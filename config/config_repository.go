@@ -7,14 +7,14 @@ const (
 	namespaceRegex = "^" + namespace + `\.`
 )
 
-func NewRepositoryConfig(repo repository.RepositoryReadWriter) RepositoryConfig {
+func NewRepositoryConfig(repo repository.ReadWriter) RepositoryConfig {
 	return RepositoryConfig{
 		Repo: repo,
 	}
 }
 
 type RepositoryConfig struct {
-	Repo repository.RepositoryReadWriter
+	Repo repository.ReadWriter
 }
 
 func (r RepositoryConfig) List() (string, error) {

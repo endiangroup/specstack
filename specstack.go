@@ -9,7 +9,7 @@ type SpecStack interface {
 	IsRepoInitialised() bool
 }
 
-func NewApp(repo repository.RepositoryReadWriter, developer actors.Developer) App {
+func NewApp(repo repository.ReadWriter, developer actors.Developer) App {
 	return App{
 		Repo:      repo,
 		Developer: developer,
@@ -17,7 +17,7 @@ func NewApp(repo repository.RepositoryReadWriter, developer actors.Developer) Ap
 }
 
 type App struct {
-	Repo      repository.RepositoryReadWriter
+	Repo      repository.ReadWriter
 	Developer actors.Developer
 }
 

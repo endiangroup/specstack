@@ -41,7 +41,7 @@ func newTestHarness() *testHarness {
 
 type testHarness struct {
 	fs   afero.Fs
-	repo repository.RepositoryReadWriter
+	repo repository.ReadWriter
 	path string
 
 	stdout bytes.Buffer

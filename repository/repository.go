@@ -1,15 +1,15 @@
 package repository
 
-type RepositoryWriter interface {
+type Writer interface {
 	Init() error
 }
 
-type RepositoryReader interface {
+type Reader interface {
 	IsInitialised() bool
 	ConfigRegex(string) (string, error)
 }
 
-type RepositoryReadWriter interface {
-	RepositoryReader
-	RepositoryWriter
+type ReadWriter interface {
+	Reader
+	Writer
 }
