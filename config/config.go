@@ -1,5 +1,5 @@
 package config
 
-type ConfigReader interface {
+type Reader interface {
 	List() (string, error)
 }

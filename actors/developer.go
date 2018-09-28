@@ -2,14 +2,14 @@ package actors
 
 import "github.com/endiangroup/specstack/config"
 
-func NewDeveloper(configReader config.ConfigReader) Developer {
+func NewDeveloper(configReader config.Reader) Developer {
 	return Developer{
 		ConfigReader: configReader,
 	}
 }
 
 type Developer struct {
-	ConfigReader config.ConfigReader
+	ConfigReader config.Reader
 }
 
 func (d Developer) ListConfiguration() (string, error) {
