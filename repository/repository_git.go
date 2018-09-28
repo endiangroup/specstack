@@ -26,7 +26,7 @@ func (repo *GitRepo) Init() error {
 	return err
 }
 
-func (repo *GitRepo) ConfigRegex(regex string) (string, error) {
+func (repo *GitRepo) ConfigGetRegex(regex string) (string, error) {
 	return repo.runGitCommand("config", "--get-regex", regex)
 }
 

@@ -18,5 +18,5 @@ type RepositoryConfig struct {
 }
 
 func (r RepositoryConfig) List() (string, error) {
-	return r.Repo.ConfigRegex(namespaceRegex)
+	return r.Repo.ConfigGetRegex(namespaceRegex)
 }

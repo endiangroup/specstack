@@ -6,7 +6,7 @@ type Writer interface {
 
 type Reader interface {
 	IsInitialised() bool
-	ConfigRegex(string) (string, error)
+	ConfigGetRegex(string) (string, error)
 }
 
 type ReadWriter interface {
