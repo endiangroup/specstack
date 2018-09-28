@@ -1,23 +1,26 @@
 package specstack
 
 import (
-	"fmt"
-	"io"
-
-	"github.com/spf13/afero"
+	"github.com/endiangroup/specstack/actors"
+	"github.com/endiangroup/specstack/repository"
 )
 
-func NewCliApp(fs afero.Fs) CliApp {
-	return CliApp{
-		Fs: fs,
+type SpecStack interface {
+	IsRepoInitialised() bool
+}
+
+func NewApp(repo repository.RepositoryReadWriter, developer actors.Developer) App {
+	return App{
+		Repo:      repo,
+		Developer: developer,
 	}
 }
 
-type CliApp struct {
-	Fs afero.Fs
+type App struct {
+	Repo      repository.RepositoryReadWriter
+	Developer actors.Developer
 }
 
-func (c CliApp) Run(args []string, stdout, stdin, stderr io.Writer) int {
-	fmt.Fprintf(stderr, "Error: Please initialise git first before running: %s\n", args[0])
-	return 1
+func (a App) IsRepoInitialised() bool {
+	return a.Repo.IsInitialised()
 }
