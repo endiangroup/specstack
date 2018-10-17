@@ -17,13 +17,10 @@ var (
 	}
 )
 
-func init() {
-	cmdConfig.AddCommand(cmdConfigList)
-
-	cmdRoot.AddCommand(cmdConfig)
-}
-
 func WireUpHarness(harness *CobraHarness) *cobra.Command {
+	cmdConfig.AddCommand(cmdConfigList)
+	cmdRoot.AddCommand(cmdConfig)
+
 	cmdRoot.SetOutput(harness.stdout)
 
 	cmdRoot.PersistentPreRunE = harness.PersistentPreRunE
