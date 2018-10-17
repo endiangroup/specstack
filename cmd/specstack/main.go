@@ -21,9 +21,9 @@ func main() {
 	developer := actors.NewDeveloper(repoStore)
 	app := specstack.NewApp(dir, gitRepo, developer, repoStore)
 
-	cmd.WireUpHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))
+	cobra := cmd.WireUpHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))
 
-	if err := cmd.Root.Execute(); err != nil {
+	if err := cobra.Execute(); err != nil {
 		if cliErr, ok := err.(cmd.CliErr); ok {
 			os.Exit(cliErr.ExitCode)
 		}

@@ -14,6 +14,7 @@ import (
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/repository"
 	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,15 +41,16 @@ func newTestHarness() *testHarness {
 	developer := actors.NewDeveloper(repoStore)
 	app := specstack.NewApp(testdirPath, th.repo, developer, repoStore)
 
-	WireUpHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
+	th.cobra = WireUpHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
 
 	return th
 }
 
 type testHarness struct {
-	fs   afero.Fs
-	repo repository.ReadWriter
-	path string
+	fs    afero.Fs
+	repo  repository.ReadWriter
+	path  string
+	cobra *cobra.Command
 
 	stdout *bytes.Buffer
 	stdin  *bytes.Buffer
@@ -75,8 +77,8 @@ func (t *testHarness) iHaveAnEmptyDirectory() error {
 }
 
 func (t *testHarness) iRunTheCommand(cmd string) error {
-	Root.SetArgs(strings.Split(cmd, " "))
-	err := Root.Execute()
+	t.cobra.SetArgs(strings.Split(cmd, " "))
+	err := t.cobra.Execute()
 	if err != nil {
 		if cliErr, ok := err.(CliErr); ok {
 			t.exitCode = cliErr.ExitCode
