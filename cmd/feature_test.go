@@ -41,7 +41,7 @@ func newTestHarness() *testHarness {
 	developer := personas.NewDeveloper(repoStore)
 	app := specstack.NewApp(testdirPath, th.repo, developer, repoStore)
 
-	th.cobra = WireUpHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
+	th.cobra = WireUpCobraHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
 
 	return th
 }

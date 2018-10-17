@@ -21,7 +21,7 @@ func main() {
 	developer := personas.NewDeveloper(repoStore)
 	app := specstack.NewApp(dir, gitRepo, developer, repoStore)
 
-	cobra := cmd.WireUpHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))
+	cobra := cmd.WireUpCobraHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))
 
 	if err := cobra.Execute(); err != nil {
 		if cliErr, ok := err.(cmd.CliErr); ok {

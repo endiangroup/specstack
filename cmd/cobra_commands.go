@@ -17,7 +17,7 @@ var (
 	}
 )
 
-func WireUpHarness(harness *CobraHarness) *cobra.Command {
+func WireUpCobraHarness(harness *CobraHarness) *cobra.Command {
 	cmdConfig.AddCommand(cmdConfigList)
 	cmdRoot.AddCommand(cmdConfig)
 
