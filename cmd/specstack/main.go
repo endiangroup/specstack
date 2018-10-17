@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"github.com/endiangroup/specstack"
-	"github.com/endiangroup/specstack/actors"
 	"github.com/endiangroup/specstack/cmd"
 	"github.com/endiangroup/specstack/persistence"
+	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
 )
 
@@ -18,7 +18,7 @@ func main() {
 
 	gitRepo := repository.NewGitRepo(dir, "specstack")
 	repoStore := persistence.NewRepositoryStore(gitRepo)
-	developer := actors.NewDeveloper(repoStore)
+	developer := personas.NewDeveloper(repoStore)
 	app := specstack.NewApp(dir, gitRepo, developer, repoStore)
 
 	cobra := cmd.WireUpHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))

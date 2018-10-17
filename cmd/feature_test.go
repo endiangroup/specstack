@@ -10,8 +10,8 @@ import (
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
 	"github.com/endiangroup/specstack"
-	"github.com/endiangroup/specstack/actors"
 	"github.com/endiangroup/specstack/persistence"
+	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -38,7 +38,7 @@ func newTestHarness() *testHarness {
 
 	th.repo = repository.NewGitRepo(tmpPath, "specstack")
 	repoStore := persistence.NewRepositoryStore(th.repo)
-	developer := actors.NewDeveloper(repoStore)
+	developer := personas.NewDeveloper(repoStore)
 	app := specstack.NewApp(testdirPath, th.repo, developer, repoStore)
 
 	th.cobra = WireUpHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))

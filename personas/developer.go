@@ -1,4 +1,4 @@
-package actors
+package personas
 
 import "github.com/endiangroup/specstack/config"
 

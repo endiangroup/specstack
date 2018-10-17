@@ -4,9 +4,9 @@ import (
 	"errors"
 	"path/filepath"
 
-	"github.com/endiangroup/specstack/actors"
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/persistence"
+	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
 )
 
@@ -19,7 +19,7 @@ type SpecStack interface {
 	ListConfiguration() (map[string]string, error)
 }
 
-func NewApp(path string, repo repository.ReadWriter, developer actors.Developer, configStore config.Storer) App {
+func NewApp(path string, repo repository.ReadWriter, developer personas.Developer, configStore config.Storer) App {
 	return App{
 		path:        path,
 		repo:        repo,
@@ -32,7 +32,7 @@ type App struct {
 	path        string
 	repo        repository.ReadWriter
 	configStore config.Storer
-	developer   actors.Developer
+	developer   personas.Developer
 }
 
 func (a App) Initialise() error {

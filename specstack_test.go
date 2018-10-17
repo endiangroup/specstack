@@ -3,9 +3,9 @@ package specstack
 import (
 	"testing"
 
-	"github.com/endiangroup/specstack/actors"
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/persistence"
+	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,7 +13,7 @@ import (
 
 func Test_Initialise_ReturnsErrorIfRepoisotiryIsntInitialised(t *testing.T) {
 	mockRepo := &repository.MockReadWriter{}
-	mockDeveloper := &actors.MockDeveloper{}
+	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := NewApp("", mockRepo, mockDeveloper, mockConfigStore)
 
@@ -24,7 +24,7 @@ func Test_Initialise_ReturnsErrorIfRepoisotiryIsntInitialised(t *testing.T) {
 
 func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 	mockRepo := &repository.MockReadWriter{}
-	mockDeveloper := &actors.MockDeveloper{}
+	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := NewApp("", mockRepo, mockDeveloper, mockConfigStore)
 
@@ -39,7 +39,7 @@ func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 
 func Test_Initialise_SetsConfigProjectNameToBaseOfPath(t *testing.T) {
 	mockRepo := &repository.MockReadWriter{}
-	mockDeveloper := &actors.MockDeveloper{}
+	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := NewApp("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
 	expectedConfig := config.NewWithDefaults()
