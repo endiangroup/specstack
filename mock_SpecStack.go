@@ -9,16 +9,39 @@ type MockSpecStack struct {
 	mock.Mock
 }
 
-// IsRepoInitialised provides a mock function with given fields:
-func (_m *MockSpecStack) IsRepoInitialised() bool {
+// Initialise provides a mock function with given fields:
+func (_m *MockSpecStack) Initialise() error {
 	ret := _m.Called()
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
 	return r0
+}
+
+// ListConfiguration provides a mock function with given fields:
+func (_m *MockSpecStack) ListConfiguration() (map[string]string, error) {
+	ret := _m.Called()
+
+	var r0 map[string]string
+	if rf, ok := ret.Get(0).(func() map[string]string); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
