@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/endiangroup/specstack"
@@ -16,22 +17,22 @@ func Test_PersistenPreRunE_PrintsErrorToStderr(t *testing.T) {
 	mockSs := &specstack.MockSpecStack{}
 	h, io := setupHarness(mockSs)
 
-	mockSs.On("IsRepoInitialised").Return(false)
+	mockSs.On("Initialise").Return(errors.New("!!!"))
 
 	h.PersistentPreRunE(nil, nil)
 
-	assert.Contains(t, io.stderr.String(), ErrUninitialisedRepo.Error())
+	assert.Contains(t, io.stderr.String(), "!!!")
 }
 
-func Test_PersistenPreRunE_ReturnsErrorIfUninitialisedRepo(t *testing.T) {
+func Test_PersistenPreRunE_ReturnsInitialiseError(t *testing.T) {
 	mockSs := &specstack.MockSpecStack{}
 	h, _ := setupHarness(mockSs)
 
-	mockSs.On("IsRepoInitialised").Return(false)
+	mockSs.On("Initialise").Return(errors.New("!!!"))
 
 	err := h.PersistentPreRunE(nil, nil)
 
-	assert.Equal(t, err, NewCliErr(1, ErrUninitialisedRepo))
+	assert.Equal(t, err, NewCliErr(1, errors.New("!!!")))
 }
 
 func setupHarness(mockSs *specstack.MockSpecStack) (*CobraHarness, *stdInOutErr) {

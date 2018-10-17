@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
@@ -9,17 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	ErrUninitialisedRepo = errors.New("Please initialise repository first before running")
-)
-
-func NewCliErr(returnCode int, err error) CliErr {
-	return CliErr{ReturnCode: returnCode, Err: err}
+func NewCliErr(exitCode int, err error) CliErr {
+	return CliErr{ExitCode: exitCode, Err: err}
 }
 
 type CliErr struct {
-	ReturnCode int
-	Err        error
+	ExitCode int
+	Err      error
 }
 
 func (err CliErr) Error() string {
@@ -50,23 +45,27 @@ func (c *CobraHarness) error(returnCode int, err error) error {
 
 func (c *CobraHarness) output(msg string) error {
 	fmt.Fprintln(c.stdout, msg)
+
 	return nil
 }
 
 func (c *CobraHarness) PersistentPreRunE(cmd *cobra.Command, args []string) error {
-	if !c.app.IsRepoInitialised() {
-		return c.error(1, ErrUninitialisedRepo)
+	if err := c.app.Initialise(); err != nil {
+		return c.error(1, err)
 	}
 
 	return nil
 }
 
 func (c *CobraHarness) ConfigList(cmd *cobra.Command, args []string) error {
-	//result, err := c.app.Developer.ListConfiguration()
-	//if err != nil {
-	//	return NewCliErr(1, err)
-	//}
+	configMap, err := c.app.ListConfiguration()
+	if err != nil {
+		return c.error(1, err)
+	}
 
-	//return c.output(result)
+	for key, value := range configMap {
+		fmt.Fprintf(c.stdout, "%s=%s\n", key, value)
+	}
+
 	return nil
 }
