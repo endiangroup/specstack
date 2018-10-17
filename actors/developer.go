@@ -2,16 +2,25 @@ package actors
 
 import "github.com/endiangroup/specstack/config"
 
-func NewDeveloper(configReader config.Reader) Developer {
-	return Developer{
-		ConfigReader: configReader,
+type Developer interface {
+	ListConfiguration() (map[string]string, error)
+}
+
+func NewDeveloper(configStore config.Storer) *developer {
+	return &developer{
+		configStore: configStore,
 	}
 }
 
-type Developer struct {
-	ConfigReader config.Reader
+type developer struct {
+	configStore config.Storer
 }
 
-func (d Developer) ListConfiguration() (string, error) {
-	return d.ConfigReader.List()
+func (d *developer) ListConfiguration() (map[string]string, error) {
+	config, err := d.configStore.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return config.ToMap(), nil
 }
