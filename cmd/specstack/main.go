@@ -6,7 +6,7 @@ import (
 	"github.com/endiangroup/specstack"
 	"github.com/endiangroup/specstack/actors"
 	"github.com/endiangroup/specstack/cmd"
-	"github.com/endiangroup/specstack/config"
+	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/repository"
 )
 
@@ -16,16 +16,16 @@ func main() {
 		panic(err)
 	}
 
-	gitRepo := repository.NewGitRepo(dir)
-	config := config.NewRepositoryConfig(gitRepo)
-	developer := actors.NewDeveloper(config)
-	app := specstack.NewApp(gitRepo, developer)
+	gitRepo := repository.NewGitRepo(dir, "specstack")
+	repoStore := persistence.NewRepositoryStore(gitRepo)
+	developer := actors.NewDeveloper(repoStore)
+	app := specstack.NewApp(dir, gitRepo, developer, repoStore)
 
 	cmd.WireUpHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))
 
 	if err := cmd.Root.Execute(); err != nil {
 		if cliErr, ok := err.(cmd.CliErr); ok {
-			os.Exit(cliErr.ReturnCode)
+			os.Exit(cliErr.ExitCode)
 		}
 
 		os.Exit(-1)
