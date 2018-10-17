@@ -3,13 +3,15 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
 	"github.com/endiangroup/specstack"
 	"github.com/endiangroup/specstack/actors"
-	"github.com/endiangroup/specstack/config"
+	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/repository"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -19,22 +21,26 @@ func newTestHarness() *testHarness {
 	// Current git implementation can only interact with OS FS
 	fs := afero.NewOsFs()
 
-	path, err := afero.TempDir(fs, "", "specstack-")
+	tmpPath, err := afero.TempDir(fs, "", "specstack-")
 	if err != nil {
 		panic(err)
 	}
+	testdirPath := filepath.Join(tmpPath, "test-dir")
 
 	th := &testHarness{
-		fs:   fs,
-		path: path,
+		fs:     fs,
+		path:   tmpPath,
+		stdout: bytes.NewBuffer(nil),
+		stdin:  bytes.NewBuffer(nil),
+		stderr: bytes.NewBuffer(nil),
 	}
 
-	th.repo = repository.NewGitRepo(path)
-	config := config.NewRepositoryConfig(th.repo)
-	developer := actors.NewDeveloper(config)
-	app := specstack.NewApp(th.repo, developer)
+	th.repo = repository.NewGitRepo(tmpPath, "specstack")
+	repoStore := persistence.NewRepositoryStore(th.repo)
+	developer := actors.NewDeveloper(repoStore)
+	app := specstack.NewApp(testdirPath, th.repo, developer, repoStore)
 
-	WireUpHarness(NewCobraHarness(app, &th.stdin, &th.stdout, &th.stderr))
+	WireUpHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
 
 	return th
 }
@@ -44,12 +50,12 @@ type testHarness struct {
 	repo repository.ReadWriter
 	path string
 
-	stdout bytes.Buffer
-	stdin  bytes.Buffer
-	stderr bytes.Buffer
+	stdout *bytes.Buffer
+	stdin  *bytes.Buffer
+	stderr *bytes.Buffer
 
 	assertError error
-	returnCode  int
+	exitCode    int
 }
 
 func (t *testHarness) ScenarioCleanup(_ interface{}, _ error) {
@@ -61,7 +67,11 @@ func (t *testHarness) ScenarioCleanup(_ interface{}, _ error) {
 }
 
 func (t *testHarness) iHaveAnEmptyDirectory() error {
-	return t.fs.MkdirAll("test-dir", 0755)
+	if err := t.fs.MkdirAll(t.path, 0755); err != nil {
+		return err
+	}
+
+	return os.Chdir(t.path)
 }
 
 func (t *testHarness) iRunTheCommand(cmd string) error {
@@ -69,7 +79,7 @@ func (t *testHarness) iRunTheCommand(cmd string) error {
 	err := Root.Execute()
 	if err != nil {
 		if cliErr, ok := err.(CliErr); ok {
-			t.returnCode = cliErr.ReturnCode
+			t.exitCode = cliErr.ExitCode
 		}
 	}
 
@@ -81,7 +91,7 @@ func (t *testHarness) iShouldSeeAnErrorMessageInformingMe(msg string) error {
 		return t.AssertError()
 	}
 
-	if !assert.True(t, t.returnCode > 0, "Zero return coded returned, expected > 0") {
+	if !assert.True(t, t.exitCode > 0, "Zero exit coded returned, expected > 0") {
 		return t.AssertError()
 	}
 
@@ -93,11 +103,14 @@ func (t *testHarness) iHaveInitialisedGit() error {
 }
 
 func (t *testHarness) iShouldSeeTheFollowing(output *gherkin.DocString) error {
-	if !assert.Contains(t, t.stdout.String(), output) {
-		return t.AssertError()
+	lines := strings.Split(output.Content, "\n")
+	for _, line := range lines {
+		if !assert.Contains(t, t.stdout.String(), line) {
+			return t.AssertError()
+		}
 	}
 
-	if !assert.True(t, t.returnCode > 0, "Zero return coded returned, expected > 0") {
+	if !assert.True(t, t.exitCode == 0, "Non-zero exit coded returned, expected 0") {
 		return t.AssertError()
 	}
 
