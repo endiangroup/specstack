@@ -3,12 +3,12 @@ Feature: View and change project settings
 	I want to view and change settings
 	I can customise them to my projects needs
 
-	Scenario: Attempt to change settings in non-git dir
+	Scenario: Attempt to view settings in non-git dir
 		Given I have an empty directory
 		When I run "config list"
 		Then I should see an error message informing me "initialise repository first"
 
-	Scenario: View all config
+	Scenario: Initialise configuration on first run
 		Given I have an empty directory
 		And I have initialised git
 		When I run "config list"
