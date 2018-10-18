@@ -12,6 +12,12 @@ Feature: View and change project settings
 		Given I have an empty directory
 		And I have initialised git
 		When I run "config list"
+		Then I should see some keys and values
+
+	Scenario: Get all default configuration values
+		Given I have an empty directory
+		And I have initialised git
+		When I run "config list"
 		Then I should see the following:
 		"""
 project.remote=origin
@@ -26,3 +32,12 @@ project.pullingmode=semi-auto
 		And I have initialised git
 		When I run "config get testkey"
 		Then I should see an error message informing me "no config key 'testkey' found"
+
+	Scenario: Get a single configuration value
+		Given I have an empty directory
+		And I have initialised git
+		When I run "config get project.remote"
+		Then I should see the following:
+		"""
+origin
+		"""

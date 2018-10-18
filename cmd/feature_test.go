@@ -119,6 +119,18 @@ func (t *testHarness) iShouldSeeTheFollowing(output *gherkin.DocString) error {
 	return nil
 }
 
+func (t *testHarness) iShouldSeeSomeKeysAndValues() error {
+	if !assert.True(t, len(strings.Split(t.stdout.String(), "\n")) > 0, "Nothing outputed, expected some lines") {
+		return t.AssertError()
+	}
+
+	if !assert.Regexp(t, `[a-z.]+=.+(\n)?`, t.stdout) {
+		t.AssertError()
+	}
+
+	return nil
+}
+
 func (t *testHarness) Errorf(format string, args ...interface{}) {
 	t.assertError = fmt.Errorf(format, args...)
 }
@@ -135,6 +147,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I should see an error message informing me "([^"]*)"$`, th.iShouldSeeAnErrorMessageInformingMe)
 	s.Step(`^I have initialised git$`, th.iHaveInitialisedGit)
 	s.Step(`^I should see the following:$`, th.iShouldSeeTheFollowing)
+	s.Step(`^I should see some keys and values$`, th.iShouldSeeSomeKeysAndValues)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }
