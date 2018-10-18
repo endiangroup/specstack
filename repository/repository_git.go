@@ -43,30 +43,30 @@ func (err GitCmdErr) Error() string {
 	return err.Stderr
 }
 
-type GitRepo struct {
+type Git struct {
 	Path            string
 	ConfigNamespace string
 }
 
-func NewGitRepo(path, configNamespace string) *GitRepo {
-	return &GitRepo{
+func NewGit(path, configNamespace string) *Git {
+	return &Git{
 		Path:            path,
 		ConfigNamespace: configNamespace,
 	}
 }
 
-func (repo *GitRepo) IsInitialised() bool {
+func (repo *Git) IsInitialised() bool {
 	_, _, _, err := repo.runGitCommandRaw("rev-parse")
 
 	return err == nil
 }
 
-func (repo *GitRepo) Init() error {
+func (repo *Git) Init() error {
 	_, err := repo.runGitCommand("init")
 	return err
 }
 
-func (repo *GitRepo) ConfigGetAll() (map[string]string, error) {
+func (repo *Git) ConfigGetAll() (map[string]string, error) {
 	result, err := repo.runGitCommand("config", "--null", "--get-regex", "^"+repo.ConfigNamespace+`\.`)
 	if err != nil {
 		return nil, NewGitConfigErr(err.(*GitCmdErr))
@@ -90,21 +90,21 @@ func (repo *GitRepo) ConfigGetAll() (map[string]string, error) {
 	return configMap, nil
 }
 
-func (repo *GitRepo) ConfigGet(key string) (string, error) {
+func (repo *Git) ConfigGet(key string) (string, error) {
 	return repo.runGitCommand("config", "--get", repo.prefixConfigNamespace(key))
 }
 
-func (repo *GitRepo) ConfigSet(key, value string) error {
+func (repo *Git) ConfigSet(key, value string) error {
 	_, err := repo.runGitCommand("config", repo.prefixConfigNamespace(key), value)
 	return err
 }
-func (repo *GitRepo) ConfigUnset(key string) error {
+func (repo *Git) ConfigUnset(key string) error {
 	_, err := repo.runGitCommand("config", "--unset", repo.prefixConfigNamespace(key))
 
 	return err
 }
 
-func (repo *GitRepo) runGitCommandRaw(args ...string) (string, string, int, error) {
+func (repo *Git) runGitCommandRaw(args ...string) (string, string, int, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repo.Path
 	var stdout bytes.Buffer
@@ -126,7 +126,7 @@ func (repo *GitRepo) runGitCommandRaw(args ...string) (string, string, int, erro
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), exitCode, err
 }
 
-func (repo *GitRepo) runGitCommand(args ...string) (string, error) {
+func (repo *Git) runGitCommand(args ...string) (string, error) {
 	stdout, stderr, exitCode, err := repo.runGitCommandRaw(args...)
 	if err != nil {
 		return "", NewGitCmdErr(stderr, exitCode, args...)
@@ -135,10 +135,10 @@ func (repo *GitRepo) runGitCommand(args ...string) (string, error) {
 	return stdout, err
 }
 
-func (repo *GitRepo) prefixConfigNamespace(key string) string {
+func (repo *Git) prefixConfigNamespace(key string) string {
 	return repo.ConfigNamespace + "." + key
 }
 
-func (repo *GitRepo) trimConfigNamespace(key string) string {
+func (repo *Git) trimConfigNamespace(key string) string {
 	return strings.TrimPrefix(key, repo.ConfigNamespace+".")
 }

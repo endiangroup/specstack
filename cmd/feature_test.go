@@ -36,7 +36,7 @@ func newTestHarness() *testHarness {
 		stderr: bytes.NewBuffer(nil),
 	}
 
-	th.repo = repository.NewGitRepo(tmpPath, "specstack")
+	th.repo = repository.NewGit(tmpPath, "specstack")
 	repoStore := persistence.NewRepositoryStore(th.repo)
 	developer := personas.NewDeveloper(repoStore)
 	app := specstack.NewApp(testdirPath, th.repo, developer, repoStore)
