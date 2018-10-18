@@ -2,12 +2,12 @@ package persistence
 
 import "github.com/endiangroup/specstack/repository"
 
-func NewRepositoryStore(repo repository.ReadWriter) *RepositoryStore {
+func NewRepositoryStore(kvStore repository.KeyValueStorer) *RepositoryStore {
 	return &RepositoryStore{
-		Repo: repo,
+		KVStore: kvStore,
 	}
 }
 
 type RepositoryStore struct {
-	Repo repository.ReadWriter
+	KVStore repository.KeyValueStorer
 }

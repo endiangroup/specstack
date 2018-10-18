@@ -66,7 +66,7 @@ func (repo *Git) Init() error {
 	return err
 }
 
-func (repo *Git) ConfigGetAll() (map[string]string, error) {
+func (repo *Git) All() (map[string]string, error) {
 	result, err := repo.runGitCommand("config", "--null", "--get-regex", "^"+repo.ConfigNamespace+`\.`)
 	if err != nil {
 		return nil, NewGitConfigErr(err.(*GitCmdErr))
@@ -90,15 +90,16 @@ func (repo *Git) ConfigGetAll() (map[string]string, error) {
 	return configMap, nil
 }
 
-func (repo *Git) ConfigGet(key string) (string, error) {
+func (repo *Git) Get(key string) (string, error) {
 	return repo.runGitCommand("config", "--get", repo.prefixConfigNamespace(key))
 }
 
-func (repo *Git) ConfigSet(key, value string) error {
+func (repo *Git) Set(key, value string) error {
 	_, err := repo.runGitCommand("config", repo.prefixConfigNamespace(key), value)
 	return err
 }
-func (repo *Git) ConfigUnset(key string) error {
+
+func (repo *Git) Unset(key string) error {
 	_, err := repo.runGitCommand("config", "--unset", repo.prefixConfigNamespace(key))
 
 	return err

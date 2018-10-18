@@ -21,7 +21,7 @@ type SpecStack interface {
 	GetConfiguration(string) (string, error)
 }
 
-func NewApp(path string, repo repository.ReadWriter, developer personas.Developer, configStore config.Storer) *App {
+func NewApp(path string, repo repository.Initialiser, developer personas.Developer, configStore config.Storer) *App {
 	return &App{
 		path:        path,
 		repo:        repo,
@@ -32,7 +32,7 @@ func NewApp(path string, repo repository.ReadWriter, developer personas.Develope
 
 type App struct {
 	path        string
-	repo        repository.ReadWriter
+	repo        repository.Initialiser
 	configStore config.Storer
 	developer   personas.Developer
 	config      *config.Config

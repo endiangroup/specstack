@@ -1,18 +1,18 @@
 package repository
 
-type Writer interface {
+type Repository interface {
+	Initialiser
+	KeyValueStorer
+}
+
+type Initialiser interface {
 	Init() error
-	ConfigSet(string, string) error
-	ConfigUnset(string) error
-}
-
-type Reader interface {
 	IsInitialised() bool
-	ConfigGetAll() (map[string]string, error)
-	ConfigGet(string) (string, error)
 }
 
-type ReadWriter interface {
-	Reader
-	Writer
+type KeyValueStorer interface {
+	Get(string) (string, error)
+	Set(string, string) error
+	Unset(string) error
+	All() (map[string]string, error)
 }

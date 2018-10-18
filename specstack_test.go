@@ -12,7 +12,7 @@ import (
 )
 
 func Test_Initialise_ReturnsErrorIfRepoisotiryIsntInitialised(t *testing.T) {
-	mockRepo := &repository.MockReadWriter{}
+	mockRepo := &repository.MockInitialiser{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := NewApp("", mockRepo, mockDeveloper, mockConfigStore)
@@ -23,7 +23,7 @@ func Test_Initialise_ReturnsErrorIfRepoisotiryIsntInitialised(t *testing.T) {
 }
 
 func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
-	mockRepo := &repository.MockReadWriter{}
+	mockRepo := &repository.MockInitialiser{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := NewApp("", mockRepo, mockDeveloper, mockConfigStore)
@@ -38,7 +38,7 @@ func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 }
 
 func Test_Initialise_SetsConfigProjectNameToBaseOfPath(t *testing.T) {
-	mockRepo := &repository.MockReadWriter{}
+	mockRepo := &repository.MockInitialiser{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := NewApp("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
@@ -55,7 +55,7 @@ func Test_Initialise_SetsConfigProjectNameToBaseOfPath(t *testing.T) {
 }
 
 func Test_Initialise_LoadsExistingConfigIfNotFirstRun(t *testing.T) {
-	mockRepo := &repository.MockReadWriter{}
+	mockRepo := &repository.MockInitialiser{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := NewApp("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)

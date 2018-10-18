@@ -48,7 +48,7 @@ func newTestHarness() *testHarness {
 
 type testHarness struct {
 	fs    afero.Fs
-	repo  repository.ReadWriter
+	repo  repository.Repository
 	path  string
 	cobra *cobra.Command
 

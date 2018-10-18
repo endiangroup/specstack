@@ -11,17 +11,17 @@ import (
 )
 
 func Test_CreateConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
-	mockRepo := &repository.MockReadWriter{}
-	repoStore := NewRepositoryStore(mockRepo)
+	mockKVStore := &repository.MockKeyValueStorer{}
+	repoStore := NewRepositoryStore(mockKVStore)
 	c := config.NewWithDefaults()
 
-	mockRepo.On("ConfigSet", mock.Anything, mock.Anything).Return(nil)
+	mockKVStore.On("Set", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := repoStore.CreateConfig(c)
 	assert.NoError(t, err)
 
 	configMap := config.ToMap(c)
-	for _, call := range mockRepo.Calls {
+	for _, call := range mockKVStore.Calls {
 		key := call.Arguments.String(0)
 		assert.Contains(t, configMap, key)
 
@@ -30,11 +30,11 @@ func Test_CreateConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
 }
 
 func Test_CreateConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
-	mockRepo := &repository.MockReadWriter{}
-	repoStore := NewRepositoryStore(mockRepo)
+	mockKVStore := &repository.MockKeyValueStorer{}
+	repoStore := NewRepositoryStore(mockKVStore)
 	config := config.NewWithDefaults()
 
-	mockRepo.On("ConfigSet", mock.Anything, mock.Anything).Return(errors.New("!!!"))
+	mockKVStore.On("Set", mock.Anything, mock.Anything).Return(errors.New("!!!"))
 
 	_, err := repoStore.CreateConfig(config)
 
@@ -42,8 +42,8 @@ func Test_CreateConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
 }
 
 func Test_LoadConfig_SetsKeyValuesOnConfig(t *testing.T) {
-	mockRepo := &repository.MockReadWriter{}
-	repoStore := NewRepositoryStore(mockRepo)
+	mockKVStore := &repository.MockKeyValueStorer{}
+	repoStore := NewRepositoryStore(mockKVStore)
 	expectedConfigMap := map[string]string{
 		"project.featuresdir": "",
 		"project.pushingmode": "",
@@ -52,7 +52,7 @@ func Test_LoadConfig_SetsKeyValuesOnConfig(t *testing.T) {
 		"project.name":        "test",
 	}
 
-	mockRepo.On("ConfigGetAll").Return(expectedConfigMap, nil)
+	mockKVStore.On("All").Return(expectedConfigMap, nil)
 
 	c, err := repoStore.LoadConfig()
 	assert.NoError(t, err)
