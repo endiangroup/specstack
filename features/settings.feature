@@ -21,3 +21,8 @@ project.pushingmode=auto
 project.pullingmode=semi-auto
 		"""
 
+	Scenario: Attempt to get non-existing config key
+		Given I have an empty directory
+		And I have initialised git
+		When I run "config get testkey"
+		Then I should see an error message informing me "no config key 'testkey' found"
