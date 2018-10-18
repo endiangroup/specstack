@@ -45,3 +45,20 @@ func (p *Project) Set(name, value string) {
 		p.PullingMode = value
 	}
 }
+
+func (p *Project) Get(name string) (string, error) {
+	switch name {
+	case "remote":
+		return p.Remote, nil
+	case "name":
+		return p.Name, nil
+	case "featuresdir":
+		return p.FeaturesDir, nil
+	case "pushingmode":
+		return p.PushingMode, nil
+	case "pullingmode":
+		return p.PullingMode, nil
+	}
+
+	return "", ErrKeyNotFound(name)
+}

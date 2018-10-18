@@ -12,10 +12,5 @@ func Create(storer Storer, config *Config) (*Config, error) {
 		return nil, err
 	}
 
-	createdConfig, err := storer.CreateConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return createdConfig, nil
+	return storer.CreateConfig(config)
 }
