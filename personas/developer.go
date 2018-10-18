@@ -1,26 +1,27 @@
 package personas
 
-import "github.com/endiangroup/specstack/config"
+import (
+	"context"
+
+	"github.com/endiangroup/specstack/config"
+)
 
 type Developer interface {
-	ListConfiguration() (map[string]string, error)
+	ListConfiguration(context.Context) (map[string]string, error)
+	GetConfiguration(context.Context, string) (string, error)
 }
 
-func NewDeveloper(configStore config.Storer) *developer {
-	return &developer{
-		configStore: configStore,
-	}
+func NewDeveloper() *developer {
+	return &developer{}
 }
 
 type developer struct {
-	configStore config.Storer
 }
 
-func (d *developer) ListConfiguration() (map[string]string, error) {
-	config, err := d.configStore.LoadConfig()
-	if err != nil {
-		return nil, err
-	}
+func (d *developer) ListConfiguration(ctx context.Context) (map[string]string, error) {
+	return config.FromContext(ctx).ToMap(), nil
+}
 
-	return config.ToMap(), nil
+func (d *developer) GetConfiguration(ctx context.Context, name string) (string, error) {
+	return config.FromContext(ctx).Get(name)
 }

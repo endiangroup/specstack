@@ -38,7 +38,7 @@ func newTestHarness() *testHarness {
 
 	th.repo = repository.NewGit(tmpPath, "specstack")
 	repoStore := persistence.NewRepositoryStore(th.repo)
-	developer := personas.NewDeveloper(repoStore)
+	developer := personas.NewDeveloper()
 	app := specstack.NewApp(testdirPath, th.repo, developer, repoStore)
 
 	th.cobra = WireUpCobraHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))

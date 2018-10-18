@@ -69,3 +69,12 @@ func (c *CobraHarness) ConfigList(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
+
+func (c *CobraHarness) ConfigGet(cmd *cobra.Command, args []string) error {
+	value, err := c.app.GetConfiguration(args[0])
+	if err != nil {
+		return c.error(1, err)
+	}
+
+	return c.output(value)
+}

@@ -1,6 +1,7 @@
 package specstack
 
 import (
+	"context"
 	"errors"
 	"path/filepath"
 
@@ -17,10 +18,11 @@ var (
 type SpecStack interface {
 	Initialise() error
 	ListConfiguration() (map[string]string, error)
+	GetConfiguration(string) (string, error)
 }
 
-func NewApp(path string, repo repository.ReadWriter, developer personas.Developer, configStore config.Storer) App {
-	return App{
+func NewApp(path string, repo repository.ReadWriter, developer personas.Developer, configStore config.Storer) *App {
+	return &App{
 		path:        path,
 		repo:        repo,
 		developer:   developer,
@@ -33,41 +35,52 @@ type App struct {
 	repo        repository.ReadWriter
 	configStore config.Storer
 	developer   personas.Developer
+	config      *config.Config
 }
 
-func (a App) Initialise() error {
+func (a *App) Initialise() error {
 	if !a.repo.IsInitialised() {
 		return ErrUninitialisedRepo
 	}
 
-	if a.isFirstRun() {
-		if err := a.createDefaultConfig(); err != nil {
-			return err
-		}
+	var err error
+	if a.config, err = a.loadOrCreateConfig(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (a App) createDefaultConfig() error {
+func (a *App) loadOrCreateConfig() (*config.Config, error) {
+	c, err := config.Load(a.configStore)
+	if a.isFirstRun(err) {
+		return a.createDefaultConfig()
+	} else if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+func (a *App) isFirstRun(err error) bool {
+	return err == persistence.ErrNoConfigFound
+}
+
+func (a *App) createDefaultConfig() (*config.Config, error) {
 	c := config.NewWithDefaults()
 	c.Project.Name = filepath.Base(a.path)
 
-	_, err := a.configStore.CreateConfig(c)
-
-	return err
+	return config.Create(a.configStore, c)
 }
 
-func (a App) isFirstRun() bool {
-	if _, err := a.ListConfiguration(); err != nil {
-		if err == persistence.ErrNoConfigFound {
-			return true
-		}
-	}
-
-	return false
+func (a *App) ListConfiguration() (map[string]string, error) {
+	return a.developer.ListConfiguration(a.newContextWithConfig())
 }
 
-func (a App) ListConfiguration() (map[string]string, error) {
-	return a.developer.ListConfiguration()
+func (a *App) GetConfiguration(name string) (string, error) {
+	return a.developer.GetConfiguration(a.newContextWithConfig(), name)
+}
+
+func (a *App) newContextWithConfig() context.Context {
+	return config.InContext(context.TODO(), a.config)
 }
