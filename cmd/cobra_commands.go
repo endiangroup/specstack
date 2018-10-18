@@ -4,7 +4,7 @@ import "github.com/spf13/cobra"
 
 var (
 	cmdRoot = &cobra.Command{
-		Use:           "specstack",
+		Use:           "spec",
 		SilenceErrors: true,
 	}
 
