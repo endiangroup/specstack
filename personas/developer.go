@@ -19,9 +19,9 @@ type developer struct {
 }
 
 func (d *developer) ListConfiguration(ctx context.Context) (map[string]string, error) {
-	return config.FromContext(ctx).ToMap(), nil
+	return config.ToMap(config.FromContext(ctx)), nil
 }
 
 func (d *developer) GetConfiguration(ctx context.Context, name string) (string, error) {
-	return config.FromContext(ctx).Get(name)
+	return config.Get(config.FromContext(ctx), name)
 }

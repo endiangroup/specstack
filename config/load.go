@@ -3,15 +3,15 @@ package config
 var onLoadValidations = []Validation{}
 
 func Load(storer Storer) (*Config, error) {
-	config, err := storer.LoadConfig()
+	c, err := storer.LoadConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	isValid, err := config.IsValid(onLoadValidations...)
+	isValid, err := IsValid(c, onLoadValidations...)
 	if !isValid {
 		return nil, err
 	}
 
-	return config, nil
+	return c, nil
 }

@@ -11,7 +11,7 @@ var (
 )
 
 func (store *RepositoryStore) CreateConfig(c *config.Config) (*config.Config, error) {
-	configMap := c.ToMap()
+	configMap := config.ToMap(c)
 
 	errs := errors.Errors{}
 	for key, value := range configMap {
