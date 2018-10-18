@@ -9,20 +9,6 @@ type MockDeveloper struct {
 	mock.Mock
 }
 
-// CreateDefaultConfiguration provides a mock function with given fields:
-func (_m *MockDeveloper) CreateDefaultConfiguration() error {
-	ret := _m.Called()
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // ListConfiguration provides a mock function with given fields:
 func (_m *MockDeveloper) ListConfiguration() (map[string]string, error) {
 	ret := _m.Called()
