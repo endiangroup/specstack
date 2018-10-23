@@ -39,3 +39,8 @@ func (store *RepositoryStore) LoadConfig() (*config.Config, error) {
 
 	return config.NewFromMap(configMap), nil
 }
+
+func (store *RepositoryStore) StoreConfig(c *config.Config) error {
+	_, err := store.CreateConfig(c)
+	return err
+}
