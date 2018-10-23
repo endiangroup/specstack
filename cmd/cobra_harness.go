@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
+	"strings"
 
 	"github.com/endiangroup/specstack"
 	"github.com/spf13/cobra"
@@ -37,21 +37,15 @@ type CobraHarness struct {
 	stderr io.Writer
 }
 
-func (c *CobraHarness) error(returnCode int, err error) error {
-	fmt.Fprintf(c.stderr, "Error: %s\n\n", err)
+func (c *CobraHarness) error(cmd *cobra.Command, returnCode int, err error) error {
+	cmd.Root().SetOutput(c.stderr)
 
 	return NewCliErr(returnCode, err)
 }
 
-func (c *CobraHarness) output(msg string) error {
-	fmt.Fprintln(c.stdout, msg)
-
-	return nil
-}
-
 func (c *CobraHarness) PersistentPreRunE(cmd *cobra.Command, args []string) error {
 	if err := c.app.Initialise(); err != nil {
-		return c.error(1, err)
+		return c.error(cmd, 1, err)
 	}
 
 	return nil
@@ -60,11 +54,11 @@ func (c *CobraHarness) PersistentPreRunE(cmd *cobra.Command, args []string) erro
 func (c *CobraHarness) ConfigList(cmd *cobra.Command, args []string) error {
 	configMap, err := c.app.ListConfiguration()
 	if err != nil {
-		return c.error(1, err)
+		return c.error(cmd, 1, err)
 	}
 
 	for key, value := range configMap {
-		fmt.Fprintf(c.stdout, "%s=%s\n", key, value)
+		cmd.Printf("%s=%s\n", key, value)
 	}
 
 	return nil
@@ -73,8 +67,10 @@ func (c *CobraHarness) ConfigList(cmd *cobra.Command, args []string) error {
 func (c *CobraHarness) ConfigGet(cmd *cobra.Command, args []string) error {
 	value, err := c.app.GetConfiguration(args[0])
 	if err != nil {
-		return c.error(1, err)
+		return c.error(cmd, 1, err)
 	}
 
-	return c.output(value)
+	cmd.Print(value)
+
+	return nil
 }

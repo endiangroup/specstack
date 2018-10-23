@@ -6,22 +6,12 @@ import (
 	"testing"
 
 	"github.com/endiangroup/specstack"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
 type stdInOutErr struct {
 	stdin, stdout, stderr bytes.Buffer
-}
-
-func Test_PersistenPreRunE_PrintsErrorToStderr(t *testing.T) {
-	mockSs := &specstack.MockSpecStack{}
-	h, io := setupHarness(mockSs)
-
-	mockSs.On("Initialise").Return(errors.New("!!!"))
-
-	h.PersistentPreRunE(nil, nil)
-
-	assert.Contains(t, io.stderr.String(), "!!!")
 }
 
 func Test_PersistenPreRunE_ReturnsInitialiseError(t *testing.T) {
@@ -30,7 +20,7 @@ func Test_PersistenPreRunE_ReturnsInitialiseError(t *testing.T) {
 
 	mockSs.On("Initialise").Return(errors.New("!!!"))
 
-	err := h.PersistentPreRunE(nil, nil)
+	err := h.PersistentPreRunE(&cobra.Command{}, nil)
 
 	assert.Equal(t, err, NewCliErr(1, errors.New("!!!")))
 }
