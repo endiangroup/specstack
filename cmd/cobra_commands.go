@@ -12,11 +12,13 @@ var (
 	}
 
 	cmdConfigList = &cobra.Command{
-		Use: "list",
+		Use:  "list",
+		Args: cobra.NoArgs,
 	}
 	cmdConfigGet = &cobra.Command{
-		Use:  "get",
-		Args: cobra.MinimumNArgs(1),
+		Use:     "get <key>",
+		Args:    cobra.MinimumNArgs(1),
+		Example: "$ spec config get project.name",
 	}
 )
 
