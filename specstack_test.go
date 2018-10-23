@@ -30,7 +30,7 @@ func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
-	mockConfigStore.On("CreateConfig", mock.AnythingOfType("*config.Config")).Return(nil, nil)
+	mockConfigStore.On("StoreConfig", mock.AnythingOfType("*config.Config")).Return(nil, nil)
 
 	assert.NoError(t, app.Initialise())
 
@@ -47,7 +47,7 @@ func Test_Initialise_SetsConfigProjectNameToBaseOfPath(t *testing.T) {
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
-	mockConfigStore.On("CreateConfig", mock.Anything).Return(nil, nil)
+	mockConfigStore.On("StoreConfig", mock.Anything).Return(nil, nil)
 
 	assert.NoError(t, app.Initialise())
 

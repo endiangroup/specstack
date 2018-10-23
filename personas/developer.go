@@ -38,5 +38,6 @@ func (d *developer) SetConfiguration(ctx context.Context, name, value string) er
 		return err
 	}
 
-	return config.Store(d.configStore, c)
+	_, err = config.Store(d.configStore, c)
+	return err
 }

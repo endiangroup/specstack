@@ -10,7 +10,7 @@ var (
 	ErrNoConfigFound = errors.New("no config found")
 )
 
-func (store *RepositoryStore) CreateConfig(c *config.Config) (*config.Config, error) {
+func (store *RepositoryStore) StoreConfig(c *config.Config) (*config.Config, error) {
 	configMap := config.ToMap(c)
 
 	errs := errors.Errors{}
@@ -38,9 +38,4 @@ func (store *RepositoryStore) LoadConfig() (*config.Config, error) {
 	}
 
 	return config.NewFromMap(configMap), nil
-}
-
-func (store *RepositoryStore) StoreConfig(c *config.Config) error {
-	_, err := store.CreateConfig(c)
-	return err
 }

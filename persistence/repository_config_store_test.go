@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func Test_CreateConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
+func Test_StoreConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
 	mockKVStore := &repository.MockKeyValueStorer{}
 	repoStore := NewRepositoryStore(mockKVStore)
 	c := config.NewWithDefaults()
 
 	mockKVStore.On("Set", mock.Anything, mock.Anything).Return(nil)
 
-	_, err := repoStore.CreateConfig(c)
+	_, err := repoStore.StoreConfig(c)
 	assert.NoError(t, err)
 
 	configMap := config.ToMap(c)
@@ -29,14 +29,14 @@ func Test_CreateConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
 	}
 }
 
-func Test_CreateConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
+func Test_StoreConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
 	mockKVStore := &repository.MockKeyValueStorer{}
 	repoStore := NewRepositoryStore(mockKVStore)
 	config := config.NewWithDefaults()
 
 	mockKVStore.On("Set", mock.Anything, mock.Anything).Return(errors.New("!!!"))
 
-	_, err := repoStore.CreateConfig(config)
+	_, err := repoStore.StoreConfig(config)
 
 	assert.True(t, len(err.(errors.Errors)) > 0)
 }
