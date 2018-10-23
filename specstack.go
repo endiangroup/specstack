@@ -19,6 +19,7 @@ type SpecStack interface {
 	Initialise() error
 	ListConfiguration() (map[string]string, error)
 	GetConfiguration(string) (string, error)
+	SetConfiguration(string, string) error
 }
 
 func NewApp(path string, repo repository.Initialiser, developer personas.Developer, configStore config.Storer) *App {
@@ -79,6 +80,10 @@ func (a *App) ListConfiguration() (map[string]string, error) {
 
 func (a *App) GetConfiguration(name string) (string, error) {
 	return a.developer.GetConfiguration(a.newContextWithConfig(), name)
+}
+
+func (a *App) SetConfiguration(name, value string) error {
+	return a.developer.SetConfiguration(a.newContextWithConfig(), name, value)
 }
 
 func (a *App) newContextWithConfig() context.Context {
