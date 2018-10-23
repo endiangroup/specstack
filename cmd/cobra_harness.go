@@ -74,3 +74,27 @@ func (c *CobraHarness) ConfigGet(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
+
+func (c *CobraHarness) ConfigSetArgs(cmd *cobra.Command, args []string) error {
+	if err := cobra.ExactArgs(1)(cmd, args); err != nil {
+		return c.error(cmd, 1, err)
+	}
+
+	if err := IsKeyEqualsValueFormat(args[0]); err != nil {
+		return c.error(cmd, 1, err)
+	}
+
+	return nil
+
+}
+
+func (c *CobraHarness) ConfigSet(cmd *cobra.Command, args []string) error {
+	keyValueParts := strings.Split(args[0], "=")
+
+	err := c.app.SetConfiguration(keyValueParts[0], keyValueParts[1])
+	if err != nil {
+		return c.error(cmd, 1, err)
+	}
+
+	return nil
+}
