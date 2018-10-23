@@ -2,16 +2,18 @@ package config
 
 import "strings"
 
-func Set(c *Config, name, value string) {
+func Set(c *Config, name, value string) error {
 	nameParts := strings.Split(name, ".")
 
 	switch nameParts[0] {
 	case "project":
-		projectSet(c.Project, strings.Join(nameParts[1:], "."), value)
+		return projectSet(c.Project, strings.Join(nameParts[1:], "."), value)
 	}
+
+	return ErrKeyNotFound(name)
 }
 
-func projectSet(p *Project, name, value string) {
+func projectSet(p *Project, name, value string) error {
 	switch name {
 	case "remote":
 		p.Remote = value
@@ -23,5 +25,9 @@ func projectSet(p *Project, name, value string) {
 		p.PushingMode = value
 	case "pullingmode":
 		p.PullingMode = value
+	default:
+		return ErrKeyNotFound(name)
 	}
+
+	return nil
 }
