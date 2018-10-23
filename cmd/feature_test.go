@@ -38,7 +38,7 @@ func newTestHarness() *testHarness {
 
 	th.repo = repository.NewGit(tmpPath, "specstack")
 	repoStore := persistence.NewRepositoryStore(th.repo)
-	developer := personas.NewDeveloper()
+	developer := personas.NewDeveloper(repoStore)
 	app := specstack.NewApp(testdirPath, th.repo, developer, repoStore)
 
 	th.cobra = WireUpCobraHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
@@ -119,13 +119,26 @@ func (t *testHarness) iShouldSeeTheFollowing(output *gherkin.DocString) error {
 	return nil
 }
 
-func (t *testHarness) iShouldSeeSomeKeysAndValues() error {
+func (t *testHarness) iShouldSeeSomeConfigurationKeysAndValues() error {
 	if !assert.True(t, len(strings.Split(t.stdout.String(), "\n")) > 0, "Nothing outputed, expected some lines") {
 		return t.AssertError()
 	}
 
 	if !assert.Regexp(t, `[a-z.]+=.+(\n)?`, t.stdout) {
 		t.AssertError()
+	}
+
+	return nil
+}
+
+func (t *testHarness) theConfigKeyShouldEqual(key, expectedValue string) error {
+	value, err := t.repo.Get(key)
+	if err != nil {
+		return err
+	}
+
+	if !assert.Equal(t, expectedValue, value) {
+		return t.AssertError()
 	}
 
 	return nil
@@ -147,7 +160,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I should see an error message informing me "([^"]*)"$`, th.iShouldSeeAnErrorMessageInformingMe)
 	s.Step(`^I have initialised git$`, th.iHaveInitialisedGit)
 	s.Step(`^I should see the following:$`, th.iShouldSeeTheFollowing)
-	s.Step(`^I should see some keys and values$`, th.iShouldSeeSomeKeysAndValues)
+	s.Step(`^I should see some configuration keys and values$`, th.iShouldSeeSomeConfigurationKeysAndValues)
+	s.Step(`^The config key "([^"]*)" should equal "([^"]*)"$`, th.theConfigKeyShouldEqual)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }

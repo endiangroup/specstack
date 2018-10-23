@@ -12,7 +12,7 @@ Feature: View and change project settings
 		Given I have an empty directory
 		And I have initialised git
 		When I run "config list"
-		Then I should see some keys and values
+		Then I should see some configuration keys and values
 
 	Scenario: Get all default configuration values
 		Given I have an empty directory
@@ -41,3 +41,21 @@ project.pullingmode=semi-auto
 		"""
 origin
 		"""
+
+	Scenario: Set config value with invalid format
+		Given I have an empty directory
+		And I have initialised git
+		When I run "config set testvalue"
+		Then I should see an error message informing me "invalid argument format, expected: key=value"
+
+	Scenario: Set a non-existing configuration key
+		Given I have an empty directory
+		And I have initialised git
+		When I run "config set testkey=testvalue"
+		Then I should see an error message informing me "no config key 'testkey' found"
+
+	Scenario: Set a config value
+		Given I have an empty directory
+		And I have initialised git
+		When I run "config set project.name=TestProject"
+		Then The config key "project.name" should equal "TestProject"

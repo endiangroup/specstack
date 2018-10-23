@@ -18,7 +18,7 @@ func main() {
 
 	gitRepo := repository.NewGit(dir, "specstack")
 	repoStore := persistence.NewRepositoryStore(gitRepo)
-	developer := personas.NewDeveloper()
+	developer := personas.NewDeveloper(repoStore)
 	app := specstack.NewApp(dir, gitRepo, developer, repoStore)
 
 	cobra := cmd.WireUpCobraHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))
