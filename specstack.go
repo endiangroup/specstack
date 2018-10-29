@@ -23,7 +23,7 @@ type Controller interface {
 }
 
 func New(path string, repo repository.Initialiser, developer personas.Developer, configStore config.Storer) Controller {
-	return &App{
+	return &appController{
 		path:        path,
 		repo:        repo,
 		developer:   developer,
@@ -31,7 +31,7 @@ func New(path string, repo repository.Initialiser, developer personas.Developer,
 	}
 }
 
-type App struct {
+type appController struct {
 	path        string
 	repo        repository.Initialiser
 	configStore config.Storer
@@ -39,7 +39,7 @@ type App struct {
 	config      *config.Config
 }
 
-func (a *App) Initialise() error {
+func (a *appController) Initialise() error {
 	if !a.repo.IsInitialised() {
 		return ErrUninitialisedRepo
 	}
@@ -52,7 +52,7 @@ func (a *App) Initialise() error {
 	return nil
 }
 
-func (a *App) loadOrCreateConfig() (*config.Config, error) {
+func (a *appController) loadOrCreateConfig() (*config.Config, error) {
 	c, err := config.Load(a.configStore)
 	if a.isFirstRun(err) {
 		return a.createDefaultConfig()
@@ -63,29 +63,29 @@ func (a *App) loadOrCreateConfig() (*config.Config, error) {
 	return c, nil
 }
 
-func (a *App) isFirstRun(err error) bool {
+func (a *appController) isFirstRun(err error) bool {
 	return err == persistence.ErrNoConfigFound
 }
 
-func (a *App) createDefaultConfig() (*config.Config, error) {
+func (a *appController) createDefaultConfig() (*config.Config, error) {
 	c := config.NewWithDefaults()
 	c.Project.Name = filepath.Base(a.path)
 
 	return config.Create(a.configStore, c)
 }
 
-func (a *App) ListConfiguration() (map[string]string, error) {
+func (a *appController) ListConfiguration() (map[string]string, error) {
 	return a.developer.ListConfiguration(a.newContextWithConfig())
 }
 
-func (a *App) GetConfiguration(name string) (string, error) {
+func (a *appController) GetConfiguration(name string) (string, error) {
 	return a.developer.GetConfiguration(a.newContextWithConfig(), name)
 }
 
-func (a *App) SetConfiguration(name, value string) error {
+func (a *appController) SetConfiguration(name, value string) error {
 	return a.developer.SetConfiguration(a.newContextWithConfig(), name, value)
 }
 
-func (a *App) newContextWithConfig() context.Context {
+func (a *appController) newContextWithConfig() context.Context {
 	return config.InContext(context.TODO(), a.config)
 }
