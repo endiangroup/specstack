@@ -15,7 +15,7 @@ func Test_Initialise_ReturnsErrorIfRepoisotiryIsntInitialised(t *testing.T) {
 	mockRepo := &repository.MockInitialiser{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
-	app := NewApp("", mockRepo, mockDeveloper, mockConfigStore)
+	app := New("", mockRepo, mockDeveloper, mockConfigStore)
 
 	mockRepo.On("IsInitialised").Return(false)
 
@@ -26,7 +26,7 @@ func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 	mockRepo := &repository.MockInitialiser{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
-	app := NewApp("", mockRepo, mockDeveloper, mockConfigStore)
+	app := New("", mockRepo, mockDeveloper, mockConfigStore)
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
@@ -41,7 +41,7 @@ func Test_Initialise_SetsConfigProjectNameToBaseOfPath(t *testing.T) {
 	mockRepo := &repository.MockInitialiser{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
-	app := NewApp("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
 	expectedConfig := config.NewWithDefaults()
 	expectedConfig.Project.Name = "test-dir"
 
@@ -58,7 +58,7 @@ func Test_Initialise_LoadsExistingConfigIfNotFirstRun(t *testing.T) {
 	mockRepo := &repository.MockInitialiser{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
-	app := NewApp("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
 	expectedConfig := config.NewWithDefaults()
 
 	mockRepo.On("IsInitialised").Return(true)

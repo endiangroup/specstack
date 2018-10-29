@@ -22,7 +22,7 @@ type Controller interface {
 	SetConfiguration(string, string) error
 }
 
-func NewApp(path string, repo repository.Initialiser, developer personas.Developer, configStore config.Storer) *App {
+func New(path string, repo repository.Initialiser, developer personas.Developer, configStore config.Storer) Controller {
 	return &App{
 		path:        path,
 		repo:        repo,
