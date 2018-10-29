@@ -15,7 +15,7 @@ var (
 	ErrUninitialisedRepo = errors.New("Please initialise repository first before running")
 )
 
-type SpecStack interface {
+type Controller interface {
 	Initialise() error
 	ListConfiguration() (map[string]string, error)
 	GetConfiguration(string) (string, error)
