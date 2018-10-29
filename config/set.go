@@ -1,32 +1,28 @@
 package config
 
-import "strings"
-
-func Set(c *Config, name, value string) error {
-	nameParts := strings.Split(name, ".")
-
-	switch nameParts[0] {
-	case "project":
-		return projectSet(c.Project, strings.Join(nameParts[1:], "."), value)
+func Set(c *Config, key, value string) error {
+	switch fetchPrefix(key) {
+	case keyProject:
+		return projectSet(c.Project, key, value)
 	}
 
-	return ErrKeyNotFound(name)
+	return ErrKeyNotFound(key)
 }
 
-func projectSet(p *Project, name, value string) error {
-	switch name {
-	case "remote":
-		p.Remote = value
-	case "name":
+func projectSet(p *Project, key, value string) error {
+	switch fetchPostfix(key) {
+	case keyProjectName:
 		p.Name = value
-	case "featuresdir":
+	case keyProjectRemote:
+		p.Remote = value
+	case keyProjectFeaturesDir:
 		p.FeaturesDir = value
-	case "pushingmode":
+	case keyProjectPushingMode:
 		p.PushingMode = value
-	case "pullingmode":
+	case keyProjectPullingMode:
 		p.PullingMode = value
 	default:
-		return ErrKeyNotFound(name)
+		return ErrKeyNotFound(key)
 	}
 
 	return nil

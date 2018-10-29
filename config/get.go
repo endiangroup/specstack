@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"strings"
 )
 
 type ErrKeyNotFound string
@@ -11,30 +10,28 @@ func (err ErrKeyNotFound) Error() string {
 	return fmt.Sprintf("no config key '%s' found", string(err))
 }
 
-func Get(c *Config, name string) (string, error) {
-	nameParts := strings.Split(name, ".")
-
-	switch nameParts[0] {
-	case "project":
-		return projectGet(c.Project, strings.Join(nameParts[1:], "."))
+func Get(c *Config, key string) (string, error) {
+	switch fetchPrefix(key) {
+	case keyProject:
+		return projectGet(c.Project, key)
 	}
 
-	return "", ErrKeyNotFound(name)
+	return "", ErrKeyNotFound(key)
 }
 
-func projectGet(p *Project, name string) (string, error) {
-	switch name {
-	case "remote":
-		return p.Remote, nil
-	case "name":
+func projectGet(p *Project, key string) (string, error) {
+	switch fetchPostfix(key) {
+	case keyProjectName:
 		return p.Name, nil
-	case "featuresdir":
+	case keyProjectRemote:
+		return p.Remote, nil
+	case keyProjectFeaturesDir:
 		return p.FeaturesDir, nil
-	case "pushingmode":
+	case keyProjectPushingMode:
 		return p.PushingMode, nil
-	case "pullingmode":
+	case keyProjectPullingMode:
 		return p.PullingMode, nil
 	}
 
-	return "", ErrKeyNotFound(name)
+	return "", ErrKeyNotFound(key)
 }
