@@ -14,6 +14,19 @@ func Get(c *Config, key string) (string, error) {
 	switch fetchPrefix(key) {
 	case keyProject:
 		return projectGet(c.Project, key)
+	case keyUser:
+		return userGet(c.User, key)
+	}
+
+	return "", ErrKeyNotFound(key)
+}
+
+func userGet(u *User, key string) (string, error) {
+	switch fetchPostfix(key) {
+	case keyUserName:
+		return u.Name, nil
+	case keyUserEmail:
+		return u.Email, nil
 	}
 
 	return "", ErrKeyNotFound(key)

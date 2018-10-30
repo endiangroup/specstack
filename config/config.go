@@ -7,11 +7,15 @@ var (
 func NewWithDefaults() *Config {
 	return &Config{
 		Project: newProjectWithDefaults(),
+		User:    newUserWithDefaults(),
 	}
 }
 
 func New() *Config {
-	return &Config{Project: newProject()}
+	return &Config{
+		Project: newProject(),
+		User:    newUser(),
+	}
 }
 
 func NewFromMap(configMap map[string]string) *Config {
@@ -25,4 +29,5 @@ func NewFromMap(configMap map[string]string) *Config {
 
 type Config struct {
 	Project *Project
+	User    *User
 }
