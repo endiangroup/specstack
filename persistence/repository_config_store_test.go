@@ -44,13 +44,10 @@ func Test_StoreConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
 func Test_LoadConfig_SetsKeyValuesOnConfig(t *testing.T) {
 	mockKVStore := &repository.MockKeyValueStorer{}
 	repoStore := NewRepositoryStore(mockKVStore)
-	expectedConfigMap := map[string]string{
-		"project.featuresdir": "",
-		"project.pushingmode": "",
-		"project.pullingmode": "",
-		"project.remote":      "upstream",
-		"project.name":        "test",
-	}
+	c := config.New()
+	c.Project.Remote = "upstream"
+	c.Project.Name = "test"
+	expectedConfigMap := config.ToMap(c)
 
 	mockKVStore.On("All").Return(expectedConfigMap, nil)
 
