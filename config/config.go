@@ -1,7 +1,7 @@
 package config
 
 var (
-	EmptyConfig = New()
+	Empty = New()
 )
 
 func NewWithDefaults() *Config {

@@ -15,5 +15,5 @@ func FromContext(ctx context.Context) *Config {
 		return c
 	}
 
-	return EmptyConfig
+	return Empty
 }
