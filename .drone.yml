@@ -35,3 +35,4 @@ pipeline:
         {{#if build.tag}}`v{{build.tag}}` | {{/if}}Commit <${DRONE_COMMIT_LINK}|{{build.commit}}> | <{{build.link}}|Build #{{build.number}}>
     when:
       event: [tag, pull_request]
+      status: failure
