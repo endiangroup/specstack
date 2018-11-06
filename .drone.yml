@@ -1,0 +1,24 @@
+workspace:
+  base: /go
+  path: src/github.com/endiangroup/specstack
+
+clone:
+  git:
+    image: plugins/git:next
+    pull: true
+    tags: true
+
+pipeline:
+  vendor:
+    image: kowalatech/go:1.0.12
+    commands:
+      - dep ensure --vendor-only
+    when:
+      event: [pull_request]
+
+  test:
+    image: kowalatech/go:1.0.12
+    commands:
+      - make test
+    when:
+      event: [pull_request]
