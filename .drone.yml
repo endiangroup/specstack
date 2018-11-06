@@ -27,12 +27,11 @@ pipeline:
     group: notify
     image: plugins/slack
     secrets: [ slack_webhook ]
-    channel: ci-notifications
+    channel: specstack
     username: drone
     template: >
         *CI build #{{build.number}}* ({{build.event}} to `{{build.branch}}`{{#if build.pull}}[PR #{{build.pull}}]{{/if}} by @{{build.author}}) *{{#success build.status}}successful{{else}}failed{{/success}}* after {{since build.started}}
         _${DRONE_COMMIT_MESSAGE}_
         {{#if build.tag}}`v{{build.tag}}` | {{/if}}Commit <${DRONE_COMMIT_LINK}|{{build.commit}}> | <{{build.link}}|Build #{{build.number}}> | <https://s3.amazonaws.com/kcoin-e2e/logs/${DRONE_BUILD_NUMBER}/e2e-build-${DRONE_BUILD_NUMBER}.zip|e2e logs>
     when:
-      status: failure
       event: [tag, pull_request]
