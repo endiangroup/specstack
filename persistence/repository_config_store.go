@@ -30,7 +30,7 @@ func (store *RepositoryStore) StoreConfig(c *config.Config) (*config.Config, err
 func (store *RepositoryStore) LoadConfig() (*config.Config, error) {
 	configMap, err := store.KVStore.All()
 	if err != nil {
-		if _, ok := err.(repository.GitConfigMissingSectionKeyErr); ok {
+		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
 			return nil, ErrNoConfigFound
 		}
 

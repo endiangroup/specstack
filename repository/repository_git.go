@@ -17,13 +17,13 @@ const (
 func NewGitConfigErr(gitCmdErr *GitCmdErr) error {
 	switch gitCmdErr.ExitCode {
 	case 1:
-		return GitConfigMissingSectionKeyErr{gitCmdErr}
+		return GitConfigMissingKeyErr{gitCmdErr}
 	}
 
 	return gitCmdErr
 }
 
-type GitConfigMissingSectionKeyErr struct {
+type GitConfigMissingKeyErr struct {
 	*GitCmdErr
 }
 
