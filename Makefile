@@ -3,6 +3,10 @@ test: dep godog
 	go test ./...
 	(cd cmd/ && godog ../features)
 
+.PHONY: lint
+lint: gometalinter
+	gometalinter.v2 --errors --vendor --exclude=vendor --config gometalinter.json ./...
+
 .PHONY: mock
 dir ?= .
 mock: export filename=$(shell echo $(name) | tr A-Z a-z)_mock.go
@@ -37,4 +41,14 @@ dep:
 ifndef DEP_BIN
 	@echo "Installing dep..."
 	@go get github.com/golang/dep/cmd/dep
+	@dep ensure --vendor-only
+endif
+
+.PHONY: gomentalinter
+GOMETALINTER_BIN := $(shell command -v gometalinter.v2 2> /dev/null)
+gometalinter:
+ifndef GOMETALINTER_BIN
+	@echo "Installing gometalinter..."
+	@go get gopkg.in/alecthomas/gometalinter.v2
+	@gometalinter.v2 --install
 endif

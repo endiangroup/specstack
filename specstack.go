@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	// Thrown when a git repo is not initialised
 	ErrUninitialisedRepo = errors.New("Please initialise repository first before running")
 )
 
@@ -45,11 +46,9 @@ func (a *appController) Initialise() error {
 	}
 
 	var err error
-	if a.config, err = a.loadOrCreateConfig(); err != nil {
-		return err
-	}
+	a.config, err = a.loadOrCreateConfig()
 
-	return nil
+	return err
 }
 
 func (a *appController) loadOrCreateConfig() (*config.Config, error) {

@@ -10,16 +10,16 @@ clone:
 
 pipeline:
   vendor:
-    image: kowalatech/go:1.0.12
+    image: endian/go:1.0.1
     commands:
       - dep ensure --vendor-only
     when:
       event: [pull_request]
 
   test:
-    image: kowalatech/go:1.0.12
+    image: endian/go:1.0.1
     commands:
-      - make test
+      - make lint test
     when:
       event: [pull_request]
 
