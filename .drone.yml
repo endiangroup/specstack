@@ -9,15 +9,22 @@ clone:
     tags: true
 
 pipeline:
+  lint:
+    image: endian/go:1.0.1
+    commands:
+      - make lint
+    when:
+      event: [pull_request]
+
   vendor:
-    image: kowalatech/go:1.0.12
+    image: endian/go:1.0.1
     commands:
       - dep ensure --vendor-only
     when:
       event: [pull_request]
 
   test:
-    image: kowalatech/go:1.0.12
+    image: endian/go:1.0.1
     commands:
       - make test
     when:
