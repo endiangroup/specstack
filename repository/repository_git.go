@@ -8,6 +8,12 @@ import (
 	"syscall"
 )
 
+const (
+	ScopeLocal  = 1
+	ScopeSystem = 2
+	ScopeGlobal = 4
+)
+
 func NewGitConfigErr(gitCmdErr *GitCmdErr) error {
 	switch gitCmdErr.ExitCode {
 	case 1:
@@ -44,15 +50,26 @@ func (err GitCmdErr) Error() string {
 }
 
 type Git struct {
-	Path            string
-	ConfigNamespace string
+	Path             string
+	ConfigReadScope  byte
+	ConfigWriteScope int
 }
 
-func NewGit(path, configNamespace string) *Git {
+func NewGit(path string) *Git {
 	return &Git{
-		Path:            path,
-		ConfigNamespace: configNamespace,
+		Path: path,
+
+		// Git defaults as of v2.18.0
+		ConfigReadScope:  ScopeLocal | ScopeGlobal | ScopeSystem,
+		ConfigWriteScope: ScopeLocal,
 	}
+}
+
+func (repo *Git) SetConfigReadScope(scope byte) {
+	repo.ConfigReadScope = scope
+}
+func (repo *Git) SetConfigWriteScope(scope int) {
+	repo.ConfigWriteScope = scope
 }
 
 func (repo *Git) IsInitialised() bool {
@@ -67,7 +84,7 @@ func (repo *Git) Init() error {
 }
 
 func (repo *Git) All() (map[string]string, error) {
-	result, err := repo.runGitCommand("config", "--null", "--get-regex", "^"+repo.ConfigNamespace+`\.`)
+	result, err := repo.runGitCommand("config", repo.configReadScope(), "--null", "--list")
 	if err != nil {
 		return nil, NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -81,9 +98,9 @@ func (repo *Git) All() (map[string]string, error) {
 		}
 		kvParts := strings.SplitN(kvPair, "\n", 2)
 		if len(kvParts) == 1 {
-			configMap[repo.trimConfigNamespace(kvParts[0])] = ""
+			configMap[kvParts[0]] = ""
 		} else {
-			configMap[repo.trimConfigNamespace(kvParts[0])] = kvParts[1]
+			configMap[kvParts[0]] = kvParts[1]
 		}
 	}
 
@@ -91,18 +108,30 @@ func (repo *Git) All() (map[string]string, error) {
 }
 
 func (repo *Git) Get(key string) (string, error) {
-	return repo.runGitCommand("config", "--get", repo.prefixConfigNamespace(key))
+	result, err := repo.runGitCommand("config", repo.configReadScope(), "--get", key)
+	if err != nil {
+		return "", NewGitConfigErr(err.(*GitCmdErr))
+	}
+
+	return result, nil
 }
 
 func (repo *Git) Set(key, value string) error {
-	_, err := repo.runGitCommand("config", repo.prefixConfigNamespace(key), value)
-	return err
+	_, err := repo.runGitCommand("config", repo.configWriteScope(), key, value)
+	if err != nil {
+		return NewGitConfigErr(err.(*GitCmdErr))
+	}
+
+	return nil
 }
 
 func (repo *Git) Unset(key string) error {
-	_, err := repo.runGitCommand("config", "--unset", repo.prefixConfigNamespace(key))
+	_, err := repo.runGitCommand("config", repo.configWriteScope(), "--unset", key)
+	if err != nil {
+		return NewGitConfigErr(err.(*GitCmdErr))
+	}
 
-	return err
+	return nil
 }
 
 func (repo *Git) runGitCommandRaw(args ...string) (string, string, int, error) {
@@ -136,10 +165,31 @@ func (repo *Git) runGitCommand(args ...string) (string, error) {
 	return stdout, err
 }
 
-func (repo *Git) prefixConfigNamespace(key string) string {
-	return repo.ConfigNamespace + "." + key
+func (repo *Git) configReadScope() string {
+	args := []string{}
+
+	if (repo.ConfigReadScope & ScopeLocal) != 0 {
+		args = append(args, "--local")
+	}
+	if (repo.ConfigReadScope & ScopeGlobal) != 0 {
+		args = append(args, "--global")
+	}
+	if (repo.ConfigReadScope & ScopeSystem) != 0 {
+		args = append(args, "--system")
+	}
+
+	return strings.Join(args, " ")
 }
 
-func (repo *Git) trimConfigNamespace(key string) string {
-	return strings.TrimPrefix(key, repo.ConfigNamespace+".")
+func (repo *Git) configWriteScope() string {
+	switch repo.ConfigWriteScope {
+	case ScopeLocal:
+		return "--local"
+	case ScopeGlobal:
+		return "--global"
+	case ScopeSystem:
+		return "--system"
+	}
+
+	return ""
 }
