@@ -8,7 +8,7 @@ import (
 
 func CannotBeBlank(field, value string) error {
 	if strings.TrimSpace(value) == "" {
-		return &errors.ValidationField{field, "cannot be blank"}
+		return &errors.ValidationField{Field: field, Message: "cannot be blank"}
 	}
 
 	return nil
