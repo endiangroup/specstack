@@ -83,7 +83,7 @@ func (repo *Git) Init() error {
 	return err
 }
 
-func (repo *Git) All() (map[string]string, error) {
+func (repo *Git) AllConfig() (map[string]string, error) {
 	result, err := repo.runGitCommand("config", repo.configReadScope(), "--null", "--list")
 	if err != nil {
 		return nil, NewGitConfigErr(err.(*GitCmdErr))
@@ -107,7 +107,7 @@ func (repo *Git) All() (map[string]string, error) {
 	return configMap, nil
 }
 
-func (repo *Git) Get(key string) (string, error) {
+func (repo *Git) GetConfig(key string) (string, error) {
 	result, err := repo.runGitCommand("config", repo.configReadScope(), "--get", key)
 	if err != nil {
 		return "", NewGitConfigErr(err.(*GitCmdErr))
@@ -116,7 +116,7 @@ func (repo *Git) Get(key string) (string, error) {
 	return result, nil
 }
 
-func (repo *Git) Set(key, value string) error {
+func (repo *Git) SetConfig(key, value string) error {
 	_, err := repo.runGitCommand("config", repo.configWriteScope(), key, value)
 	if err != nil {
 		return NewGitConfigErr(err.(*GitCmdErr))
@@ -125,7 +125,7 @@ func (repo *Git) Set(key, value string) error {
 	return nil
 }
 
-func (repo *Git) Unset(key string) error {
+func (repo *Git) UnsetConfig(key string) error {
 	_, err := repo.runGitCommand("config", repo.configWriteScope(), "--unset", key)
 	if err != nil {
 		return NewGitConfigErr(err.(*GitCmdErr))

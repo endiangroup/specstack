@@ -29,8 +29,8 @@ func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 	app := New("", mockRepo, mockDeveloper, mockConfigStore)
 
 	mockRepo.On("IsInitialised").Return(true)
-	mockRepo.On("Get", "user.name").Return("username", nil)
-	mockRepo.On("Get", "user.email").Return("user@email", nil)
+	mockRepo.On("GetConfig", "user.name").Return("username", nil)
+	mockRepo.On("GetConfig", "user.email").Return("user@email", nil)
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
 	mockConfigStore.On("StoreConfig", mock.AnythingOfType("*config.Config")).Return(nil, nil)
 
@@ -46,7 +46,7 @@ func Test_Initialise_ReturnsErrorWhenMissingUsername(t *testing.T) {
 	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
 
 	mockRepo.On("IsInitialised").Return(true)
-	mockRepo.On("Get", "user.name").Return("", repository.GitConfigMissingKeyErr{})
+	mockRepo.On("GetConfig", "user.name").Return("", repository.GitConfigMissingKeyErr{})
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
 
 	err := app.Initialise()
@@ -61,8 +61,8 @@ func Test_Initialise_ReturnsErrorWhenMissingEmail(t *testing.T) {
 	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
 
 	mockRepo.On("IsInitialised").Return(true)
-	mockRepo.On("Get", "user.name").Return("username", nil)
-	mockRepo.On("Get", "user.email").Return("", repository.GitConfigMissingKeyErr{})
+	mockRepo.On("GetConfig", "user.name").Return("username", nil)
+	mockRepo.On("GetConfig", "user.email").Return("", repository.GitConfigMissingKeyErr{})
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
 
 	err := app.Initialise()
@@ -81,8 +81,8 @@ func Test_Initialise_SetsConfigDefaults(t *testing.T) {
 	expectedConfig.User.Email = "user@email"
 
 	mockRepo.On("IsInitialised").Return(true)
-	mockRepo.On("Get", "user.name").Return("username", nil)
-	mockRepo.On("Get", "user.email").Return("user@email", nil)
+	mockRepo.On("GetConfig", "user.name").Return("username", nil)
+	mockRepo.On("GetConfig", "user.email").Return("user@email", nil)
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
 	mockConfigStore.On("StoreConfig", mock.Anything).Return(nil, nil)
 

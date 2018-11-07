@@ -135,7 +135,7 @@ func (t *testHarness) iShouldSeeSomeConfigurationKeysAndValues() error {
 }
 
 func (t *testHarness) theConfigKeyShouldEqual(key, expectedValue string) error {
-	value, err := t.repo.Get("specstack." + key)
+	value, err := t.repo.GetConfig("specstack." + key)
 	if err != nil {
 		return err
 	}
@@ -148,10 +148,10 @@ func (t *testHarness) theConfigKeyShouldEqual(key, expectedValue string) error {
 }
 
 func (t *testHarness) iHaveNoUserDetails() error {
-	if err := t.repo.Unset("user.name"); err != nil {
+	if err := t.repo.UnsetConfig("user.name"); err != nil {
 		return err
 	}
-	if err := t.repo.Unset("user.email"); err != nil {
+	if err := t.repo.UnsetConfig("user.email"); err != nil {
 		return err
 	}
 
@@ -159,11 +159,11 @@ func (t *testHarness) iHaveNoUserDetails() error {
 }
 
 func (t *testHarness) iHaveSetTheGitUserNameTo(name string) error {
-	return t.repo.Set("user.name", name)
+	return t.repo.SetConfig("user.name", name)
 }
 
 func (t *testHarness) iHaveSetTheGitUserEmailTo(email string) error {
-	return t.repo.Set("user.email", email)
+	return t.repo.SetConfig("user.email", email)
 }
 
 func (t *testHarness) iHaveSetMyUserDetails() error {

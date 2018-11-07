@@ -2,7 +2,7 @@ package repository
 
 import "strings"
 
-func NewNamespacedKeyValueStorer(keyValueStorer KeyValueStorer, namespace string) KeyValueStorer {
+func NewNamespacedKeyValueStorer(keyValueStorer ConfigStorer, namespace string) ConfigStorer {
 	return &namespacedKeyValueStorer{
 		keyValueStorer: keyValueStorer,
 		namespace:      namespace,
@@ -10,12 +10,12 @@ func NewNamespacedKeyValueStorer(keyValueStorer KeyValueStorer, namespace string
 }
 
 type namespacedKeyValueStorer struct {
-	keyValueStorer KeyValueStorer
+	keyValueStorer ConfigStorer
 	namespace      string
 }
 
-func (kv *namespacedKeyValueStorer) All() (map[string]string, error) {
-	allKeyValues, err := kv.keyValueStorer.All()
+func (kv *namespacedKeyValueStorer) AllConfig() (map[string]string, error) {
+	allKeyValues, err := kv.keyValueStorer.AllConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -34,16 +34,16 @@ func (kv *namespacedKeyValueStorer) All() (map[string]string, error) {
 	return trimedKeyValues, nil
 }
 
-func (kv *namespacedKeyValueStorer) Get(key string) (string, error) {
-	return kv.keyValueStorer.Get(kv.prefixNamespace(key))
+func (kv *namespacedKeyValueStorer) GetConfig(key string) (string, error) {
+	return kv.keyValueStorer.GetConfig(kv.prefixNamespace(key))
 }
 
-func (kv *namespacedKeyValueStorer) Set(key, value string) error {
-	return kv.keyValueStorer.Set(kv.prefixNamespace(key), value)
+func (kv *namespacedKeyValueStorer) SetConfig(key, value string) error {
+	return kv.keyValueStorer.SetConfig(kv.prefixNamespace(key), value)
 }
 
-func (kv *namespacedKeyValueStorer) Unset(key string) error {
-	return kv.keyValueStorer.Unset(kv.prefixNamespace(key))
+func (kv *namespacedKeyValueStorer) UnsetConfig(key string) error {
+	return kv.keyValueStorer.UnsetConfig(kv.prefixNamespace(key))
 }
 
 func (kv *namespacedKeyValueStorer) prefixNamespace(key string) string {

@@ -11,11 +11,11 @@ import (
 )
 
 func Test_StoreConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
-	mockKVStore := &repository.MockKeyValueStorer{}
+	mockKVStore := &repository.MockConfigStorer{}
 	repoStore := NewRepositoryStore(mockKVStore)
 	c := config.NewWithDefaults()
 
-	mockKVStore.On("Set", mock.Anything, mock.Anything).Return(nil)
+	mockKVStore.On("SetConfig", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := repoStore.StoreConfig(c)
 	assert.NoError(t, err)
@@ -30,11 +30,11 @@ func Test_StoreConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
 }
 
 func Test_StoreConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
-	mockKVStore := &repository.MockKeyValueStorer{}
+	mockKVStore := &repository.MockConfigStorer{}
 	repoStore := NewRepositoryStore(mockKVStore)
 	config := config.NewWithDefaults()
 
-	mockKVStore.On("Set", mock.Anything, mock.Anything).Return(errors.New("!!!"))
+	mockKVStore.On("SetConfig", mock.Anything, mock.Anything).Return(errors.New("!!!"))
 
 	_, err := repoStore.StoreConfig(config)
 
@@ -42,14 +42,14 @@ func Test_StoreConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
 }
 
 func Test_LoadConfig_SetsKeyValuesOnConfig(t *testing.T) {
-	mockKVStore := &repository.MockKeyValueStorer{}
+	mockKVStore := &repository.MockConfigStorer{}
 	repoStore := NewRepositoryStore(mockKVStore)
 	c := config.New()
 	c.Project.Remote = "upstream"
 	c.Project.Name = "test"
 	expectedConfigMap := config.ToMap(c)
 
-	mockKVStore.On("All").Return(expectedConfigMap, nil)
+	mockKVStore.On("AllConfig").Return(expectedConfigMap, nil)
 
 	c, err := repoStore.LoadConfig()
 	assert.NoError(t, err)

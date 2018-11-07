@@ -7,44 +7,44 @@ import (
 )
 
 func Test_Get_PrefixesKeyWithNamespace(t *testing.T) {
-	mockKVStorer := &MockKeyValueStorer{}
+	mockKVStorer := &MockConfigStorer{}
 	namespace := "testing"
 	kvstorer := NewNamespacedKeyValueStorer(mockKVStorer, namespace)
 
-	mockKVStorer.On("Get", namespace+".name").Return("", nil)
+	mockKVStorer.On("GetConfig", namespace+".name").Return("", nil)
 
-	_, err := kvstorer.Get("name")
+	_, err := kvstorer.GetConfig("name")
 	assert.NoError(t, err)
 
 	mockKVStorer.AssertExpectations(t)
 }
 
 func Test_Set_PrefixesKeyWithNamespace(t *testing.T) {
-	mockKVStorer := &MockKeyValueStorer{}
+	mockKVStorer := &MockConfigStorer{}
 	namespace := "testing"
 	kvstorer := NewNamespacedKeyValueStorer(mockKVStorer, namespace)
 
-	mockKVStorer.On("Set", namespace+".name", "blah").Return(nil)
+	mockKVStorer.On("SetConfig", namespace+".name", "blah").Return(nil)
 
-	assert.NoError(t, kvstorer.Set("name", "blah"))
+	assert.NoError(t, kvstorer.SetConfig("name", "blah"))
 
 	mockKVStorer.AssertExpectations(t)
 }
 
 func Test_Unset_PrefixesKeyWithNamespace(t *testing.T) {
-	mockKVStorer := &MockKeyValueStorer{}
+	mockKVStorer := &MockConfigStorer{}
 	namespace := "testing"
 	kvstorer := NewNamespacedKeyValueStorer(mockKVStorer, namespace)
 
-	mockKVStorer.On("Unset", namespace+".name").Return(nil)
+	mockKVStorer.On("UnsetConfig", namespace+".name").Return(nil)
 
-	assert.NoError(t, kvstorer.Unset("name"))
+	assert.NoError(t, kvstorer.UnsetConfig("name"))
 
 	mockKVStorer.AssertExpectations(t)
 }
 
 func Test_All_ReturnsOnlyConfigFromNamespaceAndTrims(t *testing.T) {
-	mockKVStorer := &MockKeyValueStorer{}
+	mockKVStorer := &MockConfigStorer{}
 	namespace := "testing"
 	kvstorer := NewNamespacedKeyValueStorer(mockKVStorer, namespace)
 	allKV := map[string]string{
@@ -58,25 +58,25 @@ func Test_All_ReturnsOnlyConfigFromNamespaceAndTrims(t *testing.T) {
 		"user.email": "a@b.com",
 	}
 
-	mockKVStorer.On("All").Return(allKV, nil)
+	mockKVStorer.On("AllConfig").Return(allKV, nil)
 
-	returnedKV, err := kvstorer.All()
+	returnedKV, err := kvstorer.AllConfig()
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedKV, returnedKV)
 }
 
 func Test_All_ReturnsKeyMissingErrorIfNoKeysInNamespace(t *testing.T) {
-	mockKVStorer := &MockKeyValueStorer{}
+	mockKVStorer := &MockConfigStorer{}
 	namespace := "testing"
 	kvstorer := NewNamespacedKeyValueStorer(mockKVStorer, namespace)
 	allKV := map[string]string{
 		"unprefixed": "123",
 	}
 
-	mockKVStorer.On("All").Return(allKV, nil)
+	mockKVStorer.On("AllConfig").Return(allKV, nil)
 
-	_, err := kvstorer.All()
+	_, err := kvstorer.AllConfig()
 
 	assert.Equal(t, GitConfigMissingKeyErr{}, err)
 }

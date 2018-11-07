@@ -9,8 +9,8 @@ type MockRepository struct {
 	mock.Mock
 }
 
-// All provides a mock function with given fields:
-func (_m *MockRepository) All() (map[string]string, error) {
+// AllConfig provides a mock function with given fields:
+func (_m *MockRepository) AllConfig() (map[string]string, error) {
 	ret := _m.Called()
 
 	var r0 map[string]string
@@ -32,8 +32,8 @@ func (_m *MockRepository) All() (map[string]string, error) {
 	return r0, r1
 }
 
-// Get provides a mock function with given fields: _a0
-func (_m *MockRepository) Get(_a0 string) (string, error) {
+// GetConfig provides a mock function with given fields: _a0
+func (_m *MockRepository) GetConfig(_a0 string) (string, error) {
 	ret := _m.Called(_a0)
 
 	var r0 string
@@ -81,8 +81,8 @@ func (_m *MockRepository) IsInitialised() bool {
 	return r0
 }
 
-// Set provides a mock function with given fields: _a0, _a1
-func (_m *MockRepository) Set(_a0 string, _a1 string) error {
+// SetConfig provides a mock function with given fields: _a0, _a1
+func (_m *MockRepository) SetConfig(_a0 string, _a1 string) error {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 error
@@ -95,8 +95,8 @@ func (_m *MockRepository) Set(_a0 string, _a1 string) error {
 	return r0
 }
 
-// Unset provides a mock function with given fields: _a0
-func (_m *MockRepository) Unset(_a0 string) error {
+// UnsetConfig provides a mock function with given fields: _a0
+func (_m *MockRepository) UnsetConfig(_a0 string) error {
 	ret := _m.Called(_a0)
 
 	var r0 error

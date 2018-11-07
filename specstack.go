@@ -93,7 +93,7 @@ func (a *appController) setUserDefaults(c *config.Config) error {
 	userName := config.KeyUser.Append(config.KeyUserName)
 	userEmail := config.KeyUser.Append(config.KeyUserEmail)
 
-	c.User.Name, err = a.repo.Get(userName)
+	c.User.Name, err = a.repo.GetConfig(userName)
 	if err != nil {
 		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
 			return MissingRequiredConfigValueErr(userName)
@@ -102,7 +102,7 @@ func (a *appController) setUserDefaults(c *config.Config) error {
 		return err
 	}
 
-	c.User.Email, err = a.repo.Get(userEmail)
+	c.User.Email, err = a.repo.GetConfig(userEmail)
 	if err != nil {
 		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
 			return MissingRequiredConfigValueErr(userEmail)
