@@ -4,10 +4,10 @@ import "github.com/endiangroup/specstack/repository"
 
 func NewRepositoryStore(kvStore repository.ConfigStorer) *RepositoryStore {
 	return &RepositoryStore{
-		KVStore: kvStore,
+		ConfigStorer: kvStore,
 	}
 }
 
 type RepositoryStore struct {
-	KVStore repository.ConfigStorer
+	ConfigStorer repository.ConfigStorer
 }

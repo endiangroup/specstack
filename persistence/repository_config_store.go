@@ -15,7 +15,7 @@ func (store *RepositoryStore) StoreConfig(c *config.Config) (*config.Config, err
 
 	errs := errors.Errors{}
 	for key, value := range configMap {
-		if err := store.KVStore.SetConfig(key, value); err != nil {
+		if err := store.ConfigStorer.SetConfig(key, value); err != nil {
 			errs = errs.Append(err)
 		}
 	}
@@ -28,7 +28,7 @@ func (store *RepositoryStore) StoreConfig(c *config.Config) (*config.Config, err
 }
 
 func (store *RepositoryStore) LoadConfig() (*config.Config, error) {
-	configMap, err := store.KVStore.AllConfig()
+	configMap, err := store.ConfigStorer.AllConfig()
 	if err != nil {
 		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
 			return nil, ErrNoConfigFound
