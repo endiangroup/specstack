@@ -2,7 +2,7 @@ package repository
 
 type Repository interface {
 	Initialiser
-	KeyValueStorer
+	ConfigStorer
 }
 
 type Initialiser interface {
@@ -10,9 +10,9 @@ type Initialiser interface {
 	IsInitialised() bool
 }
 
-type KeyValueStorer interface {
-	Get(string) (string, error)
-	Set(string, string) error
-	Unset(string) error
-	All() (map[string]string, error)
+type ConfigStorer interface {
+	GetConfig(string) (string, error)
+	SetConfig(string, string) error
+	UnsetConfig(string) error
+	AllConfig() (map[string]string, error)
 }

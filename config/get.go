@@ -12,9 +12,9 @@ func (err ErrKeyNotFound) Error() string {
 
 func Get(c *Config, key string) (string, error) {
 	switch fetchPrefix(key) {
-	case keyProject:
+	case KeyProject:
 		return projectGet(c.Project, key)
-	case keyUser:
+	case KeyUser:
 		return userGet(c.User, key)
 	}
 
@@ -23,9 +23,9 @@ func Get(c *Config, key string) (string, error) {
 
 func userGet(u *User, key string) (string, error) {
 	switch fetchPostfix(key) {
-	case keyUserName:
+	case KeyUserName:
 		return u.Name, nil
-	case keyUserEmail:
+	case KeyUserEmail:
 		return u.Email, nil
 	}
 
@@ -34,15 +34,15 @@ func userGet(u *User, key string) (string, error) {
 
 func projectGet(p *Project, key string) (string, error) {
 	switch fetchPostfix(key) {
-	case keyProjectName:
+	case KeyProjectName:
 		return p.Name, nil
-	case keyProjectRemote:
+	case KeyProjectRemote:
 		return p.Remote, nil
-	case keyProjectFeaturesDir:
+	case KeyProjectFeaturesDir:
 		return p.FeaturesDir, nil
-	case keyProjectPushingMode:
+	case KeyProjectPushingMode:
 		return p.PushingMode, nil
-	case keyProjectPullingMode:
+	case KeyProjectPullingMode:
 		return p.PullingMode, nil
 	}
 
