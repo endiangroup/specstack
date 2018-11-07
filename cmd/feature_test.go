@@ -36,8 +36,11 @@ func newTestHarness() *testHarness {
 		stderr: bytes.NewBuffer(nil),
 	}
 
-	th.repo = repository.NewGit(tmpPath, "specstack")
-	repoStore := persistence.NewRepositoryStore(th.repo)
+	git := repository.NewGit(tmpPath)
+	git.SetConfigReadScope(repository.ScopeLocal)
+	th.repo = git
+
+	repoStore := persistence.NewRepositoryStore(repository.NewNamespacedKeyValueStorer(th.repo, "specstack"))
 	developer := personas.NewDeveloper(repoStore)
 	app := specstack.New(testdirPath, th.repo, developer, repoStore)
 
@@ -132,7 +135,7 @@ func (t *testHarness) iShouldSeeSomeConfigurationKeysAndValues() error {
 }
 
 func (t *testHarness) theConfigKeyShouldEqual(key, expectedValue string) error {
-	value, err := t.repo.Get(key)
+	value, err := t.repo.Get("specstack." + key)
 	if err != nil {
 		return err
 	}
@@ -142,6 +145,34 @@ func (t *testHarness) theConfigKeyShouldEqual(key, expectedValue string) error {
 	}
 
 	return nil
+}
+
+func (t *testHarness) iHaveNoUserDetails() error {
+	if err := t.repo.Unset("user.name"); err != nil {
+		return err
+	}
+	if err := t.repo.Unset("user.email"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (t *testHarness) iHaveSetTheGitUserNameTo(name string) error {
+	return t.repo.Set("user.name", name)
+}
+
+func (t *testHarness) iHaveSetTheGitUserEmailTo(email string) error {
+	return t.repo.Set("user.email", email)
+}
+
+func (t *testHarness) iHaveSetMyUserDetails() error {
+	err := t.iHaveSetTheGitUserNameTo("Spec Stack")
+	if err != nil {
+		return err
+	}
+
+	return t.iHaveSetTheGitUserEmailTo("dev@specstack.io")
 }
 
 func (t *testHarness) Errorf(format string, args ...interface{}) {
@@ -162,6 +193,10 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I should see the following:$`, th.iShouldSeeTheFollowing)
 	s.Step(`^I should see some configuration keys and values$`, th.iShouldSeeSomeConfigurationKeysAndValues)
 	s.Step(`^The config key "([^"]*)" should equal "([^"]*)"$`, th.theConfigKeyShouldEqual)
+	s.Step(`^I have no user details$`, th.iHaveNoUserDetails)
+	s.Step(`^I have set the git user name to "([^"]*)"$`, th.iHaveSetTheGitUserNameTo)
+	s.Step(`^I have set the git user email to "([^"]*)"$`, th.iHaveSetTheGitUserEmailTo)
+	s.Step(`^I have set my user details$`, th.iHaveSetMyUserDetails)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }
