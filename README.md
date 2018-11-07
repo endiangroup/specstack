@@ -1,6 +1,6 @@
 [![Build Status](http://ci.endian.io/api/badges/endiangroup/specstack/status.svg?branch=develop)](http://ci.endian.io/endiangroup/specstack)
 
-# Specstack. Specification as code. 
+# SpecStack. Specification as code. 
 
 ## Testing and linting
 
