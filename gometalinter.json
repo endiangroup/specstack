@@ -9,6 +9,7 @@
     "deadcode",
 	"lll",
     "gocyclo",
+	"golint",
     "gofmt",
 	"gosimple",
     "misspell",
