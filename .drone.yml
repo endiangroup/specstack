@@ -9,13 +9,6 @@ clone:
     tags: true
 
 pipeline:
-  lint:
-    image: endian/go:1.0.1
-    commands:
-      - make lint
-    when:
-      event: [pull_request]
-
   vendor:
     image: endian/go:1.0.1
     commands:
@@ -26,7 +19,7 @@ pipeline:
   test:
     image: endian/go:1.0.1
     commands:
-      - make test
+      - make lint test
     when:
       event: [pull_request]
 
