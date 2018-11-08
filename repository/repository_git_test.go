@@ -24,10 +24,17 @@ func tempDirectory(t *testing.T) (path string, shutdown func()) {
 func initialisedGitRepoDir(t *testing.T) (path string, r *repositoryGit, shutdown func()) {
 
 	dir, shutdown := tempDirectory(t)
-	repo := NewGitRepository(dir)
-	repo.Init()
+	repo := NewGitRepository(dir).(*repositoryGit)
 
-	return dir, repo.(*repositoryGit), shutdown
+	require.Nil(t, repo.Init())
+
+	_, err := repo.runGitCommand("config", "user.name", "SpecStack")
+	require.Nil(t, err)
+
+	_, err = repo.runGitCommand("config", "user.email", "test@specstack.io")
+	require.Nil(t, err)
+
+	return dir, repo, shutdown
 }
 
 func Test_AnUnitialisedGitRepositoryCanBeRecognisedByAGitInstance(t *testing.T) {
