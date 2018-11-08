@@ -135,7 +135,7 @@ func (repo *repositoryGit) GetConfig(key string) (string, error) {
 }
 
 func (repo *repositoryGit) SetConfig(key, value string) error {
-	_, err := repo.runGitCommand("config", repo.configWriteScopeArgs(), key, value)
+	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), key, value)
 	if err != nil {
 		return NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -144,7 +144,7 @@ func (repo *repositoryGit) SetConfig(key, value string) error {
 }
 
 func (repo *repositoryGit) UnsetConfig(key string) error {
-	_, err := repo.runGitCommand("config", repo.configWriteScopeArgs(), "--unset", key)
+	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), "--unset", key)
 	if err != nil {
 		return NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -233,7 +233,7 @@ func (repo *repositoryGit) configReadScopeArgs() string {
 	return strings.Join(args, " ")
 }
 
-func (repo *repositoryGit) configWriteScopeArgs() string {
+func (repo *repositoryGit) configWriteScopeArg() string {
 	switch repo.configWriteScope {
 	case GitConfigScopeLocal:
 		return "--local"
