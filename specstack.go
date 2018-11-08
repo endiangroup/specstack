@@ -3,6 +3,7 @@ package specstack
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path/filepath"
 
 	"github.com/endiangroup/specstack/config"
@@ -10,6 +11,12 @@ import (
 	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
 )
+
+type MissingRequiredConfigValueErr string
+
+func (err MissingRequiredConfigValueErr) Error() string {
+	return fmt.Sprintf("no %s set in repository", string(err))
+}
 
 var (
 	// Thrown when a git repo is not initialised
@@ -23,7 +30,7 @@ type Controller interface {
 	SetConfiguration(string, string) error
 }
 
-func New(path string, repo repository.Initialiser, developer personas.Developer, configStore config.Storer) Controller {
+func New(path string, repo repository.Repository, developer personas.Developer, configStore config.Storer) Controller {
 	return &appController{
 		path:        path,
 		repo:        repo,
@@ -34,7 +41,7 @@ func New(path string, repo repository.Initialiser, developer personas.Developer,
 
 type appController struct {
 	path        string
-	repo        repository.Initialiser
+	repo        repository.Repository
 	configStore config.Storer
 	developer   personas.Developer
 	config      *config.Config
@@ -68,9 +75,43 @@ func (a *appController) isFirstRun(err error) bool {
 
 func (a *appController) createDefaultConfig() (*config.Config, error) {
 	c := config.NewWithDefaults()
-	c.Project.Name = filepath.Base(a.path)
+
+	a.setProjectDefaults(c)
+	if err := a.setUserDefaults(c); err != nil {
+		return nil, err
+	}
 
 	return config.Create(a.configStore, c)
+}
+
+func (a *appController) setProjectDefaults(c *config.Config) {
+	c.Project.Name = filepath.Base(a.path)
+}
+
+func (a *appController) setUserDefaults(c *config.Config) error {
+	var err error
+	userName := config.KeyUser.Append(config.KeyUserName)
+	userEmail := config.KeyUser.Append(config.KeyUserEmail)
+
+	c.User.Name, err = a.repo.GetConfig(userName)
+	if err != nil {
+		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
+			return MissingRequiredConfigValueErr(userName)
+		}
+
+		return err
+	}
+
+	c.User.Email, err = a.repo.GetConfig(userEmail)
+	if err != nil {
+		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
+			return MissingRequiredConfigValueErr(userEmail)
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func (a *appController) ListConfiguration() (map[string]string, error) {

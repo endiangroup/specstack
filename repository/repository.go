@@ -3,8 +3,8 @@ package repository
 // Repository represents a version control repo
 type Repository interface {
 	Initialiser
-	KeyValueStorer
 	MetadataStorer
+	ConfigStorer
 }
 
 // Initialiser initialises a repo
@@ -13,12 +13,12 @@ type Initialiser interface {
 	IsInitialised() bool
 }
 
-// KeyValueStorer is used to read and write key-value config
-type KeyValueStorer interface {
-	Get(string) (string, error)
-	Set(string, string) error
-	Unset(string) error
-	All() (map[string]string, error)
+// ConfigStorer is used to read and write key-value config
+type ConfigStorer interface {
+	GetConfig(string) (string, error)
+	SetConfig(string, string) error
+	UnsetConfig(string) error
+	AllConfig() (map[string]string, error)
 }
 
 // MetadataStorer is used to read and write repo metadata.

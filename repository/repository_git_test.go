@@ -24,7 +24,7 @@ func tempDirectory(t *testing.T) (path string, shutdown func()) {
 func initialisedGitRepoDir(t *testing.T) (path string, r *repositoryGit, shutdown func()) {
 
 	dir, shutdown := tempDirectory(t)
-	repo := NewGit(dir, "unittest")
+	repo := NewGitRepository(dir)
 	repo.Init()
 
 	return dir, repo.(*repositoryGit), shutdown
@@ -35,7 +35,7 @@ func Test_AnUnitialisedGitRepositoryCanBeRecognisedByAGitInstance(t *testing.T) 
 	tempDir, shutdown := tempDirectory(t)
 	defer shutdown()
 
-	repo := NewGit(tempDir, "unittest")
+	repo := NewGitRepository(tempDir)
 	require.False(t, repo.IsInitialised())
 }
 

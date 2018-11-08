@@ -12,7 +12,7 @@ import (
 )
 
 func Test_Initialise_ReturnsErrorIfRepoisotiryIsntInitialised(t *testing.T) {
-	mockRepo := &repository.MockInitialiser{}
+	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := New("", mockRepo, mockDeveloper, mockConfigStore)
@@ -23,12 +23,14 @@ func Test_Initialise_ReturnsErrorIfRepoisotiryIsntInitialised(t *testing.T) {
 }
 
 func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
-	mockRepo := &repository.MockInitialiser{}
+	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := New("", mockRepo, mockDeveloper, mockConfigStore)
 
 	mockRepo.On("IsInitialised").Return(true)
+	mockRepo.On("GetConfig", "user.name").Return("username", nil)
+	mockRepo.On("GetConfig", "user.email").Return("user@email", nil)
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
 	mockConfigStore.On("StoreConfig", mock.AnythingOfType("*config.Config")).Return(nil, nil)
 
@@ -37,15 +39,50 @@ func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 	mockConfigStore.AssertExpectations(t)
 }
 
-func Test_Initialise_SetsConfigProjectNameToBaseOfPath(t *testing.T) {
-	mockRepo := &repository.MockInitialiser{}
+func Test_Initialise_ReturnsErrorWhenMissingUsername(t *testing.T) {
+	mockRepo := &repository.MockRepository{}
+	mockDeveloper := &personas.MockDeveloper{}
+	mockConfigStore := &config.MockStorer{}
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
+
+	mockRepo.On("IsInitialised").Return(true)
+	mockRepo.On("GetConfig", "user.name").Return("", repository.GitConfigMissingKeyErr{})
+	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
+
+	err := app.Initialise()
+
+	assert.IsType(t, MissingRequiredConfigValueErr(""), err)
+}
+
+func Test_Initialise_ReturnsErrorWhenMissingEmail(t *testing.T) {
+	mockRepo := &repository.MockRepository{}
+	mockDeveloper := &personas.MockDeveloper{}
+	mockConfigStore := &config.MockStorer{}
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
+
+	mockRepo.On("IsInitialised").Return(true)
+	mockRepo.On("GetConfig", "user.name").Return("username", nil)
+	mockRepo.On("GetConfig", "user.email").Return("", repository.GitConfigMissingKeyErr{})
+	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
+
+	err := app.Initialise()
+
+	assert.IsType(t, MissingRequiredConfigValueErr(""), err)
+}
+
+func Test_Initialise_SetsConfigDefaults(t *testing.T) {
+	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)
 	expectedConfig := config.NewWithDefaults()
 	expectedConfig.Project.Name = "test-dir"
+	expectedConfig.User.Name = "username"
+	expectedConfig.User.Email = "user@email"
 
 	mockRepo.On("IsInitialised").Return(true)
+	mockRepo.On("GetConfig", "user.name").Return("username", nil)
+	mockRepo.On("GetConfig", "user.email").Return("user@email", nil)
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
 	mockConfigStore.On("StoreConfig", mock.Anything).Return(nil, nil)
 
@@ -55,7 +92,7 @@ func Test_Initialise_SetsConfigProjectNameToBaseOfPath(t *testing.T) {
 }
 
 func Test_Initialise_LoadsExistingConfigIfNotFirstRun(t *testing.T) {
-	mockRepo := &repository.MockInitialiser{}
+	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &config.MockStorer{}
 	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore)

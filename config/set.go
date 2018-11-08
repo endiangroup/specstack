@@ -2,9 +2,9 @@ package config
 
 func Set(c *Config, key, value string) error {
 	switch fetchPrefix(key) {
-	case keyProject:
+	case KeyProject:
 		return projectSet(c.Project, key, value)
-	case keyUser:
+	case KeyUser:
 		return userSet(c.User, key, value)
 	}
 
@@ -13,9 +13,9 @@ func Set(c *Config, key, value string) error {
 
 func userSet(u *User, key, value string) error {
 	switch fetchPostfix(key) {
-	case keyUserName:
+	case KeyUserName:
 		u.Name = value
-	case keyUserEmail:
+	case KeyUserEmail:
 		u.Email = value
 	default:
 		return ErrKeyNotFound(key)
@@ -26,15 +26,15 @@ func userSet(u *User, key, value string) error {
 
 func projectSet(p *Project, key, value string) error {
 	switch fetchPostfix(key) {
-	case keyProjectName:
+	case KeyProjectName:
 		p.Name = value
-	case keyProjectRemote:
+	case KeyProjectRemote:
 		p.Remote = value
-	case keyProjectFeaturesDir:
+	case KeyProjectFeaturesDir:
 		p.FeaturesDir = value
-	case keyProjectPushingMode:
+	case KeyProjectPushingMode:
 		p.PushingMode = value
-	case keyProjectPullingMode:
+	case KeyProjectPullingMode:
 		p.PullingMode = value
 	default:
 		return ErrKeyNotFound(key)
