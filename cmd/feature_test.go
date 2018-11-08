@@ -36,8 +36,7 @@ func newTestHarness() *testHarness {
 		stderr: bytes.NewBuffer(nil),
 	}
 
-	git := repository.NewGit(tmpPath)
-	git.SetConfigReadScope(repository.ScopeLocal)
+	git := repository.NewGitRepository(tmpPath, repository.GitConfigScopeLocal)
 	th.repo = git
 
 	repoStore := persistence.NewRepositoryStore(repository.NewNamespacedKeyValueStorer(th.repo, "specstack"))

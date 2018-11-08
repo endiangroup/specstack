@@ -16,7 +16,7 @@ func main() {
 		panic(err)
 	}
 
-	gitRepo := repository.NewGit(dir)
+	gitRepo := repository.NewGitRepository(dir)
 	repoStore := persistence.NewRepositoryStore(repository.NewNamespacedKeyValueStorer(gitRepo, "specstack"))
 	developer := personas.NewDeveloper(repoStore)
 	app := specstack.New(dir, gitRepo, developer, repoStore)

@@ -9,11 +9,16 @@ import (
 )
 
 const (
-	ScopeLocal  = 1
-	ScopeSystem = 2
-	ScopeGlobal = 4
+	gitNotesRef = "refs/notes/specstack"
+
+	// Scopes for git config
+	GitConfigScopeLocal  = 1
+	GitConfigScopeSystem = 2
+	GitConfigScopeGlobal = 4
 )
 
+// NewGitConfigErr creates the appropriate typed error for a Git failure, if
+// possible.
 func NewGitConfigErr(gitCmdErr *GitCmdErr) error {
 	switch gitCmdErr.ExitCode {
 	case 1:
@@ -27,7 +32,8 @@ type GitConfigMissingKeyErr struct {
 	*GitCmdErr
 }
 
-func NewGitCmdErr(stderr string, exitCode int, args ...string) *GitCmdErr {
+// NewGitCmdErr creates an instance of an error used for failed Git commands
+func NewGitCmdErr(stderr string, exitCode int, args ...string) error {
 	return &GitCmdErr{
 		Stderr:   stderr,
 		ExitCode: exitCode,
@@ -35,6 +41,7 @@ func NewGitCmdErr(stderr string, exitCode int, args ...string) *GitCmdErr {
 	}
 }
 
+// GitCmdErr is an error types for failed Git commands.
 type GitCmdErr struct {
 	Stderr   string
 	ExitCode int
@@ -43,48 +50,59 @@ type GitCmdErr struct {
 
 func (err GitCmdErr) Error() string {
 	if err.Stderr == "" {
-		return fmt.Sprintf("error running git command (exit code: %d): %s", err.ExitCode, strings.Join(err.Args, " "))
+		return fmt.Sprintf(
+			"error running git command (exit code: %d): %s",
+			err.ExitCode,
+			strings.Join(err.Args, " "),
+		)
 	}
 
 	return err.Stderr
 }
 
-type Git struct {
-	Path             string
-	ConfigReadScope  byte
-	ConfigWriteScope int
+type repositoryGit struct {
+	path             string
+	configReadScope  byte
+	configWriteScope int
 }
 
-func NewGit(path string) *Git {
-	return &Git{
-		Path: path,
+/*
+NewGitRepository returns a Git Repository for a given path. It does not check that the
+path is valid or that the repo is initialialised.
+
+The default config read scope is GitConfigScopeLocal | GitConfigScopeGlobal |
+GitConfigScopeSystem. This can be changed by passing a byte as the second
+argument, which is useful for local testing.
+*/
+func NewGitRepository(path string, configReadScope ...byte) Repository {
+	var readScope byte = GitConfigScopeLocal | GitConfigScopeGlobal | GitConfigScopeSystem
+
+	if len(configReadScope) > 0 {
+		readScope = configReadScope[0]
+	}
+
+	return &repositoryGit{
+		path: path,
 
 		// Git defaults as of v2.18.0
-		ConfigReadScope:  ScopeLocal | ScopeGlobal | ScopeSystem,
-		ConfigWriteScope: ScopeLocal,
+		configReadScope:  readScope,
+		configWriteScope: GitConfigScopeLocal,
 	}
 }
 
-func (repo *Git) SetConfigReadScope(scope byte) {
-	repo.ConfigReadScope = scope
-}
-func (repo *Git) SetConfigWriteScope(scope int) {
-	repo.ConfigWriteScope = scope
-}
-
-func (repo *Git) IsInitialised() bool {
-	_, _, _, err := repo.runGitCommandRaw("rev-parse")
+func (repo *repositoryGit) IsInitialised() bool {
+	_, _, _, err := repo.runGitCommandRaw("", "rev-parse")
 
 	return err == nil
 }
 
-func (repo *Git) Init() error {
+func (repo *repositoryGit) Init() error {
 	_, err := repo.runGitCommand("init")
 	return err
 }
 
-func (repo *Git) AllConfig() (map[string]string, error) {
-	result, err := repo.runGitCommand("config", repo.configReadScope(), "--null", "--list")
+func (repo *repositoryGit) AllConfig() (map[string]string, error) {
+	result, err := repo.runGitCommand("config", repo.configReadScopeArgs(), "--null", "--list")
 	if err != nil {
 		return nil, NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -107,8 +125,8 @@ func (repo *Git) AllConfig() (map[string]string, error) {
 	return configMap, nil
 }
 
-func (repo *Git) GetConfig(key string) (string, error) {
-	result, err := repo.runGitCommand("config", repo.configReadScope(), "--get", key)
+func (repo *repositoryGit) GetConfig(key string) (string, error) {
+	result, err := repo.runGitCommand("config", repo.configReadScopeArgs(), "--get", key)
 	if err != nil {
 		return "", NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -116,8 +134,8 @@ func (repo *Git) GetConfig(key string) (string, error) {
 	return result, nil
 }
 
-func (repo *Git) SetConfig(key, value string) error {
-	_, err := repo.runGitCommand("config", repo.configWriteScope(), key, value)
+func (repo *repositoryGit) SetConfig(key, value string) error {
+	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), key, value)
 	if err != nil {
 		return NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -125,8 +143,8 @@ func (repo *Git) SetConfig(key, value string) error {
 	return nil
 }
 
-func (repo *Git) UnsetConfig(key string) error {
-	_, err := repo.runGitCommand("config", repo.configWriteScope(), "--unset", key)
+func (repo *repositoryGit) UnsetConfig(key string) error {
+	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), "--unset", key)
 	if err != nil {
 		return NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -134,13 +152,38 @@ func (repo *Git) UnsetConfig(key string) error {
 	return nil
 }
 
-func (repo *Git) runGitCommandRaw(args ...string) (string, string, int, error) {
+func (repo *repositoryGit) GetMetadata(key string) (string, error) {
+	id, err := repo.objectID(key)
+	if err != nil {
+		return "", err
+	}
+
+	return repo.runGitCommand("notes", "--ref", gitNotesRef, "show", id)
+}
+
+func (repo *repositoryGit) SetMetadata(key, value string) error {
+	id, err := repo.objectID(key)
+	if err != nil {
+		return err
+	}
+
+	_, err = repo.runGitCommand("notes", "--ref", gitNotesRef, "add", "-f", id, "-m", value)
+
+	return err
+}
+
+func (repo *repositoryGit) runGitCommandRaw(stdin string, args ...string) (string, string, int, error) {
 	cmd := exec.Command("git", args...)
-	cmd.Dir = repo.Path
+	cmd.Dir = repo.path
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+
+	if stdin != "" {
+		cmd.Stdin = bytes.NewBufferString(stdin)
+	}
+
 	err := cmd.Run()
 
 	var exitCode int
@@ -156,8 +199,8 @@ func (repo *Git) runGitCommandRaw(args ...string) (string, string, int, error) {
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), exitCode, err
 }
 
-func (repo *Git) runGitCommand(args ...string) (string, error) {
-	stdout, stderr, exitCode, err := repo.runGitCommandRaw(args...)
+func (repo *repositoryGit) runGitCommand(args ...string) (string, error) {
+	stdout, stderr, exitCode, err := repo.runGitCommandRaw("", args...)
 	if err != nil {
 		return "", NewGitCmdErr(stderr, exitCode, args...)
 	}
@@ -165,31 +208,44 @@ func (repo *Git) runGitCommand(args ...string) (string, error) {
 	return stdout, err
 }
 
-func (repo *Git) configReadScope() string {
+func (repo *repositoryGit) runGitCommandStdIn(stdin string, args ...string) (string, error) {
+	stdout, stderr, exitCode, err := repo.runGitCommandRaw(stdin, args...)
+	if err != nil {
+		return "", NewGitCmdErr(stderr, exitCode, args...)
+	}
+
+	return stdout, err
+}
+
+func (repo *repositoryGit) configReadScopeArgs() string {
 	args := []string{}
 
-	if (repo.ConfigReadScope & ScopeLocal) != 0 {
+	if (repo.configReadScope & GitConfigScopeLocal) != 0 {
 		args = append(args, "--local")
 	}
-	if (repo.ConfigReadScope & ScopeGlobal) != 0 {
+	if (repo.configReadScope & GitConfigScopeGlobal) != 0 {
 		args = append(args, "--global")
 	}
-	if (repo.ConfigReadScope & ScopeSystem) != 0 {
+	if (repo.configReadScope & GitConfigScopeSystem) != 0 {
 		args = append(args, "--system")
 	}
 
 	return strings.Join(args, " ")
 }
 
-func (repo *Git) configWriteScope() string {
-	switch repo.ConfigWriteScope {
-	case ScopeLocal:
+func (repo *repositoryGit) configWriteScopeArg() string {
+	switch repo.configWriteScope {
+	case GitConfigScopeLocal:
 		return "--local"
-	case ScopeGlobal:
+	case GitConfigScopeGlobal:
 		return "--global"
-	case ScopeSystem:
+	case GitConfigScopeSystem:
 		return "--system"
 	}
 
 	return ""
+}
+
+func (repo *repositoryGit) objectID(key string) (string, error) {
+	return repo.runGitCommandStdIn(key, "hash-object", "--stdin")
 }
