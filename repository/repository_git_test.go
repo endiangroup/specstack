@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -51,7 +52,7 @@ func Test_AnInitialisedGitRepositoryCanHashObjects(t *testing.T) {
 	_, repo, shutdown := initialisedGitRepoDir(t)
 	defer shutdown()
 
-	for cycle, test := range []struct {
+	for _, test := range []struct {
 		input  string
 		output string
 	}{
@@ -59,10 +60,11 @@ func Test_AnInitialisedGitRepositoryCanHashObjects(t *testing.T) {
 		{"test2", "d606037cb232bfda7788a8322492312d55b2ae9d"},
 		{"some other long string", "5370464603c6098cb422c98b0f3e9a0fdb9c83f8"},
 	} {
-		t.Logf("Cycle %d [input '%s']", cycle, test.input)
-		output, err := repo.objectID(test.input)
-		require.Nil(t, err)
-		require.Equal(t, test.output, output)
+		t.Run(fmt.Sprintf("input '%s'", test.input), func(t *testing.T) {
+			output, err := repo.objectID(test.input)
+			require.Nil(t, err)
+			require.Equal(t, test.output, output)
+		})
 	}
 }
 
