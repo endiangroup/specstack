@@ -75,7 +75,6 @@ GitConfigScopeSystem. This can be changed by passing a byte as the second
 argument, which is useful for local testing.
 */
 func NewGitRepository(path string, configReadScope ...byte) Repository {
-
 	var readScope byte = GitConfigScopeLocal | GitConfigScopeGlobal | GitConfigScopeSystem
 
 	if len(configReadScope) > 0 {
@@ -154,9 +153,7 @@ func (repo *repositoryGit) UnsetConfig(key string) error {
 }
 
 func (repo *repositoryGit) GetMetadata(key string) (string, error) {
-
 	id, err := repo.objectID(key)
-
 	if err != nil {
 		return "", err
 	}
@@ -165,9 +162,7 @@ func (repo *repositoryGit) GetMetadata(key string) (string, error) {
 }
 
 func (repo *repositoryGit) SetMetadata(key, value string) error {
-
 	id, err := repo.objectID(key)
-
 	if err != nil {
 		return err
 	}
