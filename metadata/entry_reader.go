@@ -9,5 +9,5 @@ type ID string
 type EntryReader interface {
 	Id() ID
 	Created() time.Time
-	Data() interface{}
+	Read() (interface{}, error)
 }
