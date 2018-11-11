@@ -35,8 +35,11 @@ func NewFilesystemReader(fs afero.Fs, path string) Reader {
 	}
 }
 
+// Read reads a specification from disk, returning the spec, any warnings, and
+// possibly a fatal error.
 func (f *Filesystem) Read() (*Specification, []error, error) {
 	spec := NewSpecification()
+	spec.Source = f.Path
 	warnings := []error{}
 
 	err := afero.Walk(f.Fs, f.Path, func(path string, info os.FileInfo, err error) error {
@@ -70,23 +73,23 @@ func (f *Filesystem) Read() (*Specification, []error, error) {
 // Filesystem state.
 func (f *Filesystem) addFeatureFile(spec *Specification, path string) error {
 
-	feature, err := f.parseFeatureFile(f.Fs, path)
+	story, err := f.parseFeatureFile(f.Fs, path)
 
 	if err != nil {
 		return err
 	}
 
-	spec.FeatureFiles[path] = feature
+	spec.StorySources[path] = story
 
 	return nil
 }
 
-func (f *Filesystem) parseFeatureFile(fs afero.Fs, path string) (*gherkin.Feature, error) {
+func (f *Filesystem) parseFeatureFile(fs afero.Fs, path string) (*Story, error) {
 	content, err := afero.ReadFile(fs, path)
 
 	if err != nil {
 		// FIXME! Custom error for warnings?
-		return &gherkin.Feature{}, fmt.Errorf("Failed to read %s: %s", path, err)
+		return &Story{}, fmt.Errorf("Failed to read %s: %s", path, err)
 	}
 
 	buf := bytes.NewBuffer(content)
@@ -94,8 +97,8 @@ func (f *Filesystem) parseFeatureFile(fs afero.Fs, path string) (*gherkin.Featur
 
 	if err != nil {
 		// FIXME! Custom error for warnings?
-		return &gherkin.Feature{}, fmt.Errorf("Failed to parse %s: %s", path, err)
+		return &Story{}, fmt.Errorf("Failed to parse %s: %s", path, err)
 	}
 
-	return feature, nil
+	return newStoryFromGherkinFeature(feature, path), nil
 }

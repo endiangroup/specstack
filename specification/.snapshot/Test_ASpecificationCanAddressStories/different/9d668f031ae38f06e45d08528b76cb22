@@ -1,0 +1,21 @@
+&specification.Story{
+  Feature: &gherkin.Feature{
+    Node: gherkin.Node{
+      Location: &gherkin.Location{
+        Line: 1,
+        Column: 1,
+      },
+      Type: "Feature",
+    },
+    Tags: []*gherkin.Tag{} // p0
+,
+    Language: "en",
+    Keyword: "Feature",
+    Name: "completely different",
+    Description: "  In order to test application behavior\n  As a test suite\n  I need to be able to run features",
+    Background: nil,
+    ScenarioDefinitions: p0,
+    Comments: p0,
+  },
+  Source: "features/create_config.feature",
+}

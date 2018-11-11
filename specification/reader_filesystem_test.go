@@ -9,28 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	mockFeatureA = `Feature: run features
-  In order to test application behavior
-  As a test suite
-  I need to be able to run features
-
-  Scenario: should run a normal feature
-    Given a feature "normal.feature" file:
-      """
-      Feature: normal feature
-
-        Scenario: parse a scenario
-          Given a feature path "features/load.feature:6"
-          When I parse features
-          Then I should have 1 scenario registered
-      """
-    When I run feature suite
-    Then the suite should have passed
-    And the following steps should be passed:
-`
-)
-
 func newSpecificationFs(t *testing.T, files map[string]string) afero.Fs {
 	fs := afero.NewMemMapFs()
 
@@ -149,20 +127,4 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 			}
 		})
 	}
-}
-
-func Test_ASpecificationCanGetAListOfStories(t *testing.T) {
-	fs := newSpecificationFs(t,
-		map[string]string{
-			"features/a.feature": mockFeatureA,
-			"features/b.feature": mockFeatureA,
-		},
-	)
-	reader := NewFilesystemReader(fs, "features")
-	require.NotNil(t, reader)
-
-	spec, warnings, err := reader.Read()
-	require.Nil(t, err)
-	require.Len(t, warnings, 0)
-	snaptest.Snapshot(t, spec.Stories())
 }

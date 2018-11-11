@@ -1,99 +1,103 @@
 &specification.Specification{
-  FeatureFiles: map[string]*gherkin.Feature{
-    "features/a.feature": &gherkin.Feature{
-      Node: gherkin.Node{
-        Location: &gherkin.Location{
-          Line: 1,
-          Column: 1,
+  Source: "",
+  StorySources: map[string]*specification.Story{
+    "features/a.feature": &specification.Story{
+      Feature: &gherkin.Feature{
+        Node: gherkin.Node{
+          Location: &gherkin.Location{
+            Line: 1,
+            Column: 1,
+          },
+          Type: "Feature",
         },
-        Type: "Feature",
-      },
-      Tags: []*gherkin.Tag{} // p0
+        Tags: []*gherkin.Tag{} // p0
 ,
-      Language: "en",
-      Keyword: "Feature",
-      Name: "run features",
-      Description: "  In order to test application behavior\n  As a test suite\n  I need to be able to run features",
-      Background: nil,
-      ScenarioDefinitions: []interface {}{
-        &gherkin.Scenario{
-          ScenarioDefinition: gherkin.ScenarioDefinition{
-            Node: gherkin.Node{
-              Location: &gherkin.Location{
-                Line: 6,
-                Column: 3,
-              },
-              Type: "Scenario",
-            },
-            Keyword: "Scenario",
-            Name: "should run a normal feature",
-            Description: "",
-            Steps: []*gherkin.Step{
-              &gherkin.Step{
-                Node: gherkin.Node{
-                  Location: &gherkin.Location{
-                    Line: 7,
-                    Column: 5,
-                  },
-                  Type: "Step",
+        Language: "en",
+        Keyword: "Feature",
+        Name: "run features",
+        Description: "  In order to test application behavior\n  As a test suite\n  I need to be able to run features",
+        Background: nil,
+        ScenarioDefinitions: []interface {}{
+          &gherkin.Scenario{
+            ScenarioDefinition: gherkin.ScenarioDefinition{
+              Node: gherkin.Node{
+                Location: &gherkin.Location{
+                  Line: 6,
+                  Column: 3,
                 },
-                Keyword: "Given ",
-                Text: "a feature \"normal.feature\" file:",
-                Argument: &gherkin.DocString{
+                Type: "Scenario",
+              },
+              Keyword: "Scenario",
+              Name: "should run a normal feature",
+              Description: "",
+              Steps: []*gherkin.Step{
+                &gherkin.Step{
                   Node: gherkin.Node{
                     Location: &gherkin.Location{
-                      Line: 8,
-                      Column: 7,
+                      Line: 7,
+                      Column: 5,
                     },
-                    Type: "DocString",
+                    Type: "Step",
                   },
-                  ContentType: "",
-                  Content: "Feature: normal feature\n\n  Scenario: parse a scenario\n    Given a feature path \"features/load.feature:6\"\n    When I parse features\n    Then I should have 1 scenario registered",
-                  Delimitter: "\"\"\"",
-                },
-              },
-              &gherkin.Step{
-                Node: gherkin.Node{
-                  Location: &gherkin.Location{
-                    Line: 16,
-                    Column: 5,
+                  Keyword: "Given ",
+                  Text: "a feature \"normal.feature\" file:",
+                  Argument: &gherkin.DocString{
+                    Node: gherkin.Node{
+                      Location: &gherkin.Location{
+                        Line: 8,
+                        Column: 7,
+                      },
+                      Type: "DocString",
+                    },
+                    ContentType: "",
+                    Content: "Feature: normal feature\n\n  Scenario: parse a scenario\n    Given a feature path \"features/load.feature:6\"\n    When I parse features\n    Then I should have 1 scenario registered",
+                    Delimitter: "\"\"\"",
                   },
-                  Type: "Step",
                 },
-                Keyword: "When ",
-                Text: "I run feature suite",
-                Argument: nil,
-              },
-              &gherkin.Step{
-                Node: gherkin.Node{
-                  Location: &gherkin.Location{
-                    Line: 17,
-                    Column: 5,
+                &gherkin.Step{
+                  Node: gherkin.Node{
+                    Location: &gherkin.Location{
+                      Line: 16,
+                      Column: 5,
+                    },
+                    Type: "Step",
                   },
-                  Type: "Step",
+                  Keyword: "When ",
+                  Text: "I run feature suite",
+                  Argument: nil,
                 },
-                Keyword: "Then ",
-                Text: "the suite should have passed",
-                Argument: nil,
-              },
-              &gherkin.Step{
-                Node: gherkin.Node{
-                  Location: &gherkin.Location{
-                    Line: 18,
-                    Column: 5,
+                &gherkin.Step{
+                  Node: gherkin.Node{
+                    Location: &gherkin.Location{
+                      Line: 17,
+                      Column: 5,
+                    },
+                    Type: "Step",
                   },
-                  Type: "Step",
+                  Keyword: "Then ",
+                  Text: "the suite should have passed",
+                  Argument: nil,
                 },
-                Keyword: "And ",
-                Text: "the following steps should be passed:",
-                Argument: nil,
+                &gherkin.Step{
+                  Node: gherkin.Node{
+                    Location: &gherkin.Location{
+                      Line: 18,
+                      Column: 5,
+                    },
+                    Type: "Step",
+                  },
+                  Keyword: "And ",
+                  Text: "the following steps should be passed:",
+                  Argument: nil,
+                },
               },
             },
+            Tags: p0,
           },
-          Tags: p0,
         },
+        Comments: p0,
       },
-      Comments: p0,
+      Source: "features/a.feature",
     },
   },
 }
