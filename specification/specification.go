@@ -58,7 +58,6 @@ func (f *Specification) Stories() []*Story {
 // match. In the event of a tie (that is, two equal matches) the story is chosen
 // on its alphabetical primacy.
 func (f *Specification) FindStory(input string) (*Story, error) {
-
 	allStorySources := make(map[string]*Story)
 
 	for k, v := range f.StorySources {
@@ -67,25 +66,21 @@ func (f *Specification) FindStory(input string) (*Story, error) {
 	}
 
 	sources := []string{}
-
 	for file := range allStorySources {
 		sources = append(sources, file)
 	}
 
 	lookup := make(map[string]string)
-
 	for _, source := range sources {
 		lookup[f.trimSource(source)] = source
 	}
 
 	finalSources := []string{}
-
 	for fs := range lookup {
 		finalSources = append(finalSources, fs)
 	}
 
 	sort.Strings(finalSources)
-
 	cm := closestmatch.New(finalSources, []int{2, 3})
 	match := cm.Closest(input)
 
