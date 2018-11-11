@@ -75,7 +75,7 @@ func Test_AFilesystemReaderCanReadAFeatureFileFromDisk(t *testing.T) {
 			reader := Filesystem{
 				Fs: newSpecificationFs(t, test.fileContent),
 			}
-			err := reader.AddFeatureFile(spec, test.inputPath)
+			err := reader.addFeatureFile(spec, test.inputPath)
 
 			if test.err == nil {
 				require.Nil(t, err)

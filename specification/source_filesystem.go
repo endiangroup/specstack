@@ -36,7 +36,7 @@ func NewFilesystemReader(fs afero.Fs, path string) Reader {
 }
 
 func (f *Filesystem) Read() (*Specification, []error, error) {
-	reader := NewSpecification()
+	spec := NewSpecification()
 	warnings := []error{}
 
 	err := afero.Walk(f.Fs, f.Path, func(path string, info os.FileInfo, err error) error {
@@ -51,7 +51,7 @@ func (f *Filesystem) Read() (*Specification, []error, error) {
 		switch filepath.Ext(path) {
 		case FileExtFeature, FileExtStory:
 
-			if err := f.AddFeatureFile(reader, path); err != nil {
+			if err := f.addFeatureFile(spec, path); err != nil {
 				warnings = append(warnings, err)
 			}
 		}
@@ -63,12 +63,12 @@ func (f *Filesystem) Read() (*Specification, []error, error) {
 		return nil, warnings, fmt.Errorf("Failed to read directory %s: %s", f.Path, err)
 	}
 
-	return reader, warnings, nil
+	return spec, warnings, nil
 }
 
-// AddFeatureFile tries to parse a file in a given afero.Fs and adds it to the
+// addFeatureFile tries to parse a file in a given afero.Fs and adds it to the
 // Filesystem state.
-func (f *Filesystem) AddFeatureFile(spec *Specification, path string) error {
+func (f *Filesystem) addFeatureFile(spec *Specification, path string) error {
 
 	feature, err := f.parseFeatureFile(f.Fs, path)
 
