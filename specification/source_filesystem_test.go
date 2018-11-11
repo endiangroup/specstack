@@ -44,7 +44,7 @@ func newSpecificationFs(t *testing.T, files map[string]string) afero.Fs {
 	return fs
 }
 
-func Test_AFilesystemSourceCanReadAFeatureFileFromDisk(t *testing.T) {
+func Test_AFilesystemReaderCanReadAFeatureFileFromDisk(t *testing.T) {
 
 	for _, test := range []struct {
 		description string
@@ -71,12 +71,15 @@ func Test_AFilesystemSourceCanReadAFeatureFileFromDisk(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.description), func(t *testing.T) {
-			spec := NewFilesystem()
-			fs := newSpecificationFs(t, test.fileContent)
-			err := spec.AddFeatureFile(fs, test.inputPath)
+			spec := NewSpecification()
+			reader := Filesystem{
+				Fs: newSpecificationFs(t, test.fileContent),
+			}
+			err := reader.AddFeatureFile(spec, test.inputPath)
 
 			if test.err == nil {
 				require.Nil(t, err)
+				snaptest.Snapshot(t, spec)
 			} else {
 				require.Equal(t, test.err, err)
 			}
@@ -84,7 +87,7 @@ func Test_AFilesystemSourceCanReadAFeatureFileFromDisk(t *testing.T) {
 	}
 }
 
-func Test_AFilesystemSourceCanReadASpecificationFromDisk(t *testing.T) {
+func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 
 	for _, test := range []struct {
 		description string
@@ -133,9 +136,9 @@ func Test_AFilesystemSourceCanReadASpecificationFromDisk(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.description), func(t *testing.T) {
-
 			fs := newSpecificationFs(t, test.fileContent)
-			spec, warnings, err := NewSourceFromFilesystem(fs, test.inputDir)
+			reader := NewFilesystemReader(fs, test.inputDir)
+			spec, warnings, err := reader.Read()
 
 			if test.err == nil {
 				require.Nil(t, err)
@@ -148,14 +151,17 @@ func Test_AFilesystemSourceCanReadASpecificationFromDisk(t *testing.T) {
 	}
 }
 
-func Test_AFilesystemSourceCanGetAListOfStories(t *testing.T) {
+func Test_ASpecificationCanGetAListOfStories(t *testing.T) {
 	fs := newSpecificationFs(t,
 		map[string]string{
 			"features/a.feature": mockFeatureA,
 			"features/b.feature": mockFeatureA,
 		},
 	)
-	spec, warnings, err := NewSourceFromFilesystem(fs, "features")
+	reader := NewFilesystemReader(fs, "features")
+	require.NotNil(t, reader)
+
+	spec, warnings, err := reader.Read()
 	require.Nil(t, err)
 	require.Len(t, warnings, 0)
 	snaptest.Snapshot(t, spec.Stories())

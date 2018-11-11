@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 
 	// FIXME:	gherkin "github.com/cucumber/gherkin-go"
 	// OR github.com/cucumber/cucumber/gherkin/go ?
@@ -22,26 +21,25 @@ const (
 // A Filesystem represents a specification stored on a disk, memory, or other
 // similar entity.
 type Filesystem struct {
-	FeatureFiles map[string]*gherkin.Feature
+	Fs   afero.Fs
+	Path string
 }
 
-// NewFilesystem is a constructor for Filesystem. It allocates memory to the struct.
-// Filesystems should generally be created with NewSourceFromFilesystem.
-func NewFilesystem() *Filesystem {
+// NewFilesystemReader creates a new Filesystem-based Source given an afero.Fs
+// and a path. It scans the directory recursively, looking for .feature and .story
+// files. It returns a Source, a list of warnings and an error.
+func NewFilesystemReader(fs afero.Fs, path string) Reader {
 	return &Filesystem{
-		FeatureFiles: make(map[string]*gherkin.Feature),
+		Fs:   fs,
+		Path: path,
 	}
 }
 
-// NewSourceFromFilesystem creates a new Filesystem-based Source given an afero.Fs
-// and a path. It scans the directory recursively, looking for .feature and .story
-// files. It returns a Source, a list of warnings and an error.
-func NewSourceFromFilesystem(fs afero.Fs, path string) (Source, []error, error) {
-	reader := NewFilesystem()
+func (f *Filesystem) Read() (*Specification, []error, error) {
+	reader := NewSpecification()
 	warnings := []error{}
 
-	err := afero.Walk(fs, path, func(path string, info os.FileInfo, err error) error {
-
+	err := afero.Walk(f.Fs, f.Path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -53,7 +51,7 @@ func NewSourceFromFilesystem(fs afero.Fs, path string) (Source, []error, error) 
 		switch filepath.Ext(path) {
 		case FileExtFeature, FileExtStory:
 
-			if err := reader.AddFeatureFile(fs, path); err != nil {
+			if err := f.AddFeatureFile(reader, path); err != nil {
 				warnings = append(warnings, err)
 			}
 		}
@@ -62,7 +60,7 @@ func NewSourceFromFilesystem(fs afero.Fs, path string) (Source, []error, error) 
 	})
 
 	if err != nil {
-		return nil, warnings, fmt.Errorf("Failed to read directory %s: %s", path, err)
+		return nil, warnings, fmt.Errorf("Failed to read directory %s: %s", f.Path, err)
 	}
 
 	return reader, warnings, nil
@@ -70,15 +68,15 @@ func NewSourceFromFilesystem(fs afero.Fs, path string) (Source, []error, error) 
 
 // AddFeatureFile tries to parse a file in a given afero.Fs and adds it to the
 // Filesystem state.
-func (f *Filesystem) AddFeatureFile(fs afero.Fs, path string) error {
+func (f *Filesystem) AddFeatureFile(spec *Specification, path string) error {
 
-	feature, err := f.parseFeatureFile(fs, path)
+	feature, err := f.parseFeatureFile(f.Fs, path)
 
 	if err != nil {
 		return err
 	}
 
-	f.FeatureFiles[path] = feature
+	spec.FeatureFiles[path] = feature
 
 	return nil
 }
@@ -100,24 +98,4 @@ func (f *Filesystem) parseFeatureFile(fs afero.Fs, path string) (*gherkin.Featur
 	}
 
 	return feature, nil
-}
-
-// Stories fetches a list of features derived from loaded feature files.
-// Features are returned in alphabetical order of the file name that contains
-// them.
-func (f *Filesystem) Stories() []*gherkin.Feature {
-	stories := []*gherkin.Feature{}
-	files := []string{}
-
-	for file := range f.FeatureFiles {
-		files = append(files, file)
-	}
-
-	sort.Strings(files)
-
-	for _, index := range files {
-		stories = append(stories, f.FeatureFiles[index])
-	}
-
-	return stories
 }

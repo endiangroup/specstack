@@ -1,4 +1,4 @@
-&specification.Filesystem{
+&specification.Specification{
   FeatureFiles: map[string]*gherkin.Feature{
     "features/a.feature": &gherkin.Feature{
       Node: gherkin.Node{

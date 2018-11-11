@@ -1,10 +1,43 @@
 package specification
 
-import gherkin "github.com/DATA-DOG/godog/gherkin"
+import (
+	"sort"
 
-// FIXME: import gherkin "github.com/cucumber/gherkin-go"
+	gherkin "github.com/DATA-DOG/godog/gherkin"
+)
 
-// A Source represents the input for a specification.
-type Source interface {
-	Stories() []*gherkin.Feature
+type Specification struct {
+	FeatureFiles map[string]*gherkin.Feature
+}
+
+func NewSpecification() *Specification {
+	return &Specification{
+		FeatureFiles: make(map[string]*gherkin.Feature),
+	}
+}
+
+// Stories fetches a list of features derived from loaded feature files.
+// Features are returned in alphabetical order of the file name that contains
+// them.
+func (f *Specification) Stories() []*gherkin.Feature {
+	stories := []*gherkin.Feature{}
+	files := []string{}
+
+	for file := range f.FeatureFiles {
+		files = append(files, file)
+	}
+
+	sort.Strings(files)
+
+	for _, index := range files {
+		stories = append(stories, f.FeatureFiles[index])
+	}
+
+	return stories
+}
+
+// A Reader represents the input for a specification. The read method
+// returns a Specification, zero or more warnings, and a fatal error.
+type Reader interface {
+	Read() (*Specification, []error, error)
 }
