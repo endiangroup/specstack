@@ -59,7 +59,6 @@ func (f *Specification) Stories() []*Story {
 // on its alphabetical primacy.
 func (f *Specification) FindStory(input string) (*Story, error) {
 	allStorySources := make(map[string]*Story)
-
 	for k, v := range f.StorySources {
 		allStorySources[k] = v
 		allStorySources[v.Name] = v
