@@ -1,3 +1,16 @@
+.PHONY: install
+install: $(GOPATH)/bin/spec $(GOPATH)/bin/specfmt
+
+$(GOPATH)/bin/spec:
+	go install github.com/endiangroup/specstack/cmd/spec
+
+$(GOPATH)/bin/specfmt:
+	go install github.com/endiangroup/specstack/cmd/specfmt
+
+.PHONY: clean
+clean:
+	@rm -rf $(GOPATH)/bin/spec $(GOPATH)/bin/specfmt
+
 .PHONY: test
 test: dep godog
 	go test ./...
