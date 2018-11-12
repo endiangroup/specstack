@@ -40,13 +40,13 @@ func Test_AFilesystemReaderCanReadAFeatureFileFromDisk(t *testing.T) {
 			description: "Sad path: file doesn't exist",
 			fileContent: map[string]string{},
 			inputPath:   "features/a.feature",
-			err:         fmt.Errorf("Failed to read features/a.feature: open features/a.feature: file does not exist"),
+			err:         fmt.Errorf("failed to read features/a.feature: open features/a.feature: file does not exist"),
 		},
 		{
 			description: "Sad path: file content invalid",
 			fileContent: map[string]string{"features/a.feature": "--invalid--"},
 			inputPath:   "features/a.feature",
-			err:         fmt.Errorf("Failed to parse features/a.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"),
+			err:         fmt.Errorf("failed to parse features/a.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"),
 		},
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.description), func(t *testing.T) {
@@ -101,7 +101,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 			},
 			inputDir: "features",
 			warnings: errors.Warnings{
-				fmt.Errorf("Failed to parse features/b.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"),
+				fmt.Errorf("failed to parse features/b.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"),
 			},
 		},
 		{
@@ -111,7 +111,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 			},
 			inputDir: "notfeatures",
 			warnings: []error{},
-			err:      fmt.Errorf("Failed to read directory notfeatures: open notfeatures: file does not exist"),
+			err:      fmt.Errorf("failed to read directory notfeatures: open notfeatures: file does not exist"),
 		},
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.description), func(t *testing.T) {

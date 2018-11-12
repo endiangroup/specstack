@@ -44,7 +44,7 @@ func (f *Filesystem) Read() (*Specification, errors.Warnings, error) {
 	warnings := errors.Warnings{}
 
 	if err := afero.Walk(f.Fs, f.Path, f.featuresAndStoriesWalkFunc(spec, &warnings)); err != nil {
-		return nil, warnings, fmt.Errorf("Failed to read directory %s: %s", f.Path, err)
+		return nil, warnings, fmt.Errorf("failed to read directory %s: %s", f.Path, err)
 	}
 
 	return spec, warnings, nil
@@ -90,14 +90,14 @@ func (f *Filesystem) parseFeatureFile(fs afero.Fs, path string) (*Story, error) 
 	content, err := afero.ReadFile(fs, path)
 
 	if err != nil {
-		return &Story{}, fmt.Errorf("Failed to read %s: %s", path, err)
+		return &Story{}, fmt.Errorf("failed to read %s: %s", path, err)
 	}
 
 	buf := bytes.NewBuffer(content)
 	feature, err := gherkin.ParseFeature(buf)
 
 	if err != nil {
-		return &Story{}, fmt.Errorf("Failed to parse %s: %s", path, err)
+		return &Story{}, fmt.Errorf("failed to parse %s: %s", path, err)
 	}
 
 	return newStoryFromGherkinFeature(feature, path), nil
