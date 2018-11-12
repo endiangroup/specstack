@@ -4,8 +4,8 @@ test: dep godog
 	(cd cmd/ && godog ../features)
 
 .PHONY: lint
-lint: gometalinter
-	gometalinter.v2 --errors --vendor --exclude=vendor --config gometalinter.json ./...
+lint: golangci-lint
+	golangci-lint run ./...
 
 .PHONY: mock
 dir ?= .
@@ -44,11 +44,11 @@ ifndef DEP_BIN
 	@dep ensure --vendor-only
 endif
 
-.PHONY: gomentalinter
-GOMETALINTER_BIN := $(shell command -v gometalinter.v2 2> /dev/null)
-gometalinter:
-ifndef GOMETALINTER_BIN
-	@echo "Installing gometalinter..."
-	@go get gopkg.in/alecthomas/gometalinter.v2
-	@gometalinter.v2 --install
+.PHONY: golangci-lint
+GOLANGCI_BIN := $(shell command -v golangci-lint 2> /dev/null)
+golangci-lint:
+ifndef GOLANGCI_BIN
+	-@go get -u github.com/golangci/golangci-lint
+	@cd $(GOPATH)/src/github.com/golangci/golangci-lint/cmd/golangci-lint
+	@go install -ldflags "-X 'main.version=$(git describe --tags)' -X 'main.commit=$(git rev-parse --short HEAD)' -X 'main.date=$(date)'"
 endif

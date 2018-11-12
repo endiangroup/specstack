@@ -10,14 +10,14 @@ clone:
 
 pipeline:
   vendor:
-    image: endian/go:1.0.1
+    image: endian/go:1.0.2
     commands:
       - dep ensure --vendor-only
     when:
       event: [pull_request]
 
   test:
-    image: endian/go:1.0.1
+    image: endian/go:1.0.2
     commands:
       - make lint test
     when:

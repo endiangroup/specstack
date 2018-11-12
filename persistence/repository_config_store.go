@@ -37,5 +37,5 @@ func (store *RepositoryStore) LoadConfig() (*config.Config, error) {
 		return nil, err
 	}
 
-	return config.NewFromMap(configMap), nil
+	return config.NewFromMap(configMap)
 }
