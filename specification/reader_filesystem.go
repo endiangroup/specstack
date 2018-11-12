@@ -54,7 +54,6 @@ func (f *Filesystem) Read() (*Specification, errors.Warnings, error) {
 
 		switch filepath.Ext(path) {
 		case FileExtFeature, FileExtStory:
-
 			if err := f.addFeatureFile(spec, path); err != nil {
 				warnings = append(warnings, err)
 			}
