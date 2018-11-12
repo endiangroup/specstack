@@ -9,6 +9,16 @@ import (
 	"github.com/schollz/closestmatch"
 )
 
+/*
+Used for the closestmatch system, which uses bag-of-words approach for
+calculating string distance. Each integer represents a 'bag' of n-grams for the
+match (see https://en.wikipedia.org/wiki/Bag-of-words_model).
+
+Match accuracy can be improved by adding more bags of increasing size (for
+example, []int{2,3,4}) at the cost of speed.
+*/
+var stringMatchBags = []int{2, 3}
+
 type Specification struct {
 	Source       string
 	StorySources map[string]*Story
@@ -54,7 +64,7 @@ func (f *Specification) Stories() []*Story {
 
 // FindStory performs a fuzzy match on the source (usually file name) and
 // name of all known stories, then returns the closest match. The base source
-// (usually directory path) and any file extensions are omitted from the
+// (usually directory path) and any file extensions are ommitted from the
 // match. In the event of a tie (that is, two equal matches) the story is chosen
 // on its alphabetical primacy.
 func (f *Specification) FindStory(input string) (*Story, error) {
@@ -80,7 +90,7 @@ func (f *Specification) FindStory(input string) (*Story, error) {
 	}
 
 	sort.Strings(finalSources)
-	cm := closestmatch.New(finalSources, []int{2, 3})
+	cm := closestmatch.New(finalSources, stringMatchBags)
 	match := cm.Closest(input)
 
 	if match == "" {

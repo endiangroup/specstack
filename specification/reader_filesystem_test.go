@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/endiangroup/snaptest"
+	"github.com/endiangroup/specstack/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
@@ -39,13 +40,13 @@ func Test_AFilesystemReaderCanReadAFeatureFileFromDisk(t *testing.T) {
 			description: "Sad path: file doesn't exist",
 			fileContent: map[string]string{},
 			inputPath:   "features/a.feature",
-			err:         fmt.Errorf("Failed to read features/a.feature: open features/a.feature: file does not exist"),
+			err:         fmt.Errorf("failed to read features/a.feature: open features/a.feature: file does not exist"),
 		},
 		{
 			description: "Sad path: file content invalid",
 			fileContent: map[string]string{"features/a.feature": "--invalid--"},
 			inputPath:   "features/a.feature",
-			err:         fmt.Errorf("Failed to parse features/a.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"), //nolint:lll
+			err:         fmt.Errorf("failed to parse features/a.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"),
 		},
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.description), func(t *testing.T) {
@@ -71,7 +72,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 		description string
 		fileContent map[string]string
 		inputDir    string
-		warnings    []error
+		warnings    errors.Warnings
 		err         error
 	}{
 		{
@@ -81,7 +82,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 				"features/b.feature": mockFeatureA,
 			},
 			inputDir: "features",
-			warnings: []error{},
+			warnings: errors.Warnings{},
 		},
 		{
 			description: "Happy path: non-feature files",
@@ -90,7 +91,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 				"features/b.notfeature": "Not a feature file",
 			},
 			inputDir: "features",
-			warnings: []error{},
+			warnings: errors.Warnings{},
 		},
 		{
 			description: "Happy path: warnings",
@@ -99,8 +100,8 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 				"features/b.feature": "--invalid--",
 			},
 			inputDir: "features",
-			warnings: []error{
-				fmt.Errorf("Failed to parse features/b.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"), //nolint:lll
+			warnings: errors.Warnings{
+				fmt.Errorf("failed to parse features/b.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"),
 			},
 		},
 		{
@@ -110,7 +111,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 			},
 			inputDir: "notfeatures",
 			warnings: []error{},
-			err:      fmt.Errorf("Failed to read directory notfeatures: open notfeatures: file does not exist"),
+			err:      fmt.Errorf("failed to read directory notfeatures: open notfeatures: file does not exist"),
 		},
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.description), func(t *testing.T) {
