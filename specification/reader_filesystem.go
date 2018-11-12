@@ -9,6 +9,7 @@ import (
 	// FIXME:	gherkin "github.com/cucumber/gherkin-go"
 	// OR github.com/cucumber/cucumber/gherkin/go ?
 	gherkin "github.com/DATA-DOG/godog/gherkin"
+	"github.com/endiangroup/specstack/errors"
 	"github.com/spf13/afero"
 )
 
@@ -37,10 +38,10 @@ func NewFilesystemReader(fs afero.Fs, path string) Reader {
 
 // Read reads a specification from disk, returning the spec, any warnings, and
 // possibly a fatal error.
-func (f *Filesystem) Read() (*Specification, []error, error) {
+func (f *Filesystem) Read() (*Specification, errors.Warnings, error) {
 	spec := NewSpecification()
 	spec.Source = f.Path
-	warnings := []error{}
+	warnings := errors.Warnings{}
 
 	err := afero.Walk(f.Fs, f.Path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

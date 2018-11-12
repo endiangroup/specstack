@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/endiangroup/snaptest"
+	"github.com/endiangroup/specstack/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
@@ -71,7 +72,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 		description string
 		fileContent map[string]string
 		inputDir    string
-		warnings    []error
+		warnings    errors.Warnings
 		err         error
 	}{
 		{
@@ -81,7 +82,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 				"features/b.feature": mockFeatureA,
 			},
 			inputDir: "features",
-			warnings: []error{},
+			warnings: errors.Warnings{},
 		},
 		{
 			description: "Happy path: non-feature files",
@@ -90,7 +91,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 				"features/b.notfeature": "Not a feature file",
 			},
 			inputDir: "features",
-			warnings: []error{},
+			warnings: errors.Warnings{},
 		},
 		{
 			description: "Happy path: warnings",
@@ -99,7 +100,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 				"features/b.feature": "--invalid--",
 			},
 			inputDir: "features",
-			warnings: []error{
+			warnings: errors.Warnings{
 				fmt.Errorf("Failed to parse features/b.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"),
 			},
 		},
