@@ -22,6 +22,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:9f5edbc39ddd0d1ca8c1f007dd9d7e908924c3d75f6a68b80573a4a9bfcf2cdf"
+  name = "github.com/endiangroup/snaptest"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2524ada5b7284ba268711456cd205482f92011c8"
+
+[[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
@@ -36,6 +44,22 @@
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:3265b6b251e076aa31b46c3b58cf55670818be301024d29bc5de35f1ca9790c7"
+  name = "github.com/sanity-io/litter"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ae543b7ba8fd6af63e4976198f146e1348ae53c1"
+  version = "v1.1.0"
+
+[[projects]]
+  digest = "1:2b97fd8c3ebafa161b3cf34948a0dd7d1ec27ab3fed686eb3639ead64344e9e6"
+  name = "github.com/schollz/closestmatch"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "56fb6b15a5e88fbcbc21b196488e749fc176514c"
+  version = "v2.1.0"
 
 [[projects]]
   digest = "1:6a4a11ba764a56d2758899ec6f3848d24698d48442ebce85ee7a3f63284526cd"
@@ -105,6 +129,8 @@
   input-imports = [
     "github.com/DATA-DOG/godog",
     "github.com/DATA-DOG/godog/gherkin",
+    "github.com/endiangroup/snaptest",
+    "github.com/schollz/closestmatch",
     "github.com/spf13/afero",
     "github.com/spf13/cobra",
     "github.com/stretchr/testify/assert",
