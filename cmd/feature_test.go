@@ -127,7 +127,7 @@ func (t *testHarness) iShouldSeeSomeConfigurationKeysAndValues() error {
 	}
 
 	if !assert.Regexp(t, `[a-z.]+=.+(\n)?`, t.stdout) {
-		t.AssertError()
+		return t.AssertError()
 	}
 
 	return nil

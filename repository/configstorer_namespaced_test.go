@@ -6,9 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const namespace = "testing"
+
 func Test_Get_PrefixesKeyWithNamespace(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
-	namespace := "testing"
 	configstorer := NewNamespacedKeyValueStorer(mockConfigStorer, namespace)
 
 	mockConfigStorer.On("GetConfig", namespace+".name").Return("", nil)
@@ -21,7 +22,6 @@ func Test_Get_PrefixesKeyWithNamespace(t *testing.T) {
 
 func Test_Set_PrefixesKeyWithNamespace(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
-	namespace := "testing"
 	configstorer := NewNamespacedKeyValueStorer(mockConfigStorer, namespace)
 
 	mockConfigStorer.On("SetConfig", namespace+".name", "blah").Return(nil)
@@ -33,7 +33,6 @@ func Test_Set_PrefixesKeyWithNamespace(t *testing.T) {
 
 func Test_Unset_PrefixesKeyWithNamespace(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
-	namespace := "testing"
 	configstorer := NewNamespacedKeyValueStorer(mockConfigStorer, namespace)
 
 	mockConfigStorer.On("UnsetConfig", namespace+".name").Return(nil)
@@ -45,7 +44,6 @@ func Test_Unset_PrefixesKeyWithNamespace(t *testing.T) {
 
 func Test_All_ReturnsOnlyConfigFromNamespaceAndTrims(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
-	namespace := "testing"
 	configstorer := NewNamespacedKeyValueStorer(mockConfigStorer, namespace)
 	allKV := map[string]string{
 		"testing.user.name":  "a b",
@@ -68,7 +66,6 @@ func Test_All_ReturnsOnlyConfigFromNamespaceAndTrims(t *testing.T) {
 
 func Test_All_ReturnsKeyMissingErrorIfNoKeysInNamespace(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
-	namespace := "testing"
 	configstorer := NewNamespacedKeyValueStorer(mockConfigStorer, namespace)
 	allKV := map[string]string{
 		"unprefixed": "123",

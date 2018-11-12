@@ -54,7 +54,7 @@ func (f *Specification) Stories() []*Story {
 
 // FindStory performs a fuzzy match on the source (usually file name) and
 // name of all known stories, then returns the closest match. The base source
-// (usually directory path) and any file extensions are ommitted from the
+// (usually directory path) and any file extensions are omitted from the
 // match. In the event of a tie (that is, two equal matches) the story is chosen
 // on its alphabetical primacy.
 func (f *Specification) FindStory(input string) (*Story, error) {

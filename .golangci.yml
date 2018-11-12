@@ -1,0 +1,29 @@
+run:
+  skip-files:
+    # The feature test breaks because of the way godog compiles
+    # a new binary for each run. cmd.FeatureContext() is never
+    # called by anything in specstack, so it generates lots of
+    # unused-code errors.
+    - cmd/feature_test.go
+
+linters-settings:
+  gocyclo:
+    min-complexity: 10
+  maligned:
+    suggest-new: true
+  misspell:
+    locale: UK
+
+linters:
+  enable:
+    - gocyclo
+    - dupl
+    - lll
+    - goconst
+    - gofmt
+    - misspell
+    - prealloc
+    - gocritic
+    - gochecknoinits
+    - prealloc
+    - maligned

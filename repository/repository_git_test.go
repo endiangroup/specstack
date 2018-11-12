@@ -21,10 +21,10 @@ func tempDirectory(t *testing.T) (path string, shutdown func()) {
 	}
 }
 
-func initialisedGitRepoDir(t *testing.T) (path string, r *repositoryGit, shutdown func()) {
+func initialisedGitRepoDir(t *testing.T) (path string, r *Git, shutdown func()) {
 
 	dir, shutdown := tempDirectory(t)
-	repo := NewGitRepository(dir).(*repositoryGit)
+	repo := NewGitRepository(dir).(*Git)
 
 	require.Nil(t, repo.Init())
 

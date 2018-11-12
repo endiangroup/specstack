@@ -45,7 +45,7 @@ func Test_AFilesystemReaderCanReadAFeatureFileFromDisk(t *testing.T) {
 			description: "Sad path: file content invalid",
 			fileContent: map[string]string{"features/a.feature": "--invalid--"},
 			inputPath:   "features/a.feature",
-			err:         fmt.Errorf("Failed to parse features/a.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"),
+			err:         fmt.Errorf("Failed to parse features/a.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"), //nolint:lll
 		},
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.description), func(t *testing.T) {
@@ -100,7 +100,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 			},
 			inputDir: "features",
 			warnings: []error{
-				fmt.Errorf("Failed to parse features/b.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"),
+				fmt.Errorf("Failed to parse features/b.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"), //nolint:lll
 			},
 		},
 		{
