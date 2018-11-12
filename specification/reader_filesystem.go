@@ -88,7 +88,6 @@ func (f *Filesystem) parseFeatureFile(fs afero.Fs, path string) (*Story, error) 
 	content, err := afero.ReadFile(fs, path)
 
 	if err != nil {
-		// FIXME! Custom error for warnings?
 		return &Story{}, fmt.Errorf("Failed to read %s: %s", path, err)
 	}
 
@@ -96,7 +95,6 @@ func (f *Filesystem) parseFeatureFile(fs afero.Fs, path string) (*Story, error) 
 	feature, err := gherkin.ParseFeature(buf)
 
 	if err != nil {
-		// FIXME! Custom error for warnings?
 		return &Story{}, fmt.Errorf("Failed to parse %s: %s", path, err)
 	}
 
