@@ -43,7 +43,15 @@ func (f *Filesystem) Read() (*Specification, errors.Warnings, error) {
 	spec.Source = f.Path
 	warnings := errors.Warnings{}
 
-	err := afero.Walk(f.Fs, f.Path, func(path string, info os.FileInfo, err error) error {
+	if err := afero.Walk(f.Fs, f.Path, f.featuresAndStoriesWalkFunc(spec, &warnings)); err != nil {
+		return nil, warnings, fmt.Errorf("Failed to read directory %s: %s", f.Path, err)
+	}
+
+	return spec, warnings, nil
+}
+
+func (f *Filesystem) featuresAndStoriesWalkFunc(spec *Specification, warnings *errors.Warnings) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -55,18 +63,12 @@ func (f *Filesystem) Read() (*Specification, errors.Warnings, error) {
 		switch filepath.Ext(path) {
 		case FileExtFeature, FileExtStory:
 			if err := f.addFeatureFile(spec, path); err != nil {
-				warnings = append(warnings, err)
+				*warnings = append(*warnings, err)
 			}
 		}
 
 		return nil
-	})
-
-	if err != nil {
-		return nil, warnings, fmt.Errorf("Failed to read directory %s: %s", f.Path, err)
 	}
-
-	return spec, warnings, nil
 }
 
 // addFeatureFile tries to parse a file in a given afero.Fs and adds it to the
