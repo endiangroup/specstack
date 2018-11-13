@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
@@ -41,6 +42,10 @@ func (c *CobraHarness) error(cmd *cobra.Command, returnCode int, err error) erro
 	cmd.Root().SetOutput(c.stderr)
 
 	return NewCliErr(returnCode, err)
+}
+
+func (c *CobraHarness) warning(message string) {
+	c.stdout.Write([]byte(fmt.Sprintf("WARNING: %s\n", message)))
 }
 
 func (c *CobraHarness) PersistentPreRunE(cmd *cobra.Command, args []string) error {
@@ -94,6 +99,33 @@ func (c *CobraHarness) ConfigSet(cmd *cobra.Command, args []string) error {
 	err := c.app.SetConfiguration(keyValueParts[0], keyValueParts[1])
 	if err != nil {
 		return c.error(cmd, 1, err)
+	}
+
+	return nil
+}
+
+func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
+
+	spec, warnings, err := c.app.Specification()
+
+	if err != nil {
+		return c.error(cmd, 1, err)
+	}
+
+	for _, warning := range warnings {
+		c.warning(warning.Error())
+	}
+
+	storyFlag := cmd.Flag("story")
+
+	if storyName := storyFlag.Value.String(); storyName != "" {
+		story, err := spec.FindStory(storyName)
+
+		if err != nil {
+			return c.error(cmd, 1, err)
+		}
+
+		return fmt.Errorf("TODO: add metadata: %s", story.Name)
 	}
 
 	return nil

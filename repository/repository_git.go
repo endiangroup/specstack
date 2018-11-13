@@ -61,7 +61,7 @@ func (err GitCmdErr) Error() string {
 
 type Git struct {
 	path             string
-	configReadScope  byte
+	configReadScope  int
 	configWriteScope int
 }
 
@@ -73,17 +73,15 @@ The default config read scope is GitConfigScopeLocal | GitConfigScopeGlobal |
 GitConfigScopeSystem. This can be changed by passing a byte as the second
 argument, which is useful for local testing.
 */
-func NewGitRepository(path string, configReadScope ...byte) Repository {
-	var readScope byte = GitConfigScopeLocal | GitConfigScopeGlobal | GitConfigScopeSystem
+func NewGitRepository(path string, configReadScope ...int) Repository {
+	var readScope int = GitConfigScopeGlobal
 
 	if len(configReadScope) > 0 {
 		readScope = configReadScope[0]
 	}
 
 	return &Git{
-		path: path,
-
-		// Git defaults as of v2.18.0
+		path:             path,
 		configReadScope:  readScope,
 		configWriteScope: GitConfigScopeLocal,
 	}
@@ -217,19 +215,20 @@ func (repo *Git) runGitCommandStdIn(stdin string, args ...string) (string, error
 }
 
 func (repo *Git) configReadScopeArgs() string {
-	args := []string{}
 
-	if (repo.configReadScope & GitConfigScopeLocal) != 0 {
-		args = append(args, "--local")
-	}
-	if (repo.configReadScope & GitConfigScopeGlobal) != 0 {
-		args = append(args, "--global")
-	}
-	if (repo.configReadScope & GitConfigScopeSystem) != 0 {
-		args = append(args, "--system")
+	switch repo.configReadScope {
+	case GitConfigScopeLocal:
+		return "--local"
+
+	case GitConfigScopeGlobal:
+		return "--global"
+
+	case GitConfigScopeSystem:
+		return "--system"
 	}
 
-	return strings.Join(args, " ")
+	return ""
+
 }
 
 func (repo *Git) configWriteScopeArg() string {

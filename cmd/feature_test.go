@@ -78,6 +78,14 @@ func (t *testHarness) iHaveAnEmptyDirectory() error {
 	return os.Chdir(t.path)
 }
 
+func (t *testHarness) iHaveAProjectDirectory() error {
+	if err := t.iHaveAnEmptyDirectory(); err != nil {
+		return nil
+	}
+
+	return t.fs.MkdirAll(filepath.Join(t.path, "features"), 0755)
+}
+
 func (t *testHarness) iRunTheCommand(cmd string) error {
 	t.cobra.SetArgs(strings.Split(cmd, " "))
 	err := t.cobra.Execute()
@@ -104,6 +112,27 @@ func (t *testHarness) iShouldSeeAnErrorMessageInformingMe(msg string) error {
 
 func (t *testHarness) iHaveInitialisedGit() error {
 	return t.repo.Init()
+}
+
+func (t *testHarness) iHaveNotInitialisedGit() error {
+	return nil
+}
+
+func (t *testHarness) iHaveConfiguredGit() error {
+
+	if err := t.iHaveInitialisedGit(); err != nil {
+		return nil
+	}
+
+	if err := t.iHaveSetTheGitUserNameTo("Speck Stack"); err != nil {
+		return err
+	}
+
+	if err := t.iHaveSetTheGitUserEmailTo("dev@specstack.io"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (t *testHarness) iShouldSeeTheFollowing(output *gherkin.DocString) error {
@@ -174,6 +203,13 @@ func (t *testHarness) iHaveSetMyUserDetails() error {
 	return t.iHaveSetTheGitUserEmailTo("dev@specstack.io")
 }
 
+func (t *testHarness) iHaveAFileCalledWithTheFollowingContent(filename string, content *gherkin.DocString) error {
+	if err := t.fs.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
+		return err
+	}
+	return afero.WriteFile(t.fs, filename, []byte(content.Content), os.ModePerm)
+}
+
 func (t *testHarness) Errorf(format string, args ...interface{}) {
 	t.assertError = fmt.Errorf(format, args...)
 }
@@ -186,6 +222,7 @@ func FeatureContext(s *godog.Suite) {
 	th := newTestHarness()
 
 	s.Step(`^I have an empty directory$`, th.iHaveAnEmptyDirectory)
+	s.Step(`^I have a project directory$`, th.iHaveAProjectDirectory)
 	s.Step(`^I run "([^"]*)"$`, th.iRunTheCommand)
 	s.Step(`^I should see an error message informing me "([^"]*)"$`, th.iShouldSeeAnErrorMessageInformingMe)
 	s.Step(`^I have initialised git$`, th.iHaveInitialisedGit)
@@ -196,6 +233,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have set the git user name to "([^"]*)"$`, th.iHaveSetTheGitUserNameTo)
 	s.Step(`^I have set the git user email to "([^"]*)"$`, th.iHaveSetTheGitUserEmailTo)
 	s.Step(`^I have set my user details$`, th.iHaveSetMyUserDetails)
+	s.Step(`^I have a file called "([^"]*)" with the following content:$`, th.iHaveAFileCalledWithTheFollowingContent)
+	s.Step(`^I have configured git$`, th.iHaveConfiguredGit)
+	s.Step(`^I have not initialised git$`, th.iHaveNotInitialisedGit)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }
