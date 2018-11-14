@@ -100,6 +100,7 @@ func (t *testHarness) iRunTheCommand(cmd string) error {
 
 func (t *testHarness) iShouldSeeAnErrorMessageInformingMe(msg string) error {
 	if !assert.Contains(t, t.stderr.String(), msg) {
+		t.Errorf("%d, %s, %s", t.exitCode, t.stdout.String(), t.stderr.String())
 		return t.AssertError()
 	}
 
@@ -143,11 +144,7 @@ func (t *testHarness) iShouldSeeTheFollowing(output *gherkin.DocString) error {
 		}
 	}
 
-	if !assert.True(t, t.exitCode == 0, "Non-zero exit coded returned, expected 0") {
-		return t.AssertError()
-	}
-
-	return nil
+	return t.iShouldSeeNoErrors()
 }
 
 func (t *testHarness) iShouldSeeSomeConfigurationKeysAndValues() error {
@@ -210,6 +207,25 @@ func (t *testHarness) iHaveAFileCalledWithTheFollowingContent(filename string, c
 	return afero.WriteFile(t.fs, filename, []byte(content.Content), os.ModePerm)
 }
 
+func (t *testHarness) iHaveAConfiguredProjectDirectory() error {
+	if err := t.iHaveAProjectDirectory(); err != nil {
+		return err
+	}
+	return t.iHaveConfiguredGit()
+}
+
+func (t *testHarness) theMetadataShouldBeAddedToStory(arg1, arg2 string) error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iShouldSeeNoErrors() error {
+	if !assert.True(t, t.exitCode == 0, "Non-zero exit coded returned, expected 0") {
+		return t.AssertError()
+	}
+
+	return nil
+}
+
 func (t *testHarness) Errorf(format string, args ...interface{}) {
 	t.assertError = fmt.Errorf(format, args...)
 }
@@ -236,6 +252,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have a file called "([^"]*)" with the following content:$`, th.iHaveAFileCalledWithTheFollowingContent)
 	s.Step(`^I have configured git$`, th.iHaveConfiguredGit)
 	s.Step(`^I have not initialised git$`, th.iHaveNotInitialisedGit)
+	s.Step(`^I have a configured project directory$`, th.iHaveAConfiguredProjectDirectory)
+	s.Step(`^The metadata "([^"]*)" should be added to story "([^"]*)"$`, th.theMetadataShouldBeAddedToStory)
+	s.Step(`^I should see no errors$`, th.iShouldSeeNoErrors)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }

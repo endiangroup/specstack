@@ -3,6 +3,7 @@ package repository
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -88,7 +89,7 @@ func NewGitRepository(path string, configReadScope ...int) Repository {
 }
 
 func (repo *Git) IsInitialised() bool {
-	_, _, _, err := repo.runGitCommandRaw("", "rev-parse")
+	_, _, _, err := repo.runGitCommandRaw(nil, "rev-parse")
 
 	return err == nil
 }
@@ -149,16 +150,47 @@ func (repo *Git) UnsetConfig(key string) error {
 	return nil
 }
 
-func (repo *Git) GetMetadata(key string) (string, error) {
+func (repo *Git) GetMetadata(key io.Reader) ([]string, error) {
 	id, err := repo.objectID(key)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return repo.runGitCommand("notes", "--ref", gitNotesRef, "show", id)
+	// Check to see if there's a revision history for this object.
+	// If there isn't, we can still check for notes attached directly
+	// to the object hash.
+	// If there is no check and the note recovery fails, it's not an
+	// error; it means there are no notes for the id.
+	revisions, err := repo.revList(id)
+	if err != nil {
+		note, err := repo.runGitCommand("notes", "--ref", gitNotesRef, "show", id)
+
+		if err != nil {
+			return []string{}, nil
+		}
+
+		return []string{note}, nil
+	}
+
+	outputs := []string{}
+
+	for _, revision := range revisions {
+		if len(revision) > 1 {
+
+			// We want the objects referenced by the commits,
+			// in case they're notes. These are in indexes [1:]
+			for _, ref := range revision[1:] {
+				if note, err := repo.runGitCommand("notes", "--ref", gitNotesRef, "show", ref); err == nil {
+					outputs = append(outputs, note)
+				}
+			}
+		}
+	}
+
+	return outputs, nil
 }
 
-func (repo *Git) SetMetadata(key, value string) error {
+func (repo *Git) SetMetadata(key io.Reader, value string) error {
 	id, err := repo.objectID(key)
 	if err != nil {
 		return err
@@ -169,17 +201,37 @@ func (repo *Git) SetMetadata(key, value string) error {
 	return err
 }
 
-func (repo *Git) runGitCommandRaw(stdin string, args ...string) (string, string, int, error) {
+/*
+revList gets a list of object revisions for a given hash ID.
+The information is returned reverse-chronlogically, in N columns:
+the first column is the hash of the commit, and the subsequent
+(usually blank) columns are the hash of any objects referenced by
+the commits.
+*/
+func (repo *Git) revList(id string) ([][]string, error) {
+	output, err := repo.runGitCommand("rev-list", "--all", "--objects", id)
+	if err != nil {
+		return nil, err
+	}
+
+	revisions := [][]string{}
+
+	for _, state := range strings.Split(output, "\n") {
+		revision := strings.Split(strings.TrimSpace(state), " ")
+		revisions = append(revisions, revision)
+	}
+
+	return revisions, nil
+}
+
+func (repo *Git) runGitCommandRaw(stdin io.Reader, args ...string) (string, string, int, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repo.path
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-
-	if stdin != "" {
-		cmd.Stdin = bytes.NewBufferString(stdin)
-	}
+	cmd.Stdin = stdin
 
 	err := cmd.Run()
 
@@ -197,7 +249,7 @@ func (repo *Git) runGitCommandRaw(stdin string, args ...string) (string, string,
 }
 
 func (repo *Git) runGitCommand(args ...string) (string, error) {
-	stdout, stderr, exitCode, err := repo.runGitCommandRaw("", args...)
+	stdout, stderr, exitCode, err := repo.runGitCommandRaw(nil, args...)
 	if err != nil {
 		return "", NewGitCmdErr(stderr, exitCode, args...)
 	}
@@ -205,7 +257,7 @@ func (repo *Git) runGitCommand(args ...string) (string, error) {
 	return stdout, err
 }
 
-func (repo *Git) runGitCommandStdIn(stdin string, args ...string) (string, error) {
+func (repo *Git) runGitCommandStdIn(stdin io.Reader, args ...string) (string, error) {
 	stdout, stderr, exitCode, err := repo.runGitCommandRaw(stdin, args...)
 	if err != nil {
 		return "", NewGitCmdErr(stderr, exitCode, args...)
@@ -219,10 +271,8 @@ func (repo *Git) configReadScopeArgs() string {
 	switch repo.configReadScope {
 	case GitConfigScopeLocal:
 		return "--local"
-
 	case GitConfigScopeGlobal:
 		return "--global"
-
 	case GitConfigScopeSystem:
 		return "--system"
 	}
@@ -244,6 +294,6 @@ func (repo *Git) configWriteScopeArg() string {
 	return ""
 }
 
-func (repo *Git) objectID(key string) (string, error) {
+func (repo *Git) objectID(key io.Reader) (string, error) {
 	return repo.runGitCommandStdIn(key, "hash-object", "--stdin")
 }

@@ -1,5 +1,7 @@
 package repository
 
+import "io"
+
 // Repository represents a version control repo
 type Repository interface {
 	Initialiser
@@ -24,6 +26,6 @@ type ConfigStorer interface {
 // MetadataStorer is used to read and write repo metadata.
 // In Git, this takes the form of git notes.
 type MetadataStorer interface {
-	GetMetadata(key string) (string, error)
-	SetMetadata(key, value string) error
+	GetMetadata(key io.Reader) ([]string, error)
+	SetMetadata(key io.Reader, value string) error
 }

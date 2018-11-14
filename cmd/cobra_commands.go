@@ -57,7 +57,7 @@ func commandMetadata(harness *CobraHarness) *cobra.Command {
 	}
 	add := &cobra.Command{
 		Use:  "add",
-		Args: cobra.MinimumNArgs(1),
+		Args: cobra.MinimumNArgs(2),
 	}
 	root.AddCommand(
 		add,
