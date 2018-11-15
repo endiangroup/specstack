@@ -54,27 +54,18 @@ func (_m *MockRepository) GetConfig(_a0 string) (string, error) {
 	return r0, r1
 }
 
-// GetMetadata provides a mock function with given fields: key
-func (_m *MockRepository) GetMetadata(key io.Reader) ([]string, error) {
-	ret := _m.Called(key)
+// GetMetadata provides a mock function with given fields: key, output
+func (_m *MockRepository) GetMetadata(key io.Reader, output interface{}) error {
+	ret := _m.Called(key, output)
 
-	var r0 []string
-	if rf, ok := ret.Get(0).(func(io.Reader) []string); ok {
-		r0 = rf(key)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(io.Reader, interface{}) error); ok {
+		r0 = rf(key, output)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(io.Reader) error); ok {
-		r1 = rf(key)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Init provides a mock function with given fields:
@@ -120,11 +111,11 @@ func (_m *MockRepository) SetConfig(_a0 string, _a1 string) error {
 }
 
 // SetMetadata provides a mock function with given fields: key, value
-func (_m *MockRepository) SetMetadata(key io.Reader, value string) error {
+func (_m *MockRepository) SetMetadata(key io.Reader, value interface{}) error {
 	ret := _m.Called(key, value)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(io.Reader, string) error); ok {
+	if rf, ok := ret.Get(0).(func(io.Reader, interface{}) error); ok {
 		r0 = rf(key, value)
 	} else {
 		r0 = ret.Error(0)

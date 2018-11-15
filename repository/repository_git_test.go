@@ -58,14 +58,13 @@ func setFileMetadata(t *testing.T, repo *Git, fileName, value string) {
 	require.Nil(t, f0.Close())
 }
 
-func getFileMetadata(t *testing.T, repo *Git, fileName string) []string {
+func getFileMetadata(t *testing.T, repo *Git, fileName string) (value []string) {
 	f0, err := os.Open(fileName)
 	require.NotNil(t, f0)
 	require.Nil(t, err)
-	value, err := repo.GetMetadata(f0)
-	require.Nil(t, err)
+	require.Nil(t, repo.GetMetadata(f0, &value))
 	require.Nil(t, f0.Close())
-	return value
+	return
 }
 
 func Test_AnUnitialisedGitRepositoryCanBeRecognisedByAGitInstance(t *testing.T) {
@@ -115,13 +114,51 @@ func Test_AnInitialisedGitRepositoryCanSetBasicMetadata(t *testing.T) {
 
 	require.Nil(t, repo.SetMetadata(bytes.NewBufferString(key), data))
 
-	output, err := repo.GetMetadata(bytes.NewBufferString(key))
-	require.Nil(t, err)
-	require.Equal(t, []string{data}, output)
+	t.Run("Get correct output", func(t *testing.T) {
+		output := []string{}
+		require.Nil(t, repo.GetMetadata(bytes.NewBufferString(key), &output))
+		require.Equal(t, []string{data}, output)
+	})
 
-	output, err = repo.GetMetadata(bytes.NewBufferString("doesn't exist"))
-	require.Nil(t, err)
-	require.Equal(t, []string{}, output)
+	t.Run("Get nothing when there's no note", func(t *testing.T) {
+		output2 := []string{}
+		require.Nil(t, repo.GetMetadata(bytes.NewBufferString("doesn't exist"), &output2))
+		require.Equal(t, []string{}, output2)
+	})
+}
+
+func Test_AnInitialisedGitRepositoryCanSetComplexMetadata(t *testing.T) {
+
+	_, repo, shutdown := initialisedGitRepoDir(t)
+	defer shutdown()
+
+	type myStruct struct {
+		A int
+		B int
+	}
+
+	key, data := time.Now().String(), myStruct{}
+
+	require.Nil(t, repo.SetMetadata(bytes.NewBufferString(key), data))
+
+	t.Run("Get correct output", func(t *testing.T) {
+		output := []myStruct{}
+		require.Nil(t, repo.GetMetadata(bytes.NewBufferString(key), &output))
+		require.Equal(t, []myStruct{data}, output)
+	})
+
+	t.Run("Get nothing when there's no note", func(t *testing.T) {
+		output2 := []myStruct{}
+		require.Nil(t, repo.GetMetadata(bytes.NewBufferString("doesn't exist"), &output2))
+		require.Equal(t, []myStruct{}, output2)
+	})
+
+	t.Run("Get error when there's a type mismatch", func(t *testing.T) {
+		output2 := []string{}
+		err := repo.GetMetadata(bytes.NewBufferString(key), &output2)
+		require.NotNil(t, err)
+		require.Equal(t, "json: cannot unmarshal object into Go value of type string", err.Error())
+	})
 }
 
 func Test_AnInitialisedGitRepoCanTrackAndSetMetadataAtTheFileLevel(t *testing.T) {
@@ -170,11 +207,18 @@ func Test_AnInitialisedGitRepoCanTrackAndSetMetadataAtTheFileLevel(t *testing.T)
 	})
 
 	t.Run("Commit the file again", func(t *testing.T) {
+		assertGitCmd(t, repo, "", "add", "a.txt")
 		assertGitCmd(t, repo, "", "add", "b.txt")
 		assertGitCmd(t, repo, "", "commit", "-m", "Commit c")
 	})
 
 	t.Run("Check the metadata after commit", func(t *testing.T) {
 		require.Equal(t, []string{"m0", "m1"}, getFileMetadata(t, repo, "b.txt"))
+	})
+
+	t.Run("Add some more metadata whtout a commit", func(t *testing.T) {
+		setFileMetadata(t, repo, "b.txt", "m2")
+		setFileMetadata(t, repo, "b.txt", "m3")
+		require.Equal(t, []string{"m0", "m1", "m2", "m3"}, getFileMetadata(t, repo, "b.txt"))
 	})
 }

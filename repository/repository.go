@@ -25,7 +25,9 @@ type ConfigStorer interface {
 
 // MetadataStorer is used to read and write repo metadata.
 // In Git, this takes the form of git notes.
+// GetMetaData requires an underlying slice for its output
+// argument, otherwise it cannot process the data.
 type MetadataStorer interface {
-	GetMetadata(key io.Reader) ([]string, error)
-	SetMetadata(key io.Reader, value string) error
+	GetMetadata(key io.Reader, output interface{}) error
+	SetMetadata(key io.Reader, value interface{}) error
 }
