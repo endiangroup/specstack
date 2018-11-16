@@ -1,11 +1,8 @@
 package repository
 
-import "io"
-
 // Repository represents a version control repo
 type Repository interface {
 	Initialiser
-	MetadataStorer
 	ConfigStorer
 }
 
@@ -21,13 +18,4 @@ type ConfigStorer interface {
 	SetConfig(string, string) error
 	UnsetConfig(string) error
 	AllConfig() (map[string]string, error)
-}
-
-// MetadataStorer is used to read and write repo metadata.
-// In Git, this takes the form of git notes.
-// GetMetaData requires an underlying slice for its output
-// argument, otherwise it cannot process the data.
-type MetadataStorer interface {
-	GetMetadata(key io.Reader, output interface{}) error
-	SetMetadata(key io.Reader, value interface{}) error
 }

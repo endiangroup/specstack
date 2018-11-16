@@ -27,7 +27,7 @@ func tempDirectory(t *testing.T) (path string, shutdown func()) {
 func initialisedGitRepoDir(t *testing.T) (path string, r *Git, shutdown func()) {
 
 	dir, shutdown := tempDirectory(t)
-	repo := NewGitRepository(dir).(*Git)
+	repo := NewGitRepository(dir)
 
 	require.Nil(t, repo.Init())
 
@@ -148,14 +148,14 @@ func Test_AnInitialisedGitRepositoryCanSetComplexMetadata(t *testing.T) {
 	})
 
 	t.Run("Get nothing when there's no note", func(t *testing.T) {
-		output2 := []myStruct{}
-		require.Nil(t, repo.GetMetadata(bytes.NewBufferString("doesn't exist"), &output2))
-		require.Equal(t, []myStruct{}, output2)
+		output := []myStruct{}
+		require.Nil(t, repo.GetMetadata(bytes.NewBufferString("doesn't exist"), &output))
+		require.Equal(t, []myStruct{}, output)
 	})
 
 	t.Run("Get error when there's a type mismatch", func(t *testing.T) {
-		output2 := []string{}
-		err := repo.GetMetadata(bytes.NewBufferString(key), &output2)
+		output := []string{}
+		err := repo.GetMetadata(bytes.NewBufferString(key), &output)
 		require.NotNil(t, err)
 		require.Equal(t, "json: cannot unmarshal object into Go value of type string", err.Error())
 	})

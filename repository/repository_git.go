@@ -68,14 +68,14 @@ type Git struct {
 }
 
 /*
-NewGitRepository returns a Git Repository for a given path. It does not check that the
-path is valid or that the repo is initialialised.
+NewGitRepository returns a Git Repository for a given path. It does not
+check that the path is valid or that the repo is initialialised.
 
-The default config read scope is GitConfigScopeLocal | GitConfigScopeGlobal |
-GitConfigScopeSystem. This can be changed by passing a byte as the second
-argument, which is useful for local testing.
+The default config read scope is GitConfigScopeGlobal . This can be changed
+by passing an int in the second argument, which is useful for local
+testing.
 */
-func NewGitRepository(path string, configReadScope ...int) Repository {
+func NewGitRepository(path string, configReadScope ...int) *Git {
 	var readScope int = GitConfigScopeGlobal
 
 	if len(configReadScope) > 0 {
