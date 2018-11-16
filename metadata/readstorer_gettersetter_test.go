@@ -23,14 +23,14 @@ func mockUids(t *testing.T, count int) (output []uuid.UUID) {
 func Test_AValidGetterSetterReadStorerCanAssertMetadataHeaders(t *testing.T) {
 	rs := &readStorer{}
 
-	t.Run("Asset headers on empty entry", func(t *testing.T) {
+	t.Run("Assert headers on empty entry", func(t *testing.T) {
 		entry := Entry{}
 		require.Nil(t, rs.assertHeaders(&entry))
 		require.NotEqual(t, uuid.UUID{}, entry.Id)
 		require.NotEqual(t, time.Time{}, entry.Created)
 	})
 
-	t.Run("Don't headers on non-empty entry", func(t *testing.T) {
+	t.Run("Don't populate headers on non-empty entry", func(t *testing.T) {
 		entry := Entry{}
 
 		uid, err := uuid.NewV4()
