@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/endiangroup/specstack/config"
+	"github.com/endiangroup/specstack/repository"
 )
 
 type Developer interface {
@@ -12,14 +13,19 @@ type Developer interface {
 	SetConfiguration(context.Context, string, string) error
 }
 
-func NewDeveloper(configStore config.Storer) *developer {
+func NewDeveloper(
+	configStore config.Storer,
+	repo repository.Repository,
+) *developer {
 	return &developer{
 		configStore: configStore,
+		repo:        repo,
 	}
 }
 
 type developer struct {
 	configStore config.Storer
+	repo        repository.Repository
 }
 
 func (d *developer) ListConfiguration(ctx context.Context) (map[string]string, error) {

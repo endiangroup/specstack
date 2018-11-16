@@ -5,6 +5,7 @@ import (
 
 	"github.com/endiangroup/specstack"
 	"github.com/endiangroup/specstack/cmd"
+	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
@@ -18,9 +19,9 @@ func main() {
 
 	gitRepo := repository.NewGitRepository(dir)
 	repoStore := persistence.NewRepositoryStore(repository.NewNamespacedKeyValueStorer(gitRepo, "specstack"))
-	developer := personas.NewDeveloper(repoStore)
-	app := specstack.New(dir, gitRepo, developer, repoStore)
-
+	metadataStore := metadata.New(gitRepo)
+	developer := personas.NewDeveloper(repoStore, gitRepo)
+	app := specstack.New(dir, gitRepo, developer, repoStore, metadataStore)
 	cobra := cmd.WireUpCobraHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))
 
 	if err := cobra.Execute(); err != nil {

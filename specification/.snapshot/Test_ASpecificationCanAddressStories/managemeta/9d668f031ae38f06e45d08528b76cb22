@@ -17,5 +17,5 @@
     ScenarioDefinitions: p0,
     Comments: p0,
   },
-  Source: "features/add_metadata.feature",
+  SourceIdentifier: "features/add_metadata.feature",
 }

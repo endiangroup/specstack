@@ -32,14 +32,18 @@ func NewSpecification() *Specification {
 
 type Story struct {
 	*gherkin.Feature
-	Source string
+	SourceIdentifier string
 }
 
 func newStoryFromGherkinFeature(feature *gherkin.Feature, source string) *Story {
 	return &Story{
-		Feature: feature,
-		Source:  source,
+		Feature:          feature,
+		SourceIdentifier: source,
 	}
+}
+
+func (s *Story) Source() string {
+	return s.SourceIdentifier
 }
 
 // Stories fetches a list of features derived from loaded feature files.

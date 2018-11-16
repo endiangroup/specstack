@@ -7,6 +7,7 @@ import (
 
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/errors"
+	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
@@ -30,24 +31,32 @@ type Controller interface {
 	ListConfiguration() (map[string]string, error)
 	GetConfiguration(string) (string, error)
 	SetConfiguration(string, string) error
-	Specification() (*specification.Specification, errors.Warnings, error)
+	AddMetadataToStory(storyName, key, value string) error
 }
 
-func New(path string, repo repository.Repository, developer personas.Developer, configStore config.Storer) Controller {
+func New(
+	path string,
+	repo repository.Repository,
+	developer personas.Developer,
+	configStore config.Storer,
+	metadataStore metadata.ReadStorer,
+) Controller {
 	return &appController{
-		path:        path,
-		repo:        repo,
-		developer:   developer,
-		configStore: configStore,
+		path:          path,
+		repo:          repo,
+		developer:     developer,
+		configStore:   configStore,
+		metadataStore: metadataStore,
 	}
 }
 
 type appController struct {
-	path        string
-	repo        repository.Repository
-	configStore config.Storer
-	developer   personas.Developer
-	config      *config.Config
+	path          string
+	repo          repository.Repository
+	configStore   config.Storer
+	developer     personas.Developer
+	config        *config.Config
+	metadataStore metadata.ReadStorer
 }
 
 func (a *appController) Initialise() error {
@@ -133,11 +142,39 @@ func (a *appController) newContextWithConfig() context.Context {
 	return config.InContext(context.TODO(), a.config)
 }
 
-func (a *appController) Specification() (*specification.Specification, errors.Warnings, error) {
-	reader := specification.NewFilesystemReader(
-		afero.NewOsFs(),
-		a.config.Project.FeaturesDir,
-	)
+func (a *appController) specificationReader() specification.Reader {
+	return specification.NewFilesystemReader(afero.NewOsFs(), a.config.Project.FeaturesDir)
+}
 
-	return reader.Read()
+// TODO: Move this to developer persona. How best to transfer deps?
+func (a *appController) AddMetadataToStory(storyName, key, value string) error {
+
+	reader := a.specificationReader()
+	spec, warnings, err := reader.Read()
+
+	if err != nil {
+		return err
+	}
+
+	// FIXME! Emit warnings properly
+	for _, warning := range warnings {
+		fmt.Printf("WARNING: %s\n", warning.Error())
+	}
+
+	story, err := spec.FindStory(storyName)
+	if err != nil {
+		return err
+	}
+
+	object, err := reader.ReadSource(story)
+	if err != nil {
+		return err
+	}
+
+	entry := &metadata.Entry{
+		Name:  key,
+		Value: value,
+	}
+
+	return a.metadataStore.Store(object, entry)
 }
