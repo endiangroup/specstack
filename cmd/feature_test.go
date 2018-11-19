@@ -10,7 +10,6 @@ import (
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
 	"github.com/endiangroup/specstack"
-	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
@@ -42,10 +41,10 @@ func newTestHarness() *testHarness {
 
 	repoStore := persistence.NewStore(
 		persistence.NewNamespacedKeyValueStorer(th.repo, "specstack"),
+		git,
 	)
 	developer := personas.NewDeveloper(repoStore, git)
-	metadataStore := metadata.New(git)
-	app := specstack.New(testdirPath, th.repo, developer, repoStore, metadataStore)
+	app := specstack.New(testdirPath, th.repo, developer, repoStore)
 
 	th.cobra = WireUpCobraHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
 

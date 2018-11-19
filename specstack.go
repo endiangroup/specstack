@@ -34,29 +34,31 @@ type Controller interface {
 	AddMetadataToStory(storyName, key, value string) error
 }
 
+type Storer interface {
+	config.Storer
+	metadata.Storer
+}
+
 func New(
 	path string,
 	repo repository.Repository,
 	developer personas.Developer,
-	configStore config.Storer,
-	metadataStore metadata.ReadStorer,
+	omniStore Storer,
 ) Controller {
 	return &appController{
-		path:          path,
-		repo:          repo,
-		developer:     developer,
-		configStore:   configStore,
-		metadataStore: metadataStore,
+		path:      path,
+		repo:      repo,
+		developer: developer,
+		omniStore: omniStore,
 	}
 }
 
 type appController struct {
-	path          string
-	repo          repository.Repository
-	configStore   config.Storer
-	developer     personas.Developer
-	config        *config.Config
-	metadataStore metadata.ReadStorer
+	path      string
+	repo      repository.Repository
+	omniStore Storer
+	developer personas.Developer
+	config    *config.Config
 }
 
 func (a *appController) Initialise() error {
@@ -71,7 +73,7 @@ func (a *appController) Initialise() error {
 }
 
 func (a *appController) loadOrCreateConfig() (*config.Config, error) {
-	c, err := config.Load(a.configStore)
+	c, err := config.Load(a.omniStore)
 	if a.isFirstRun(err) {
 		return a.createDefaultConfig()
 	} else if err != nil {
@@ -93,7 +95,7 @@ func (a *appController) createDefaultConfig() (*config.Config, error) {
 		return nil, err
 	}
 
-	return config.Create(a.configStore, c)
+	return config.Create(a.omniStore, c)
 }
 
 func (a *appController) setProjectDefaults(c *config.Config) {
@@ -176,5 +178,5 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 		Value: value,
 	}
 
-	return a.metadataStore.Store(object, entry)
+	return a.omniStore.StoreMetadata(object, entry)
 }

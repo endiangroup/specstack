@@ -4,20 +4,18 @@ import (
 	"testing"
 
 	"github.com/endiangroup/specstack/config"
-	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+	mock "github.com/stretchr/testify/mock"
 )
 
-func Test_Initialise_ReturnsErrorIfRepoisotiryIsntInitialised(t *testing.T) {
+func Test_Initialise_ReturnsErrorIfRepositoryIsntInitialised(t *testing.T) {
 	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
-	mockConfigStore := &config.MockStorer{}
-	mockMetadataStore := &metadata.MockReadStorer{}
-	app := New("", mockRepo, mockDeveloper, mockConfigStore, mockMetadataStore)
+	repoStore := persistence.NewStore(&persistence.MockConfigStorer{}, &persistence.MockMetadataStorer{})
+	app := New("", mockRepo, mockDeveloper, repoStore)
 
 	mockRepo.On("IsInitialised").Return(false)
 
@@ -27,15 +25,14 @@ func Test_Initialise_ReturnsErrorIfRepoisotiryIsntInitialised(t *testing.T) {
 func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
-	mockConfigStore := &config.MockStorer{}
-	mockMetadataStore := &metadata.MockReadStorer{}
-	app := New("", mockRepo, mockDeveloper, mockConfigStore, mockMetadataStore)
+	mockConfigStore := &persistence.MockConfigStorer{}
+	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
+	app := New("", mockRepo, mockDeveloper, repoStore)
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("username", nil)
 	mockRepo.On("GetConfig", "user.email").Return("user@email", nil)
-	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
-	mockConfigStore.On("StoreConfig", mock.AnythingOfType("*config.Config")).Return(nil, nil)
+	mockConfigStore.On("AllConfig").Return(map[string]string{}, nil)
 
 	assert.NoError(t, app.Initialise())
 
@@ -45,13 +42,13 @@ func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 func Test_Initialise_ReturnsErrorWhenMissingUsername(t *testing.T) {
 	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
-	mockConfigStore := &config.MockStorer{}
-	mockMetadataStore := &metadata.MockReadStorer{}
-	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore, mockMetadataStore)
+	mockConfigStore := &persistence.MockConfigStorer{}
+	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore)
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("", persistence.ErrNoConfigFound)
-	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
+	mockConfigStore.On("AllConfig").Return(map[string]string{}, persistence.ErrNoConfigFound)
 
 	err := app.Initialise()
 
@@ -61,14 +58,14 @@ func Test_Initialise_ReturnsErrorWhenMissingUsername(t *testing.T) {
 func Test_Initialise_ReturnsErrorWhenMissingEmail(t *testing.T) {
 	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
-	mockConfigStore := &config.MockStorer{}
-	mockMetadataStore := &metadata.MockReadStorer{}
-	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore, mockMetadataStore)
+	mockConfigStore := &persistence.MockConfigStorer{}
+	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore)
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("username", nil)
 	mockRepo.On("GetConfig", "user.email").Return("", persistence.ErrNoConfigFound)
-	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
+	mockConfigStore.On("AllConfig").Return(map[string]string{}, persistence.ErrNoConfigFound)
 
 	err := app.Initialise()
 
@@ -78,9 +75,9 @@ func Test_Initialise_ReturnsErrorWhenMissingEmail(t *testing.T) {
 func Test_Initialise_SetsConfigDefaults(t *testing.T) {
 	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
-	mockConfigStore := &config.MockStorer{}
-	mockMetadataStore := &metadata.MockReadStorer{}
-	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore, mockMetadataStore)
+	mockConfigStore := &persistence.MockConfigStorer{}
+	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore).(*appController)
 	expectedConfig := config.NewWithDefaults()
 	expectedConfig.Project.Name = "test-dir"
 	expectedConfig.User.Name = "username"
@@ -89,27 +86,29 @@ func Test_Initialise_SetsConfigDefaults(t *testing.T) {
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("username", nil)
 	mockRepo.On("GetConfig", "user.email").Return("user@email", nil)
-	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
+	mockConfigStore.On("SetConfig", mock.Anything, mock.Anything).Return(nil)
+	mockConfigStore.On("AllConfig").Return(map[string]string{}, persistence.ErrNoConfigFound)
 	mockConfigStore.On("StoreConfig", mock.Anything).Return(nil, nil)
 
 	assert.NoError(t, app.Initialise())
 
-	assert.Equal(t, expectedConfig, mockConfigStore.Calls[1].Arguments.Get(0))
+	assert.Equal(t, expectedConfig, app.config)
 }
 
 func Test_Initialise_LoadsExistingConfigIfNotFirstRun(t *testing.T) {
 	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
-	mockConfigStore := &config.MockStorer{}
-	mockMetadataStore := &metadata.MockReadStorer{}
-	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore, mockMetadataStore)
+	mockConfigStore := &persistence.MockConfigStorer{}
+	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore).(*appController)
 	expectedConfig := config.NewWithDefaults()
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockDeveloper.On("ListConfiguration", mock.Anything).Return(nil, nil)
-	mockConfigStore.On("LoadConfig").Return(expectedConfig, nil)
+	mockConfigStore.On("AllConfig").Return(config.ToMap(expectedConfig), nil)
 
 	assert.NoError(t, app.Initialise())
 
 	mockConfigStore.AssertExpectations(t)
+	assert.Equal(t, expectedConfig, app.config)
 }

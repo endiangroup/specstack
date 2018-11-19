@@ -11,7 +11,8 @@ import (
 
 func Test_StoreConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
-	repoStore := NewStore(mockConfigStorer)
+	mockMetadataStorer := &MockMetadataStorer{}
+	repoStore := NewStore(mockConfigStorer, mockMetadataStorer)
 	c := config.NewWithDefaults()
 
 	mockConfigStorer.On("SetConfig", mock.Anything, mock.Anything).Return(nil)
@@ -30,7 +31,8 @@ func Test_StoreConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
 
 func Test_StoreConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
-	repoStore := NewStore(mockConfigStorer)
+	mockMetadataStorer := &MockMetadataStorer{}
+	repoStore := NewStore(mockConfigStorer, mockMetadataStorer)
 	config := config.NewWithDefaults()
 
 	mockConfigStorer.On("SetConfig", mock.Anything, mock.Anything).Return(errors.New("!!!"))
@@ -42,7 +44,8 @@ func Test_StoreConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
 
 func Test_LoadConfig_SetsKeyValuesOnConfig(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
-	repoStore := NewStore(mockConfigStorer)
+	mockMetadataStorer := &MockMetadataStorer{}
+	repoStore := NewStore(mockConfigStorer, mockMetadataStorer)
 	c := config.New()
 	c.Project.Remote = "upstream"
 	c.Project.Name = "test"

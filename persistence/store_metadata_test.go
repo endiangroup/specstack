@@ -1,4 +1,4 @@
-package metadata
+package persistence
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/endiangroup/snaptest"
+	"github.com/endiangroup/specstack/metadata"
 	uuid "github.com/satori/go.uuid"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -20,18 +21,20 @@ func mockUids(t *testing.T, count int) (output []uuid.UUID) {
 	return
 }
 
-func Test_AValidGetterSetterReadStorerCanAssertMetadataHeaders(t *testing.T) {
-	rs := &readStorer{}
+func Test_StoreMetadata_CanAssertMetadataHeaders(t *testing.T) {
+	mockConfigStorer := &MockConfigStorer{}
+	mockMetadataStorer := &MockMetadataStorer{}
+	rs := NewStore(mockConfigStorer, mockMetadataStorer)
 
 	t.Run("Assert headers on empty entry", func(t *testing.T) {
-		entry := Entry{}
+		entry := metadata.Entry{}
 		require.Nil(t, rs.assertHeaders(&entry))
 		require.NotEqual(t, uuid.UUID{}, entry.Id)
 		require.NotEqual(t, time.Time{}, entry.Created)
 	})
 
 	t.Run("Don't populate headers on non-empty entry", func(t *testing.T) {
-		entry := Entry{}
+		entry := metadata.Entry{}
 
 		uid := uuid.NewV4()
 		entry.Id = uid
@@ -45,26 +48,28 @@ func Test_AValidGetterSetterReadStorerCanAssertMetadataHeaders(t *testing.T) {
 	})
 }
 
-func Test_AValidGetterSetterReadStorerCanStore(t *testing.T) {
-	key, entry := bytes.NewBuffer([]byte{}), &Entry{}
+func Test_StoreMetadata_CanStoreValueData(t *testing.T) {
+	key, entry := bytes.NewBuffer([]byte{}), &metadata.Entry{}
 
-	mockGetterSetter := &MockGetterSetter{}
-	mockGetterSetter.On("SetMetadata", key, entry).Return(nil)
+	mockMetadataStore := &MockMetadataStorer{}
+	mockMetadataStore.On("SetMetadata", key, entry).Return(nil)
 
-	rs := New(mockGetterSetter)
-	require.Nil(t, rs.Store(key, entry))
+	mockConfigStorer := &MockConfigStorer{}
+	rs := NewStore(mockConfigStorer, mockMetadataStore)
+
+	require.Nil(t, rs.StoreMetadata(key, entry))
 
 	require.NotEqual(t, uuid.UUID{}, entry.Id)
 	require.NotEqual(t, time.Time{}, entry.Created)
 }
 
-func Test_AValidGetterSetterReadStorerCanDelete(t *testing.T) {
+func Test_StoreMetadata_CanDelete(t *testing.T) {
 
 	key := bytes.NewBuffer([]byte{})
 	uids := mockUids(t, 2)
 	now := time.Now()
 
-	entries := []*Entry{
+	entries := []*metadata.Entry{
 		{
 			Id:      uids[1],
 			Created: now,
@@ -73,41 +78,42 @@ func Test_AValidGetterSetterReadStorerCanDelete(t *testing.T) {
 		},
 	}
 
-	mockGetterSetter := &MockGetterSetter{}
-	mockGetterSetter.On("GetMetadata", key, mock.Anything).
+	mockMetadataStore := &MockMetadataStorer{}
+	mockMetadataStore.On("GetMetadata", key, mock.Anything).
 		Run(func(args mock.Arguments) {
-			input := args.Get(1).(*[]*Entry)
+			input := args.Get(1).(*[]*metadata.Entry)
 			*input = entries
 		}).
 		Return(nil)
 
-	rs := New(mockGetterSetter)
+	mockConfigStorer := &MockConfigStorer{}
+	rs := NewStore(mockConfigStorer, mockMetadataStore)
 
 	t.Run("Fail when there's no entry", func(t *testing.T) {
-		require.Equal(t, fmt.Errorf("No entry for id %s", uids[0]), rs.Delete(key, uids[0]))
+		require.Equal(t, fmt.Errorf("No entry for id %s", uids[0]), rs.DeleteMetadata(key, uids[0]))
 	})
 
 	t.Run("Mark entry as deleted", func(t *testing.T) {
-		deleted := &Entry{
+		deleted := &metadata.Entry{
 			Id:      uids[1],
 			Created: now,
 			Name:    "A",
 			Value:   "B",
-			Status:  StatusDeleted,
+			Status:  metadata.StatusDeleted,
 		}
 
-		mockGetterSetter.On("SetMetadata", key, deleted).Return(nil)
+		mockMetadataStore.On("SetMetadata", key, deleted).Return(nil)
 
-		require.Nil(t, rs.Delete(key, uids[1]))
+		require.Nil(t, rs.DeleteMetadata(key, uids[1]))
 	})
 }
 
-func Test_AValidGetterSetterReadStorerCanRead(t *testing.T) {
+func Test_StoreMetadata_CanRead(t *testing.T) {
 
 	key := bytes.NewBuffer([]byte{})
 	uids := mockUids(t, 4)
 
-	entries := []*Entry{
+	entries := []*metadata.Entry{
 		{
 			Id:    uids[0],
 			Name:  "A",
@@ -130,18 +136,19 @@ func Test_AValidGetterSetterReadStorerCanRead(t *testing.T) {
 		},
 	}
 
-	mockGetterSetter := &MockGetterSetter{}
-	mockGetterSetter.On("GetMetadata", key, mock.Anything).
+	mockMetadataStore := &MockMetadataStorer{}
+	mockMetadataStore.On("GetMetadata", key, mock.Anything).
 		Run(func(args mock.Arguments) {
-			input := args.Get(1).(*[]*Entry)
+			input := args.Get(1).(*[]*metadata.Entry)
 			*input = entries
 		}).
 		Return(nil)
 
-	rs := New(mockGetterSetter)
+	mockConfigStorer := &MockConfigStorer{}
+	rs := NewStore(mockConfigStorer, mockMetadataStore)
 
 	t.Run("Get merged lists", func(t *testing.T) {
-		entries, err := rs.Read(key)
+		entries, err := rs.ReadMetadata(key)
 		require.Nil(t, err)
 		snaptest.Snapshot(t, entries)
 	})

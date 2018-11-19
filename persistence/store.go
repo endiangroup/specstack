@@ -1,11 +1,13 @@
 package persistence
 
-func NewStore(configStore ConfigStorer) *Store {
+func NewStore(configStore ConfigStorer, metadataStorer MetadataStorer) *Store {
 	return &Store{
-		ConfigStorer: configStore,
+		ConfigStorer:   configStore,
+		MetadataStorer: metadataStorer,
 	}
 }
 
 type Store struct {
-	ConfigStorer ConfigStorer
+	ConfigStorer   ConfigStorer
+	MetadataStorer MetadataStorer
 }

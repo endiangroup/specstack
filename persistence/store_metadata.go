@@ -1,25 +1,16 @@
-package metadata
+package persistence
 
 import (
 	"fmt"
-	"io"
+	io "io"
 	"sort"
 	"time"
 
+	"github.com/endiangroup/specstack/metadata"
 	uuid "github.com/satori/go.uuid"
 )
 
-type readStorer struct {
-	gs GetterSetter
-}
-
-func New(gs GetterSetter) ReadStorer {
-	return &readStorer{
-		gs: gs,
-	}
-}
-
-func (r *readStorer) assertHeaders(entry *Entry) error {
+func (r *Store) assertHeaders(entry *metadata.Entry) error {
 	zeroId := uuid.UUID{}
 	if entry.Id == zeroId {
 		uid := uuid.NewV4()
@@ -34,20 +25,20 @@ func (r *readStorer) assertHeaders(entry *Entry) error {
 	return nil
 }
 
-func (r *readStorer) Store(key io.Reader, entry *Entry) error {
+func (r *Store) StoreMetadata(key io.Reader, entry *metadata.Entry) error {
 	if err := r.assertHeaders(entry); err != nil {
 		return err
 	}
-	return r.gs.SetMetadata(key, entry)
+	return r.MetadataStorer.SetMetadata(key, entry)
 }
 
-func (r *readStorer) Delete(key io.Reader, id uuid.UUID) error {
-	var entries []*Entry
-	if err := r.gs.GetMetadata(key, &entries); err != nil {
+func (r *Store) DeleteMetadata(key io.Reader, id uuid.UUID) error {
+	var entries []*metadata.Entry
+	if err := r.MetadataStorer.GetMetadata(key, &entries); err != nil {
 		return err
 	}
 
-	var candidate *Entry
+	var candidate *metadata.Entry
 	for _, entry := range entries {
 		if entry.Id == id {
 			candidate = entry
@@ -58,22 +49,22 @@ func (r *readStorer) Delete(key io.Reader, id uuid.UUID) error {
 		return fmt.Errorf("No entry for id %s", id)
 	}
 
-	candidate.Status = StatusDeleted
+	candidate.Status = metadata.StatusDeleted
 
-	return r.gs.SetMetadata(key, candidate)
+	return r.MetadataStorer.SetMetadata(key, candidate)
 }
 
-func (r *readStorer) Read(key io.Reader) ([]*Entry, error) {
+func (r *Store) ReadMetadata(key io.Reader) ([]*metadata.Entry, error) {
 
 	// TODO! Merge on constraints. The current implemenation
 	// cares about unique names only.
-	var outputs []*Entry
+	var outputs []*metadata.Entry
 
-	if err := r.gs.GetMetadata(key, &outputs); err != nil {
+	if err := r.MetadataStorer.GetMetadata(key, &outputs); err != nil {
 		return nil, err
 	}
 
-	entryMap := make(map[string]*Entry)
+	entryMap := make(map[string]*metadata.Entry)
 
 	// Outputs are returned in chronological order,
 	// so we can step through them an take the most
@@ -83,7 +74,7 @@ func (r *readStorer) Read(key io.Reader) ([]*Entry, error) {
 	}
 
 	//nolint:prealloc
-	var final []*Entry
+	var final []*metadata.Entry
 	for _, e := range entryMap {
 		final = append(final, e)
 	}
