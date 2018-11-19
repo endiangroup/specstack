@@ -50,7 +50,7 @@ func Test_Initialise_ReturnsErrorWhenMissingUsername(t *testing.T) {
 	app := New("/testing/test-dir", mockRepo, mockDeveloper, mockConfigStore, mockMetadataStore)
 
 	mockRepo.On("IsInitialised").Return(true)
-	mockRepo.On("GetConfig", "user.name").Return("", repository.GitConfigMissingKeyErr{})
+	mockRepo.On("GetConfig", "user.name").Return("", persistence.ErrNoConfigFound)
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
 
 	err := app.Initialise()
@@ -67,7 +67,7 @@ func Test_Initialise_ReturnsErrorWhenMissingEmail(t *testing.T) {
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("username", nil)
-	mockRepo.On("GetConfig", "user.email").Return("", repository.GitConfigMissingKeyErr{})
+	mockRepo.On("GetConfig", "user.email").Return("", persistence.ErrNoConfigFound)
 	mockConfigStore.On("LoadConfig").Return(nil, persistence.ErrNoConfigFound)
 
 	err := app.Initialise()

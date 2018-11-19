@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+
+	"github.com/endiangroup/specstack/persistence"
 )
 
 const (
@@ -23,14 +25,10 @@ const (
 // possible.
 func NewGitConfigErr(gitCmdErr *GitCmdErr) error {
 	if gitCmdErr.ExitCode == 1 {
-		return GitConfigMissingKeyErr{gitCmdErr}
+		return persistence.ErrNoConfigFound
 	}
 
 	return gitCmdErr
-}
-
-type GitConfigMissingKeyErr struct {
-	*GitCmdErr
 }
 
 // NewGitCmdErr creates an instance of an error used for failed Git commands

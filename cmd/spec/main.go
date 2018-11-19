@@ -18,7 +18,9 @@ func main() {
 	}
 
 	gitRepo := repository.NewGitRepository(dir)
-	repoStore := persistence.NewRepositoryStore(repository.NewNamespacedKeyValueStorer(gitRepo, "specstack"))
+	repoStore := persistence.NewStore(
+		persistence.NewNamespacedKeyValueStorer(gitRepo, "specstack"),
+	)
 	metadataStore := metadata.New(gitRepo)
 	developer := personas.NewDeveloper(repoStore, gitRepo)
 	app := specstack.New(dir, gitRepo, developer, repoStore, metadataStore)

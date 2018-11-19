@@ -107,7 +107,7 @@ func (a *appController) setUserDefaults(c *config.Config) error {
 
 	c.User.Name, err = a.repo.GetConfig(userName)
 	if err != nil {
-		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
+		if err == persistence.ErrNoConfigFound {
 			return MissingRequiredConfigValueErr(userName)
 		}
 
@@ -116,7 +116,7 @@ func (a *appController) setUserDefaults(c *config.Config) error {
 
 	c.User.Email, err = a.repo.GetConfig(userEmail)
 	if err != nil {
-		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
+		if err == persistence.ErrNoConfigFound {
 			return MissingRequiredConfigValueErr(userEmail)
 		}
 

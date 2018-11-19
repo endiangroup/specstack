@@ -40,7 +40,9 @@ func newTestHarness() *testHarness {
 	git := repository.NewGitRepository(tmpPath, repository.GitConfigScopeLocal)
 	th.repo = git
 
-	repoStore := persistence.NewRepositoryStore(repository.NewNamespacedKeyValueStorer(th.repo, "specstack"))
+	repoStore := persistence.NewStore(
+		persistence.NewNamespacedKeyValueStorer(th.repo, "specstack"),
+	)
 	developer := personas.NewDeveloper(repoStore, git)
 	metadataStore := metadata.New(git)
 	app := specstack.New(testdirPath, th.repo, developer, repoStore, metadataStore)

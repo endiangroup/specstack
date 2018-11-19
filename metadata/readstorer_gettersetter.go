@@ -22,10 +22,7 @@ func New(gs GetterSetter) ReadStorer {
 func (r *readStorer) assertHeaders(entry *Entry) error {
 	zeroId := uuid.UUID{}
 	if entry.Id == zeroId {
-		uid, err := uuid.NewV4()
-		if err != nil {
-			return err
-		}
+		uid := uuid.NewV4()
 		entry.Id = uid
 	}
 

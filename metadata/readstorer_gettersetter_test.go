@@ -33,8 +33,7 @@ func Test_AValidGetterSetterReadStorerCanAssertMetadataHeaders(t *testing.T) {
 	t.Run("Don't populate headers on non-empty entry", func(t *testing.T) {
 		entry := Entry{}
 
-		uid, err := uuid.NewV4()
-		require.Nil(t, err)
+		uid := uuid.NewV4()
 		entry.Id = uid
 
 		now := time.Now()
