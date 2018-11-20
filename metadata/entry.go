@@ -7,9 +7,13 @@ import (
 )
 
 type Entry struct {
-	Id      uuid.UUID
-	Created time.Time
-	Deleted bool
-	Name    string
-	Value   string
+	Id        uuid.UUID
+	CreatedAt time.Time
+	DeletedAt time.Time
+	Name      string
+	Value     string
+}
+
+func (e *Entry) IsDeleted() bool {
+	return e.DeletedAt.IsZero()
 }

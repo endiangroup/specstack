@@ -30,7 +30,7 @@ func Test_StoreMetadata_CanAssertMetadataHeaders(t *testing.T) {
 		entry := metadata.Entry{}
 		require.Nil(t, rs.assertHeaders(&entry))
 		require.NotEqual(t, uuid.UUID{}, entry.Id)
-		require.NotEqual(t, time.Time{}, entry.Created)
+		require.NotEqual(t, time.Time{}, entry.CreatedAt)
 	})
 
 	t.Run("Don't populate headers on non-empty entry", func(t *testing.T) {
@@ -40,11 +40,11 @@ func Test_StoreMetadata_CanAssertMetadataHeaders(t *testing.T) {
 		entry.Id = uid
 
 		now := time.Now()
-		entry.Created = now
+		entry.CreatedAt = now
 
 		require.Nil(t, rs.assertHeaders(&entry))
 		require.Equal(t, uid, entry.Id)
-		require.Equal(t, now, entry.Created)
+		require.Equal(t, now, entry.CreatedAt)
 	})
 }
 
@@ -60,7 +60,7 @@ func Test_StoreMetadata_CanStoreValueData(t *testing.T) {
 	require.Nil(t, rs.StoreMetadata(key, entry))
 
 	require.NotEqual(t, uuid.UUID{}, entry.Id)
-	require.NotEqual(t, time.Time{}, entry.Created)
+	require.NotEqual(t, time.Time{}, entry.CreatedAt)
 }
 
 func Test_StoreMetadata_CanDelete(t *testing.T) {
@@ -71,10 +71,10 @@ func Test_StoreMetadata_CanDelete(t *testing.T) {
 
 	entries := []*metadata.Entry{
 		{
-			Id:      uids[1],
-			Created: now,
-			Name:    "A",
-			Value:   "B",
+			Id:        uids[1],
+			CreatedAt: now,
+			Name:      "A",
+			Value:     "B",
 		},
 	}
 
@@ -95,14 +95,21 @@ func Test_StoreMetadata_CanDelete(t *testing.T) {
 
 	t.Run("Mark entry as deleted", func(t *testing.T) {
 		deleted := &metadata.Entry{
-			Id:      uids[1],
-			Created: now,
-			Name:    "A",
-			Value:   "B",
-			Deleted: true,
+			Id:        uids[1],
+			CreatedAt: now,
+			Name:      "A",
+			Value:     "B",
 		}
 
-		mockMetadataStore.On("SetMetadata", key, deleted).Return(nil)
+		mockMetadataStore.On("SetMetadata", key, mock.Anything).
+			Run(func(args mock.Arguments) {
+				output := (args.Get(1).(*metadata.Entry))
+				require.NotEqual(t, time.Time{}, output.DeletedAt)
+
+				output.DeletedAt = time.Time{}
+				require.Equal(t, deleted, output)
+			}).
+			Return(nil)
 
 		require.Nil(t, rs.DeleteMetadata(key, uids[1]))
 	})

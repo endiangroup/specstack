@@ -18,8 +18,8 @@ func (r *Store) assertHeaders(entry *metadata.Entry) error {
 	}
 
 	zeroTime := time.Time{}
-	if entry.Created == zeroTime {
-		entry.Created = time.Now()
+	if entry.CreatedAt == zeroTime {
+		entry.CreatedAt = time.Now()
 	}
 
 	return nil
@@ -49,7 +49,7 @@ func (r *Store) DeleteMetadata(key io.Reader, id uuid.UUID) error {
 		return fmt.Errorf("No entry for id %s", id)
 	}
 
-	candidate.Deleted = true
+	candidate.DeletedAt = time.Now()
 
 	return r.MetadataStorer.SetMetadata(key, candidate)
 }
@@ -70,7 +70,7 @@ func (r *Store) ReadMetadata(key io.Reader) ([]*metadata.Entry, error) {
 	// so we can step through them an take the most
 	// recent as canon.
 	for _, output := range outputs {
-		if !output.Deleted {
+		if !output.IsDeleted() {
 			entryMap[output.Name] = output
 		}
 	}
