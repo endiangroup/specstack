@@ -149,48 +149,45 @@ func (repo *Git) UnsetConfig(key string) error {
 	return nil
 }
 
-func (repo *Git) GetMetadata(key io.Reader, object interface{}) error {
+func (repo *Git) GetMetadata(key io.Reader) ([][]byte, error) {
 	id, err := repo.objectID(key)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	raw := []json.RawMessage{}
+	raw := [][]byte{}
 
 	// Check to see if there's a revision history for this object.
 	// If there isn't, we can still check for notes attached directly
 	// to the object hash.
 	revisions, err := repo.revList(id)
 	if err != nil {
-		if err := repo.extractJsonRawMessageFromObjectId(id, &raw); err != nil {
-			return err
+		if err := repo.extractJsonMessagesFromObjectId(id, &raw); err != nil {
+			return nil, err
 		}
 	}
 
-	if err := repo.extractJsonRawMessageFromRevisionList(revisions, &raw); err != nil {
-		return err
+	if err := repo.extractJsonMessagesFromRevisionList(revisions, &raw); err != nil {
+		return nil, err
 	}
 
-	j, err := json.Marshal(raw)
-	if err != nil {
-		return fmt.Errorf("failed to marshal notes JSON: %s", err)
-	}
-
-	return json.Unmarshal(j, object)
+	return raw, nil
 }
 
-func (repo *Git) extractJsonRawMessageFromNote(note string, raw *[]json.RawMessage) error {
-	var rs []json.RawMessage
-	if err := json.Unmarshal([]byte(note), &rs); err != nil {
-		return fmt.Errorf("failed to parse json from note: %s", err)
-	}
+func (repo *Git) extractJsonMessagesFromNote(note string, raw *[][]byte) error {
 
-	*raw = append(*raw, rs...)
+	for line, value := range strings.Split(note, "\n") {
+		decoded := []byte{}
+		if err := json.Unmarshal([]byte(value), &decoded); err != nil {
+			return fmt.Errorf("failed to parse json from note line %d: %s", line, err)
+		}
+		*raw = append(*raw, decoded)
+	}
 
 	return nil
 }
 
-func (repo *Git) extractJsonRawMessageFromObjectId(id string, raw *[]json.RawMessage) error {
+func (repo *Git) extractJsonMessagesFromObjectId(id string, raw *[][]byte) error {
 	note, err := repo.runGitCommand("notes", "--ref", gitNotesRef, "show", id)
 
 	// If there is no check and the note recovery fails, it's not an
@@ -199,10 +196,10 @@ func (repo *Git) extractJsonRawMessageFromObjectId(id string, raw *[]json.RawMes
 		return nil
 	}
 
-	return repo.extractJsonRawMessageFromNote(note, raw)
+	return repo.extractJsonMessagesFromNote(note, raw)
 }
 
-func (repo *Git) extractJsonRawMessageFromRevisionList(revisions [][]string, raw *[]json.RawMessage) error {
+func (repo *Git) extractJsonMessagesFromRevisionList(revisions [][]string, raw *[][]byte) error {
 	processedNotes := make(map[string]struct{})
 	for _, revision := range revisions {
 		if len(revision) > 1 {
@@ -216,7 +213,7 @@ func (repo *Git) extractJsonRawMessageFromRevisionList(revisions [][]string, raw
 				}
 
 				if note, err := repo.runGitCommand("notes", "--ref", gitNotesRef, "show", ref); err == nil {
-					if err := repo.extractJsonRawMessageFromNote(note, raw); err != nil {
+					if err := repo.extractJsonMessagesFromNote(note, raw); err != nil {
 						return err
 					}
 					processedNotes[ref] = struct{}{}
@@ -227,28 +224,26 @@ func (repo *Git) extractJsonRawMessageFromRevisionList(revisions [][]string, raw
 	return nil
 }
 
-func (repo *Git) SetMetadata(key io.Reader, value interface{}) error {
-	id, err := repo.objectID(key)
+func (repo *Git) SetMetadata(target io.Reader, value []byte) error {
+	id, err := repo.objectID(target)
 	if err != nil {
 		return err
 	}
 
-	note := []interface{}{}
+	encodedValue, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metadata value to json: %s", err)
+	}
+
+	var note string
 
 	if existingNote, err := repo.runGitCommand("notes", "--ref", gitNotesRef, "show", id); err == nil {
-		if err := json.Unmarshal([]byte(existingNote), &note); err != nil {
-			return fmt.Errorf("failed to parse JSON from note: %s", err)
-		}
+		note = existingNote + "\n" + string(encodedValue)
+	} else {
+		note = string(encodedValue)
 	}
 
-	note = append(note, value)
-
-	jsn, err := json.Marshal(note)
-	if err != nil {
-		return fmt.Errorf("failed to serialise JSON for note: %s", err)
-	}
-
-	_, err = repo.runGitCommand("notes", "--ref", gitNotesRef, "add", "-f", id, "-m", string(jsn))
+	_, err = repo.runGitCommand("notes", "--ref", gitNotesRef, "add", "-f", id, "-m", note)
 
 	return err
 }

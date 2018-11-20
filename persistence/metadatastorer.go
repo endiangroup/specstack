@@ -3,6 +3,6 @@ package persistence
 import "io"
 
 type MetadataStorer interface {
-	GetMetadata(key io.Reader, output interface{}) error
-	SetMetadata(key io.Reader, value interface{}) error
+	GetMetadata(key io.Reader) ([][]byte, error)
+	SetMetadata(key io.Reader, value []byte) error
 }

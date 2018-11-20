@@ -54,7 +54,7 @@ func setFileMetadata(t *testing.T, repo *Git, fileName, value string) {
 	f0, err := os.Open(fileName)
 	require.NotNil(t, f0)
 	require.Nil(t, err)
-	require.Nil(t, repo.SetMetadata(f0, value))
+	require.Nil(t, repo.SetMetadata(f0, []byte(value)))
 	require.Nil(t, f0.Close())
 }
 
@@ -62,7 +62,14 @@ func getFileMetadata(t *testing.T, repo *Git, fileName string) (value []string) 
 	f0, err := os.Open(fileName)
 	require.NotNil(t, f0)
 	require.Nil(t, err)
-	require.Nil(t, repo.GetMetadata(f0, &value))
+
+	raw, err := repo.GetMetadata(f0)
+	require.Nil(t, err)
+
+	for _, v := range raw {
+		value = append(value, string(v))
+	}
+
 	require.Nil(t, f0.Close())
 	return
 }
@@ -110,54 +117,20 @@ func Test_AnInitialisedGitRepositoryCanSetBasicMetadata(t *testing.T) {
 	_, repo, shutdown := initialisedGitRepoDir(t)
 	defer shutdown()
 
-	key, data := time.Now().String(), time.Now().String()
+	key, data := time.Now().String(), []byte(time.Now().String())
 
 	require.Nil(t, repo.SetMetadata(bytes.NewBufferString(key), data))
 
 	t.Run("Get correct output", func(t *testing.T) {
-		output := []string{}
-		require.Nil(t, repo.GetMetadata(bytes.NewBufferString(key), &output))
-		require.Equal(t, []string{data}, output)
+		output, err := repo.GetMetadata(bytes.NewBufferString(key))
+		require.Nil(t, err)
+		require.Equal(t, [][]byte{data}, output)
 	})
 
 	t.Run("Get nothing when there's no note", func(t *testing.T) {
-		output2 := []string{}
-		require.Nil(t, repo.GetMetadata(bytes.NewBufferString("doesn't exist"), &output2))
-		require.Equal(t, []string{}, output2)
-	})
-}
-
-func Test_AnInitialisedGitRepositoryCanSetComplexMetadata(t *testing.T) {
-
-	_, repo, shutdown := initialisedGitRepoDir(t)
-	defer shutdown()
-
-	type myStruct struct {
-		A int
-		B int
-	}
-
-	key, data := time.Now().String(), myStruct{}
-
-	require.Nil(t, repo.SetMetadata(bytes.NewBufferString(key), data))
-
-	t.Run("Get correct output", func(t *testing.T) {
-		output := []myStruct{}
-		require.Nil(t, repo.GetMetadata(bytes.NewBufferString(key), &output))
-		require.Equal(t, []myStruct{data}, output)
-	})
-
-	t.Run("Get nothing when there's no note", func(t *testing.T) {
-		output := []myStruct{}
-		require.Nil(t, repo.GetMetadata(bytes.NewBufferString("doesn't exist"), &output))
-		require.Equal(t, []myStruct{}, output)
-	})
-
-	t.Run("Get error when there's a type mismatch", func(t *testing.T) {
-		output := []string{}
-		err := repo.GetMetadata(bytes.NewBufferString(key), &output)
-		require.NotNil(t, err)
-		require.Equal(t, "json: cannot unmarshal object into Go value of type string", err.Error())
+		output, err := repo.GetMetadata(bytes.NewBufferString("doesn't exist"))
+		require.Nil(t, err)
+		require.Equal(t, [][]byte{}, output)
 	})
 }
 

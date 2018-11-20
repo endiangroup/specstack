@@ -173,10 +173,5 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 		return err
 	}
 
-	entry := &metadata.Entry{
-		Name:  key,
-		Value: value,
-	}
-
-	return a.omniStore.StoreMetadata(object, entry)
+	return metadata.Add(a.omniStore, object, metadata.NewKeyValue(key, value))
 }

@@ -14,6 +14,17 @@ type Entry struct {
 	Value     string
 }
 
+func New() *Entry {
+	return &Entry{}
+}
+
+func NewKeyValue(key, value string) *Entry {
+	e := New()
+	e.Name = key
+	e.Value = value
+	return e
+}
+
 func (e *Entry) IsDeleted() bool {
 	return e.DeletedAt.IsZero()
 }

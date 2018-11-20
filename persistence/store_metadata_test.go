@@ -2,161 +2,61 @@ package persistence
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
 
-	"github.com/endiangroup/snaptest"
-	"github.com/endiangroup/specstack/metadata"
-	uuid "github.com/satori/go.uuid"
-	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func mockUids(t *testing.T, count int) (output []uuid.UUID) {
-	for i := 0; i < count; i++ {
-		uid := uuid.NewV5(uuid.NamespaceOID, fmt.Sprintf("%d", i))
-		output = append(output, uid)
-	}
-	return
-}
-
-func Test_StoreMetadata_CanAssertMetadataHeaders(t *testing.T) {
+func Test_StoreMetadata_CanStoreAnyValidValueAsMetadata(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
 	mockMetadataStorer := &MockMetadataStorer{}
 	rs := NewStore(mockConfigStorer, mockMetadataStorer)
 
-	t.Run("Assert headers on empty entry", func(t *testing.T) {
-		entry := metadata.Entry{}
-		require.Nil(t, rs.assertHeaders(&entry))
-		require.NotEqual(t, uuid.UUID{}, entry.Id)
-		require.NotEqual(t, time.Time{}, entry.CreatedAt)
+	t.Run("Throw error with invalid values", func(t *testing.T) {
+		err := rs.StoreMetadata(bytes.NewBufferString(t.Name()), func() {})
+		require.NotNil(t, err)
+		require.Equal(t, "failed to serialise metadata value: json: unsupported type: func()", err.Error())
 	})
 
-	t.Run("Don't populate headers on non-empty entry", func(t *testing.T) {
-		entry := metadata.Entry{}
-
-		uid := uuid.NewV4()
-		entry.Id = uid
-
-		now := time.Now()
-		entry.CreatedAt = now
-
-		require.Nil(t, rs.assertHeaders(&entry))
-		require.Equal(t, uid, entry.Id)
-		require.Equal(t, now, entry.CreatedAt)
-	})
-}
-
-func Test_StoreMetadata_CanStoreValueData(t *testing.T) {
-	key, entry := bytes.NewBuffer([]byte{}), &metadata.Entry{}
-
-	mockMetadataStore := &MockMetadataStorer{}
-	mockMetadataStore.On("SetMetadata", key, entry).Return(nil)
-
-	mockConfigStorer := &MockConfigStorer{}
-	rs := NewStore(mockConfigStorer, mockMetadataStore)
-
-	require.Nil(t, rs.StoreMetadata(key, entry))
-
-	require.NotEqual(t, uuid.UUID{}, entry.Id)
-	require.NotEqual(t, time.Time{}, entry.CreatedAt)
-}
-
-func Test_StoreMetadata_CanDelete(t *testing.T) {
-
-	key := bytes.NewBuffer([]byte{})
-	uids := mockUids(t, 2)
-	now := time.Now()
-
-	entries := []*metadata.Entry{
-		{
-			Id:        uids[1],
-			CreatedAt: now,
-			Name:      "A",
-			Value:     "B",
-		},
-	}
-
-	mockMetadataStore := &MockMetadataStorer{}
-	mockMetadataStore.On("GetMetadata", key, mock.Anything).
-		Run(func(args mock.Arguments) {
-			input := args.Get(1).(*[]*metadata.Entry)
-			*input = entries
-		}).
-		Return(nil)
-
-	mockConfigStorer := &MockConfigStorer{}
-	rs := NewStore(mockConfigStorer, mockMetadataStore)
-
-	t.Run("Fail when there's no entry", func(t *testing.T) {
-		require.Equal(t, fmt.Errorf("No entry for id %s", uids[0]), rs.DeleteMetadata(key, uids[0]))
-	})
-
-	t.Run("Mark entry as deleted", func(t *testing.T) {
-		deleted := &metadata.Entry{
-			Id:        uids[1],
-			CreatedAt: now,
-			Name:      "A",
-			Value:     "B",
-		}
-
-		mockMetadataStore.On("SetMetadata", key, mock.Anything).
-			Run(func(args mock.Arguments) {
-				output := (args.Get(1).(*metadata.Entry))
-				require.NotEqual(t, time.Time{}, output.DeletedAt)
-
-				output.DeletedAt = time.Time{}
-				require.Equal(t, deleted, output)
-			}).
-			Return(nil)
-
-		require.Nil(t, rs.DeleteMetadata(key, uids[1]))
-	})
-}
-
-func Test_StoreMetadata_CanRead(t *testing.T) {
-
-	key := bytes.NewBuffer([]byte{})
-	uids := mockUids(t, 4)
-
-	entries := []*metadata.Entry{
-		{
-			Id:    uids[0],
-			Name:  "A",
-			Value: "1",
-		},
-		{
-			Id:    uids[1],
-			Name:  "A",
-			Value: "2",
-		},
-		{
-			Id:    uids[3],
-			Name:  "B",
-			Value: "0",
-		},
-		{
-			Id:    uids[2],
-			Name:  "A",
-			Value: "3",
-		},
-	}
-
-	mockMetadataStore := &MockMetadataStorer{}
-	mockMetadataStore.On("GetMetadata", key, mock.Anything).
-		Run(func(args mock.Arguments) {
-			input := args.Get(1).(*[]*metadata.Entry)
-			*input = entries
-		}).
-		Return(nil)
-
-	mockConfigStorer := &MockConfigStorer{}
-	rs := NewStore(mockConfigStorer, mockMetadataStore)
-
-	t.Run("Get merged lists", func(t *testing.T) {
-		entries, err := rs.ReadMetadata(key)
+	t.Run("Encode valid values", func(t *testing.T) {
+		value := "{ / * string \n`}"
+		jsn, err := json.Marshal(value)
 		require.Nil(t, err)
-		snaptest.Snapshot(t, entries)
+
+		key := bytes.NewBufferString(t.Name())
+		mockMetadataStorer.On("SetMetadata", key, jsn).Return(nil)
+
+		require.Nil(t, rs.StoreMetadata(key, value))
+	})
+}
+
+func Test_StoreMetadata_CanReadAllMetadataFromASource(t *testing.T) {
+	mockConfigStorer := &MockConfigStorer{}
+	mockMetadataStorer := &MockMetadataStorer{}
+	rs := NewStore(mockConfigStorer, mockMetadataStorer)
+
+	t.Run("Throw error when provided invalid values", func(t *testing.T) {
+		key := bytes.NewBufferString(t.Name())
+		mockMetadataStorer.On("GetMetadata", key).Return(nil, fmt.Errorf("some error"))
+		require.Equal(t, fmt.Errorf("failed to get raw metadata: some error"), rs.ReadAllMetadata(key, nil))
+	})
+
+	t.Run("Retrieve valid values", func(t *testing.T) {
+		key := bytes.NewBufferString(t.Name())
+		type MyObject struct {
+			A int
+			B int
+		}
+		objects := []MyObject{}
+		object := MyObject{1, 2}
+
+		jsn, err := json.Marshal(object)
+		require.Nil(t, err)
+
+		mockMetadataStorer.On("GetMetadata", key).Return([][]byte{jsn}, nil)
+		require.Nil(t, rs.ReadAllMetadata(key, &objects))
+		require.Equal(t, []MyObject{object}, objects)
 	})
 }
