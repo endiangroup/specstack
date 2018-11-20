@@ -57,14 +57,22 @@ func commandMetadata(harness *CobraHarness) *cobra.Command {
 	}
 	add := &cobra.Command{
 		Use:  "add",
-		Args: cobra.MinimumNArgs(2),
+		Args: cobra.ExactArgs(2),
 	}
+	list := &cobra.Command{
+		Use:     "list",
+		Args:    cobra.ExactArgs(0),
+		Aliases: []string{"ls"},
+	}
+
 	root.AddCommand(
 		add,
+		list,
 	)
 
 	root.PersistentFlags().String("story", "", "")
 	add.RunE = harness.MetadataAdd
+	list.RunE = harness.MetadataList
 
 	return root
 }

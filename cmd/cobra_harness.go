@@ -121,3 +121,12 @@ func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
 
 	return c.error(cmd, 0, fmt.Errorf("specify a story"))
 }
+
+func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
+
+	if storyName := c.flagValueString(cmd, "story"); storyName != "" {
+		return c.errorOrNil(cmd, 1, c.app.ShowStoryMetadata(storyName))
+	}
+
+	return c.error(cmd, 0, fmt.Errorf("specify a story"))
+}

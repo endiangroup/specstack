@@ -3,10 +3,12 @@ package specstack
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/errors"
+	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
@@ -31,6 +33,7 @@ type Controller interface {
 	GetConfiguration(string) (string, error)
 	SetConfiguration(string, string) error
 	AddMetadataToStory(storyName, key, value string) error
+	ShowStoryMetadata(string) error
 }
 
 func New(
@@ -147,7 +150,6 @@ func (a *appController) warning(warning error) {
 	fmt.Printf("WARNING: %s\n", warning.Error())
 }
 
-// TODO: Move this to developer persona. How best to transfer deps?
 func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 
 	reader := a.specificationReader()
@@ -172,4 +174,40 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 	}
 
 	return a.developer.AddMetadataToStory(a.newContextWithConfig(), story, object, key, value)
+}
+
+func (a *appController) ShowStoryMetadata(storyName string) error {
+
+	reader := a.specificationReader()
+	spec, warnings, err := reader.Read()
+
+	if err != nil {
+		return err
+	}
+
+	for _, warning := range warnings {
+		a.warning(warning)
+	}
+
+	story, err := spec.FindStory(storyName)
+	if err != nil {
+		return err
+	}
+
+	object, err := reader.ReadSource(story)
+	if err != nil {
+		return err
+	}
+
+	entries, err := metadata.ReadAll(a.omniStore, object)
+	if err != nil {
+		return err
+	}
+
+	printer := metadata.NewPlaintextPrintscanner()
+	if err := printer.Print(os.Stdout, entries); err != nil {
+		return err
+	}
+
+	return nil
 }

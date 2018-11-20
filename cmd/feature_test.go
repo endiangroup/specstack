@@ -217,7 +217,13 @@ func (t *testHarness) iHaveAConfiguredProjectDirectory() error {
 	return t.iHaveConfiguredGit()
 }
 
-func (t *testHarness) theMetadataShouldBeAddedToStory(arg1, arg2 string) error {
+func (t *testHarness) theMetadataShouldBeAddedToStory(metadataKey, storyId string) error {
+	if err := t.iRunTheCommand(fmt.Sprintf("metadata ls --story %s", storyId)); err != nil {
+		return err
+	}
+
+	fmt.Println("@@", t.stdout.String())
+
 	return godog.ErrPending
 }
 
