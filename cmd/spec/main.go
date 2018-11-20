@@ -21,7 +21,7 @@ func main() {
 		persistence.NewNamespacedKeyValueStorer(gitRepo, "specstack"),
 		gitRepo,
 	)
-	developer := personas.NewDeveloper(repoStore, gitRepo)
+	developer := personas.NewDeveloper(repoStore)
 	app := specstack.New(
 		dir,
 		gitRepo,

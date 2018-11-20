@@ -2,30 +2,31 @@ package personas
 
 import (
 	"context"
+	"io"
 
 	"github.com/endiangroup/specstack/config"
-	"github.com/endiangroup/specstack/repository"
+	"github.com/endiangroup/specstack/metadata"
+	"github.com/endiangroup/specstack/persistence"
+	"github.com/endiangroup/specstack/specification"
 )
 
 type Developer interface {
 	ListConfiguration(context.Context) (map[string]string, error)
 	GetConfiguration(context.Context, string) (string, error)
 	SetConfiguration(context.Context, string, string) error
+	AddMetadataToStory(context.Context, *specification.Story, io.Reader, string, string) error
 }
 
 func NewDeveloper(
-	configStore config.Storer,
-	repo repository.Repository,
+	store *persistence.Store,
 ) *developer {
 	return &developer{
-		configStore: configStore,
-		repo:        repo,
+		store: store,
 	}
 }
 
 type developer struct {
-	configStore config.Storer
-	repo        repository.Repository
+	store *persistence.Store
 }
 
 func (d *developer) ListConfiguration(ctx context.Context) (map[string]string, error) {
@@ -44,6 +45,15 @@ func (d *developer) SetConfiguration(ctx context.Context, name, value string) er
 		return err
 	}
 
-	_, err = config.Store(d.configStore, c)
+	_, err = config.Store(d.store, c)
 	return err
+}
+
+func (d *developer) AddMetadataToStory(
+	ctx context.Context,
+	story *specification.Story,
+	object io.Reader,
+	name, value string,
+) error {
+	return metadata.Add(d.store, object, metadata.NewKeyValue(name, value))
 }

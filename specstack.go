@@ -7,7 +7,6 @@ import (
 
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/errors"
-	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
@@ -34,16 +33,11 @@ type Controller interface {
 	AddMetadataToStory(storyName, key, value string) error
 }
 
-type Storer interface {
-	config.Storer
-	metadata.Storer
-}
-
 func New(
 	path string,
 	repo repository.Repository,
 	developer personas.Developer,
-	omniStore Storer,
+	omniStore *persistence.Store,
 ) Controller {
 	return &appController{
 		path:      path,
@@ -56,7 +50,7 @@ func New(
 type appController struct {
 	path      string
 	repo      repository.Repository
-	omniStore Storer
+	omniStore *persistence.Store
 	developer personas.Developer
 	config    *config.Config
 }
@@ -148,6 +142,11 @@ func (a *appController) specificationReader() specification.Reader {
 	return specification.NewFilesystemReader(afero.NewOsFs(), a.config.Project.FeaturesDir)
 }
 
+// FIXME! Emit warnings properly
+func (a *appController) warning(warning error) {
+	fmt.Printf("WARNING: %s\n", warning.Error())
+}
+
 // TODO: Move this to developer persona. How best to transfer deps?
 func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 
@@ -158,9 +157,8 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 		return err
 	}
 
-	// FIXME! Emit warnings properly
 	for _, warning := range warnings {
-		fmt.Printf("WARNING: %s\n", warning.Error())
+		a.warning(warning)
 	}
 
 	story, err := spec.FindStory(storyName)
@@ -173,5 +171,5 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 		return err
 	}
 
-	return metadata.Add(a.omniStore, object, metadata.NewKeyValue(key, value))
+	return a.developer.AddMetadataToStory(a.newContextWithConfig(), story, object, key, value)
 }

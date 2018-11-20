@@ -43,7 +43,7 @@ func newTestHarness() *testHarness {
 		persistence.NewNamespacedKeyValueStorer(th.repo, "specstack"),
 		git,
 	)
-	developer := personas.NewDeveloper(repoStore, git)
+	developer := personas.NewDeveloper(repoStore)
 	app := specstack.New(testdirPath, th.repo, developer, repoStore)
 
 	th.cobra = WireUpCobraHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
