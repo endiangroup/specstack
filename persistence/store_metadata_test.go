@@ -99,7 +99,7 @@ func Test_StoreMetadata_CanDelete(t *testing.T) {
 			Created: now,
 			Name:    "A",
 			Value:   "B",
-			Status:  metadata.StatusDeleted,
+			Deleted: true,
 		}
 
 		mockMetadataStore.On("SetMetadata", key, deleted).Return(nil)

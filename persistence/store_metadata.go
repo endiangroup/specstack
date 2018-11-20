@@ -49,7 +49,7 @@ func (r *Store) DeleteMetadata(key io.Reader, id uuid.UUID) error {
 		return fmt.Errorf("No entry for id %s", id)
 	}
 
-	candidate.Status = metadata.StatusDeleted
+	candidate.Deleted = true
 
 	return r.MetadataStorer.SetMetadata(key, candidate)
 }
@@ -70,7 +70,9 @@ func (r *Store) ReadMetadata(key io.Reader) ([]*metadata.Entry, error) {
 	// so we can step through them an take the most
 	// recent as canon.
 	for _, output := range outputs {
-		entryMap[output.Name] = output
+		if !output.Deleted {
+			entryMap[output.Name] = output
+		}
 	}
 
 	//nolint:prealloc
