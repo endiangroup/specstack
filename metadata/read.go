@@ -21,9 +21,7 @@ func ReadAll(storer Storer, key io.Reader) ([]*Entry, error) {
 	// so we can step through them an take the most
 	// recent as canon.
 	for _, output := range outputs {
-		if !output.IsDeleted() {
-			entryMap[output.Name] = output
-		}
+		entryMap[output.Name] = output
 	}
 
 	//nolint:prealloc

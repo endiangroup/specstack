@@ -12,26 +12,21 @@ import (
 func Test_CanRead(t *testing.T) {
 
 	key := bytes.NewBuffer([]byte{})
-	uids := mockUids(t, 4)
 
 	entries := []*Entry{
 		{
-			Id:    uids[0],
 			Name:  "A",
 			Value: "1",
 		},
 		{
-			Id:    uids[1],
 			Name:  "A",
 			Value: "2",
 		},
 		{
-			Id:    uids[3],
 			Name:  "B",
 			Value: "0",
 		},
 		{
-			Id:    uids[2],
 			Name:  "A",
 			Value: "3",
 		},

@@ -54,14 +54,6 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
-
-[[projects]]
   digest = "1:2b97fd8c3ebafa161b3cf34948a0dd7d1ec27ab3fed686eb3639ead64344e9e6"
   name = "github.com/schollz/closestmatch"
   packages = ["."]
@@ -138,7 +130,6 @@
     "github.com/DATA-DOG/godog",
     "github.com/DATA-DOG/godog/gherkin",
     "github.com/endiangroup/snaptest",
-    "github.com/satori/go.uuid",
     "github.com/schollz/closestmatch",
     "github.com/spf13/afero",
     "github.com/spf13/cobra",
