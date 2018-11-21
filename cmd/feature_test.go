@@ -10,6 +10,7 @@ import (
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
 	"github.com/endiangroup/specstack"
+	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
@@ -44,7 +45,7 @@ func newTestHarness() *testHarness {
 		git,
 	)
 	developer := personas.NewDeveloper(repoStore)
-	app := specstack.New(testdirPath, th.repo, developer, repoStore)
+	app := specstack.New(testdirPath, th.repo, developer, repoStore, th.stdout, th.stderr)
 
 	th.cobra = WireUpCobraHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
 
@@ -217,14 +218,28 @@ func (t *testHarness) iHaveAConfiguredProjectDirectory() error {
 	return t.iHaveConfiguredGit()
 }
 
-func (t *testHarness) theMetadataShouldBeAddedToStory(metadataKey, storyId string) error {
+func (t *testHarness) theMetadataShouldBeAddedToStory(metadataKey, storyId, value string) error {
 	if err := t.iRunTheCommand(fmt.Sprintf("metadata ls --story %s", storyId)); err != nil {
 		return err
 	}
 
-	fmt.Println("@@", t.stdout.String())
+	scanner := metadata.NewPlaintextPrintscanner()
+	entries, err := scanner.Scan(t.stdout)
+	if err != nil {
+		return err
+	}
 
-	return godog.ErrPending
+	for _, entry := range entries {
+		if entry.Name == metadataKey {
+			if entry.Value == value {
+				return nil
+			} else {
+				return fmt.Errorf("Got %s, expected %s", entry.Value, value)
+			}
+		}
+	}
+
+	return fmt.Errorf("metadata not found")
 }
 
 func (t *testHarness) iShouldSeeNoErrors() error {
@@ -262,7 +277,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have configured git$`, th.iHaveConfiguredGit)
 	s.Step(`^I have not initialised git$`, th.iHaveNotInitialisedGit)
 	s.Step(`^I have a configured project directory$`, th.iHaveAConfiguredProjectDirectory)
-	s.Step(`^The metadata "([^"]*)" should be added to story "([^"]*)"$`, th.theMetadataShouldBeAddedToStory)
+	s.Step(`^The metadata "([^"]*)" should be added to story "([^"]*)" with the value "([^"]*)"$`, th.theMetadataShouldBeAddedToStory)
 	s.Step(`^I should see no errors$`, th.iShouldSeeNoErrors)
 
 	s.AfterScenario(th.ScenarioCleanup)

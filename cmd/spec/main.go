@@ -27,6 +27,8 @@ func main() {
 		gitRepo,
 		developer,
 		repoStore,
+		os.Stdout,
+		os.Stderr,
 	)
 	cobra := cmd.WireUpCobraHarness(
 		cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr),

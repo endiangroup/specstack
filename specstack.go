@@ -3,7 +3,7 @@ package specstack
 import (
 	"context"
 	"fmt"
-	"os"
+	"io"
 	"path/filepath"
 
 	"github.com/endiangroup/specstack/config"
@@ -41,12 +41,16 @@ func New(
 	repo repository.Repository,
 	developer personas.Developer,
 	omniStore *persistence.Store,
+	stdout io.Writer,
+	stderr io.Writer,
 ) Controller {
 	return &appController{
 		path:      path,
 		repo:      repo,
 		developer: developer,
 		omniStore: omniStore,
+		stdout:    stdout,
+		stderr:    stderr,
 	}
 }
 
@@ -56,6 +60,8 @@ type appController struct {
 	omniStore *persistence.Store
 	developer personas.Developer
 	config    *config.Config
+	stdout    io.Writer
+	stderr    io.Writer
 }
 
 func (a *appController) Initialise() error {
@@ -145,30 +151,37 @@ func (a *appController) specificationReader() specification.Reader {
 	return specification.NewFilesystemReader(afero.NewOsFs(), a.config.Project.FeaturesDir)
 }
 
-// FIXME! Emit warnings properly
 func (a *appController) warning(warning error) {
-	fmt.Printf("WARNING: %s\n", warning.Error())
+	fmt.Fprintf(a.stderr, "WARNING: %s\n", warning.Error())
 }
 
-func (a *appController) AddMetadataToStory(storyName, key, value string) error {
-
+func (a *appController) findStoryObject(name string) (*specification.Story, io.Reader, error) {
 	reader := a.specificationReader()
-	spec, warnings, err := reader.Read()
 
+	spec, warnings, err := reader.Read()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	for _, warning := range warnings {
 		a.warning(warning)
 	}
 
-	story, err := spec.FindStory(storyName)
+	story, err := spec.FindStory(name)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	object, err := reader.ReadSource(story)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return story, object, nil
+}
+
+func (a *appController) AddMetadataToStory(storyName, key, value string) error {
+	story, object, err := a.findStoryObject(storyName)
 	if err != nil {
 		return err
 	}
@@ -177,24 +190,7 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 }
 
 func (a *appController) ShowStoryMetadata(storyName string) error {
-
-	reader := a.specificationReader()
-	spec, warnings, err := reader.Read()
-
-	if err != nil {
-		return err
-	}
-
-	for _, warning := range warnings {
-		a.warning(warning)
-	}
-
-	story, err := spec.FindStory(storyName)
-	if err != nil {
-		return err
-	}
-
-	object, err := reader.ReadSource(story)
+	_, object, err := a.findStoryObject(storyName)
 	if err != nil {
 		return err
 	}
@@ -205,7 +201,7 @@ func (a *appController) ShowStoryMetadata(storyName string) error {
 	}
 
 	printer := metadata.NewPlaintextPrintscanner()
-	if err := printer.Print(os.Stdout, entries); err != nil {
+	if err := printer.Print(a.stdout, entries); err != nil {
 		return err
 	}
 

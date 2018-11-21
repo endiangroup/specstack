@@ -1,6 +1,7 @@
 package specstack
 
 import (
+	"os"
 	"testing"
 
 	"github.com/endiangroup/specstack/config"
@@ -15,7 +16,7 @@ func Test_Initialise_ReturnsErrorIfRepositoryIsntInitialised(t *testing.T) {
 	mockRepo := &repository.MockRepository{}
 	mockDeveloper := &personas.MockDeveloper{}
 	repoStore := persistence.NewStore(&persistence.MockConfigStorer{}, &persistence.MockMetadataStorer{})
-	app := New("", mockRepo, mockDeveloper, repoStore)
+	app := New("", mockRepo, mockDeveloper, repoStore, os.Stdout, os.Stderr)
 
 	mockRepo.On("IsInitialised").Return(false)
 
@@ -27,7 +28,7 @@ func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &persistence.MockConfigStorer{}
 	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
-	app := New("", mockRepo, mockDeveloper, repoStore)
+	app := New("", mockRepo, mockDeveloper, repoStore, os.Stdout, os.Stderr)
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("username", nil)
@@ -44,7 +45,7 @@ func Test_Initialise_ReturnsErrorWhenMissingUsername(t *testing.T) {
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &persistence.MockConfigStorer{}
 	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
-	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore)
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore, os.Stdout, os.Stderr)
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("", persistence.ErrNoConfigFound)
@@ -60,7 +61,7 @@ func Test_Initialise_ReturnsErrorWhenMissingEmail(t *testing.T) {
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &persistence.MockConfigStorer{}
 	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
-	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore)
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore, os.Stdout, os.Stderr)
 
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("username", nil)
@@ -77,7 +78,7 @@ func Test_Initialise_SetsConfigDefaults(t *testing.T) {
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &persistence.MockConfigStorer{}
 	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
-	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore).(*appController)
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore, os.Stdout, os.Stderr).(*appController)
 	expectedConfig := config.NewWithDefaults()
 	expectedConfig.Project.Name = "test-dir"
 	expectedConfig.User.Name = "username"
@@ -100,7 +101,7 @@ func Test_Initialise_LoadsExistingConfigIfNotFirstRun(t *testing.T) {
 	mockDeveloper := &personas.MockDeveloper{}
 	mockConfigStore := &persistence.MockConfigStorer{}
 	repoStore := persistence.NewStore(mockConfigStore, &persistence.MockMetadataStorer{})
-	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore).(*appController)
+	app := New("/testing/test-dir", mockRepo, mockDeveloper, repoStore, os.Stdout, os.Stderr).(*appController)
 	expectedConfig := config.NewWithDefaults()
 
 	mockRepo.On("IsInitialised").Return(true)

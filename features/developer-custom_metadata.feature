@@ -22,5 +22,5 @@ Feature: Manage custom metadata
       Feature: Story1
       """
     When I run "metadata add --story story1 key value"
-    Then The metadata "key" should be added to story "story1"
+    Then The metadata "key" should be added to story "story1" with the value "value"
     And I should see no errors
