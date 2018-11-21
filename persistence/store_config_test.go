@@ -5,14 +5,14 @@ import (
 
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/errors"
-	"github.com/endiangroup/specstack/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func Test_StoreConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
-	mockConfigStorer := &repository.MockConfigStorer{}
-	repoStore := NewRepositoryStore(mockConfigStorer)
+	mockConfigStorer := &MockConfigStorer{}
+	mockMetadataStorer := &MockMetadataStorer{}
+	repoStore := NewStore(mockConfigStorer, mockMetadataStorer)
 	c := config.NewWithDefaults()
 
 	mockConfigStorer.On("SetConfig", mock.Anything, mock.Anything).Return(nil)
@@ -30,8 +30,9 @@ func Test_StoreConfig_SetsAllConfigKeyValuesOnRepository(t *testing.T) {
 }
 
 func Test_StoreConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
-	mockConfigStorer := &repository.MockConfigStorer{}
-	repoStore := NewRepositoryStore(mockConfigStorer)
+	mockConfigStorer := &MockConfigStorer{}
+	mockMetadataStorer := &MockMetadataStorer{}
+	repoStore := NewStore(mockConfigStorer, mockMetadataStorer)
 	config := config.NewWithDefaults()
 
 	mockConfigStorer.On("SetConfig", mock.Anything, mock.Anything).Return(errors.New("!!!"))
@@ -42,8 +43,9 @@ func Test_StoreConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
 }
 
 func Test_LoadConfig_SetsKeyValuesOnConfig(t *testing.T) {
-	mockConfigStorer := &repository.MockConfigStorer{}
-	repoStore := NewRepositoryStore(mockConfigStorer)
+	mockConfigStorer := &MockConfigStorer{}
+	mockMetadataStorer := &MockMetadataStorer{}
+	repoStore := NewStore(mockConfigStorer, mockMetadataStorer)
 	c := config.New()
 	c.Project.Remote = "upstream"
 	c.Project.Name = "test"

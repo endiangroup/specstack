@@ -1,6 +1,8 @@
-package repository
+package persistence
 
-import "strings"
+import (
+	"strings"
+)
 
 func NewNamespacedKeyValueStorer(keyValueStorer ConfigStorer, namespace string) ConfigStorer {
 	return &namespacedKeyValueStorer{
@@ -28,7 +30,7 @@ func (kv *namespacedKeyValueStorer) AllConfig() (map[string]string, error) {
 	}
 
 	if len(trimedKeyValues) == 0 {
-		return nil, GitConfigMissingKeyErr{}
+		return nil, ErrNoConfigFound
 	}
 
 	return trimedKeyValues, nil

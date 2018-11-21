@@ -1,7 +1,9 @@
 package specification
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"testing"
 
 	"github.com/endiangroup/snaptest"
@@ -128,4 +130,22 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_AFilesystemReaderCanReadASourcerFromDisk(t *testing.T) {
+	fs := newSpecificationFs(t, map[string]string{
+		"features/a.feature": mockFeatureA,
+	})
+	reader := NewFilesystemReader(fs, "features")
+	sourcer := &MockSourcer{}
+	sourcer.On("Source").Return("features/a.feature")
+
+	sreader, err := reader.ReadSource(sourcer)
+	require.Nil(t, err)
+
+	buf := &bytes.Buffer{}
+	_, err = io.Copy(buf, sreader)
+	require.Nil(t, err)
+
+	require.Equal(t, mockFeatureA, buf.String())
 }

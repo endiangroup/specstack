@@ -1,0 +1,17 @@
+[]metadata.Entry{
+  metadata.Entry{
+    CreatedAt: time.Time{},
+    Name: "Name A",
+    Value: "B",
+  },
+  metadata.Entry{
+    CreatedAt: time.Time{},
+    Name: "Longer name B",
+    Value: "B",
+  },
+  metadata.Entry{
+    CreatedAt: time.Time{},
+    Name: "Name C",
+    Value: "Vivamus id bibendum risus: Maecenas quis arcu non ipsum bibendum posuere. Sed vita...",
+  },
+}

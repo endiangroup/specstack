@@ -3,14 +3,13 @@ package persistence
 import (
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/errors"
-	"github.com/endiangroup/specstack/repository"
 )
 
 var (
 	ErrNoConfigFound = errors.New("no config found")
 )
 
-func (store *RepositoryStore) StoreConfig(c *config.Config) (*config.Config, error) {
+func (store *Store) StoreConfig(c *config.Config) (*config.Config, error) {
 	configMap := config.ToMap(c)
 
 	errs := errors.Errors{}
@@ -27,13 +26,9 @@ func (store *RepositoryStore) StoreConfig(c *config.Config) (*config.Config, err
 	return c, nil
 }
 
-func (store *RepositoryStore) LoadConfig() (*config.Config, error) {
+func (store *Store) LoadConfig() (*config.Config, error) {
 	configMap, err := store.ConfigStorer.AllConfig()
 	if err != nil {
-		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
-			return nil, ErrNoConfigFound
-		}
-
 		return nil, err
 	}
 

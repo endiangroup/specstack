@@ -1,0 +1,12 @@
+[]*metadata.Entry{
+  &metadata.Entry{
+    CreatedAt: time.Time{},
+    Name: "A",
+    Value: "3",
+  },
+  &metadata.Entry{
+    CreatedAt: time.Time{},
+    Name: "B",
+    Value: "0",
+  },
+}

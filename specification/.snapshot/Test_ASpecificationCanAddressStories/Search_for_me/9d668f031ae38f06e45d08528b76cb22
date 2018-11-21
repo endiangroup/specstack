@@ -17,5 +17,5 @@
     ScenarioDefinitions: p0,
     Comments: p0,
   },
-  Source: "features/update_config.feature",
+  SourceIdentifier: "features/update_config.feature",
 }

@@ -2,43 +2,82 @@ package cmd
 
 import "github.com/spf13/cobra"
 
-var (
-	cmdRoot = &cobra.Command{
+func WireUpCobraHarness(harness *CobraHarness) *cobra.Command {
+	root := &cobra.Command{
 		Use: "spec",
 	}
 
-	cmdConfig = &cobra.Command{
-		Use: "config",
-	}
+	root.SetOutput(harness.stdout)
 
-	cmdConfigList = &cobra.Command{
+	root.AddCommand(
+		commandConfig(harness),
+		commandMetadata(harness),
+	)
+
+	root.PersistentPreRunE = harness.PersistentPreRunE
+
+	return root
+}
+
+func commandConfig(harness *CobraHarness) *cobra.Command {
+	root := &cobra.Command{
+		Use:   "config",
+		Short: "Manage configuration",
+	}
+	list := &cobra.Command{
 		Use:  "list",
 		Args: cobra.NoArgs,
 	}
-	cmdConfigGet = &cobra.Command{
+	get := &cobra.Command{
 		Use:     "get <key>",
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(1),
 		Example: "$ spec config get project.name",
 	}
-	cmdConfigSet = &cobra.Command{
+	set := &cobra.Command{
 		Use:     "set <key>=<value>",
 		Example: "$ spec config set project.name=myProject",
 	}
-)
 
-func WireUpCobraHarness(harness *CobraHarness) *cobra.Command {
-	cmdConfig.AddCommand(cmdConfigList)
-	cmdConfig.AddCommand(cmdConfigGet)
-	cmdConfig.AddCommand(cmdConfigSet)
-	cmdRoot.AddCommand(cmdConfig)
+	root.AddCommand(
+		list,
+		get,
+		set,
+	)
 
-	cmdRoot.SetOutput(harness.stdout)
+	list.RunE = harness.ConfigList
+	get.RunE = harness.ConfigGet
+	set.Args = harness.SetKeyValueArgs
+	set.RunE = harness.ConfigSet
 
-	cmdRoot.PersistentPreRunE = harness.PersistentPreRunE
-	cmdConfigList.RunE = harness.ConfigList
-	cmdConfigGet.RunE = harness.ConfigGet
-	cmdConfigSet.Args = harness.ConfigSetArgs
-	cmdConfigSet.RunE = harness.ConfigSet
+	return root
+}
 
-	return cmdRoot
+func commandMetadata(harness *CobraHarness) *cobra.Command {
+	root := &cobra.Command{
+		Use:     "metadata",
+		Aliases: []string{"md"},
+		Short:   "Manage low level metadata",
+	}
+	add := &cobra.Command{
+		Use:     "add",
+		Example: "$ spec metadata add --story my_story key=value",
+	}
+	list := &cobra.Command{
+		Use:     "list",
+		Args:    cobra.ExactArgs(0),
+		Aliases: []string{"ls"},
+		Example: "$ spec metadata list --story my_story",
+	}
+
+	root.AddCommand(
+		add,
+		list,
+	)
+
+	root.PersistentFlags().String("story", "", "")
+	add.RunE = harness.MetadataAdd
+	add.Args = harness.SetKeyValueArgs
+	list.RunE = harness.MetadataList
+
+	return root
 }

@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
 	"github.com/endiangroup/specstack"
+	"github.com/endiangroup/specstack/metadata"
 	"github.com/spf13/cobra"
 )
 
@@ -43,6 +45,10 @@ func (c *CobraHarness) error(cmd *cobra.Command, returnCode int, err error) erro
 	return NewCliErr(returnCode, err)
 }
 
+func (c *CobraHarness) flagValueString(cmd *cobra.Command, name string) string {
+	return cmd.Flag(name).Value.String()
+}
+
 func (c *CobraHarness) PersistentPreRunE(cmd *cobra.Command, args []string) error {
 	if err := c.app.Initialise(); err != nil {
 		return c.error(cmd, 1, err)
@@ -75,8 +81,8 @@ func (c *CobraHarness) ConfigGet(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (c *CobraHarness) ConfigSetArgs(cmd *cobra.Command, args []string) error {
-	if err := cobra.ExactArgs(1)(cmd, args); err != nil {
+func (c *CobraHarness) SetKeyValueArgs(cmd *cobra.Command, args []string) error {
+	if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
 		return c.error(cmd, 1, err)
 	}
 
@@ -97,4 +103,45 @@ func (c *CobraHarness) ConfigSet(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
+	entityFound := false
+
+	if storyName := c.flagValueString(cmd, "story"); storyName != "" {
+		entityFound = true
+		for _, arg := range args {
+			kv := strings.Split(arg, "=")
+			if err := c.app.AddMetadataToStory(storyName, kv[0], kv[1]); err != nil {
+				return c.error(cmd, 1, err)
+			}
+		}
+	}
+
+	if !entityFound {
+		return c.error(cmd, 0, fmt.Errorf("specify a story"))
+	}
+
+	return nil
+}
+
+func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
+	var entries []*metadata.Entry
+	entityFound := false
+
+	if storyName := c.flagValueString(cmd, "story"); storyName != "" {
+		var err error
+		entries, err = c.app.GetStoryMetadata(storyName)
+		if err != nil {
+			return c.error(cmd, 1, err)
+		}
+		entityFound = true
+	}
+
+	if !entityFound {
+		return c.error(cmd, 0, fmt.Errorf("specify a story"))
+	}
+
+	printer := metadata.NewPlaintextPrintscanner()
+	return printer.Print(c.stdout, entries)
 }

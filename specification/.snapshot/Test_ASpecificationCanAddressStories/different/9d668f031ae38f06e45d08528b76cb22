@@ -17,5 +17,5 @@
     ScenarioDefinitions: p0,
     Comments: p0,
   },
-  Source: "features/create_config.feature",
+  SourceIdentifier: "features/create_config.feature",
 }
