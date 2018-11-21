@@ -14,6 +14,30 @@
   version = "v0.7.6"
 
 [[projects]]
+  digest = "1:c77e3e35960e9aeda8f3a3ad17c778b9e898cdd5d6eb907e8d7f870baed91105"
+  name = "github.com/cucumber/cucumber-messages-go"
+  packages = ["v2"]
+  pruneopts = "UT"
+  revision = "0512577f4d68b9c760b05d05f87f22e60c0d53d8"
+  version = "v2.1.1"
+
+[[projects]]
+  digest = "1:e34af935a388775bf3e123102b663740adcefa4935f55881c915c1789292cb22"
+  name = "github.com/cucumber/gherkin-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f732235a1dbe09fd6fd5164a59f46f9d8496dbf9"
+  version = "v6.0.15"
+
+[[projects]]
+  branch = "master"
+  digest = "1:ec1710b2b0dfe9fd7d2957e7e343aece56d72a31c408362a1d46e303faad1650"
+  name = "github.com/cucumber/pretty-formatter-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "efeae4a82a5742d4b10fe45fa212956ff6a0d288"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -28,6 +52,20 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "2524ada5b7284ba268711456cd205482f92011c8"
+
+[[projects]]
+  digest = "1:cda5c079f622734322f6e198c53078e768e797104908060a11e1f8837f677e97"
+  name = "github.com/gogo/protobuf"
+  packages = [
+    "io",
+    "jsonpb",
+    "proto",
+    "sortkeys",
+    "types",
+  ]
+  pruneopts = "UT"
+  revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
+  version = "v1.1.1"
 
 [[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
@@ -129,6 +167,8 @@
   input-imports = [
     "github.com/DATA-DOG/godog",
     "github.com/DATA-DOG/godog/gherkin",
+    "github.com/cucumber/gherkin-go",
+    "github.com/cucumber/pretty-formatter-go",
     "github.com/endiangroup/snaptest",
     "github.com/schollz/closestmatch",
     "github.com/spf13/afero",

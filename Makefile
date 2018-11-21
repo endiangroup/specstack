@@ -1,12 +1,15 @@
 .PHONY: install
-install: vendor $(GOPATH)/bin/spec
+install: vendor $(GOPATH)/bin/spec $(GOPATH)/bin/specfmt
 
 $(GOPATH)/bin/spec:
 	@go install github.com/endiangroup/specstack/cmd/spec
+  
+$(GOPATH)/bin/specfmt:
+	go install github.com/endiangroup/specstack/cmd/specfmt
 
 .PHONY: clean
 clean:
-	@rm -rf vendor $(GOPATH)/bin/spec
+	@rm -rf vendor $(GOPATH)/bin/spec $(GOPATH)/bin/specfmt
 
 vendor: dep
 	@dep ensure --vendor-only
@@ -17,8 +20,9 @@ test: dep godog
 	(cd cmd/ && godog ../features)
 
 .PHONY: lint
-lint: golangci-lint
+lint: golangci-lint $(GOPATH)/bin/specfmt
 	golangci-lint run ./...
+	specfmt -l features/*.feature
 
 .PHONY: mock
 dir ?= .
