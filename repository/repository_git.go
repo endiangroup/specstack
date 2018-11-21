@@ -190,10 +190,15 @@ func (repo *Git) extractJsonMessagesFromNote(note string, raw *[][]byte) error {
 func (repo *Git) extractJsonMessagesFromObjectId(id string, raw *[][]byte) error {
 	note, err := repo.runGitCommand("notes", "--ref", gitNotesRef, "show", id)
 
-	// If there is no check and the note recovery fails, it's not an
-	// error; it means there are no notes for the id.
+	// If there is no check and the note recovery fails, it's not an always
+	// error; it may mean there are no notes for the id.
 	if err != nil {
-		return nil
+		if e, ok := err.(*GitCmdErr); ok {
+			if strings.HasPrefix(e.Stderr, "error: no note found for object") {
+				return nil
+			}
+		}
+		return err
 	}
 
 	return repo.extractJsonMessagesFromNote(note, raw)
