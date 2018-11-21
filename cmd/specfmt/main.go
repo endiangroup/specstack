@@ -15,6 +15,7 @@ import (
 
 var dialectFlag = flag.String("dialect", "en", "Gherkin Dialect")
 var writeFlag = flag.Bool("w", false, "write result to (source) file instead of stdout")
+var lintFlag = flag.Bool("l", false, "list files whoe formatting differes from specfmt's")
 
 func main() {
 	flag.Parse()
@@ -25,28 +26,60 @@ func main() {
 		shutdown()
 	}()
 
-	if len(paths) == 0 {
+	switch {
+	case len(paths) == 0:
 		// Results mode. Read messages from STDIN
 		pretty.ProcessMessages(os.Stdin, output, true)
-	} else {
-		// Pretty formatting mode.
-		buf := &bytes.Buffer{}
-		_, err := gherkin.Messages(
-			[]string{paths[0]},
-			nil,
-			*dialectFlag,
-			true,
-			true,
-			true,
-			buf,
-			false,
-		)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to parse Gherkin: %+v\n", err)
-			os.Exit(1)
+
+	case *lintFlag:
+		// Linting mode. List files that don't match.
+		for _, path := range paths {
+			invalid := false
+			if !assertFileLint(path) {
+				fmt.Fprintln(os.Stderr, path)
+				invalid = true
+			}
+
+			if invalid {
+				os.Exit(1)
+			}
 		}
+
+	default:
+		// Pretty formatting mode.
+		buf := loadFeatureFile(paths...)
 		pretty.ProcessMessages(buf, output, false)
 	}
+}
+
+func loadFeatureFile(names ...string) *bytes.Buffer {
+	buf := &bytes.Buffer{}
+	if _, err := gherkin.Messages(
+		names,
+		nil,
+		*dialectFlag,
+		true,
+		true,
+		true,
+		buf,
+		false,
+	); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to parse Gherkin: %+v\n", err)
+		os.Exit(1)
+	}
+	return buf
+}
+
+func assertFileLint(path string) bool {
+	input := loadFeatureFile(path)
+	buf := &bytes.Buffer{}
+	feature, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load Gherkin: %+v\n", err)
+		os.Exit(1)
+	}
+	pretty.ProcessMessages(input, buf, false)
+	return bytes.Equal(buf.Bytes(), feature)
 }
 
 func outputStream(finalPath string) (stream *bufio.Writer, shutdown func()) {

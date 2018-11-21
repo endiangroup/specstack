@@ -20,8 +20,9 @@ test: dep godog
 	(cd cmd/ && godog ../features)
 
 .PHONY: lint
-lint: golangci-lint
+lint: golangci-lint $(GOPATH)/bin/specfmt
 	golangci-lint run ./...
+	specfmt -l features/*.feature
 
 .PHONY: mock
 dir ?= .
