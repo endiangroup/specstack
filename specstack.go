@@ -33,7 +33,7 @@ type Controller interface {
 	GetConfiguration(string) (string, error)
 	SetConfiguration(string, string) error
 	AddMetadataToStory(storyName, key, value string) error
-	ShowStoryMetadata(string) error
+	GetStoryMetadata(string) ([]*metadata.Entry, error)
 }
 
 func New(
@@ -189,21 +189,11 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 	return a.developer.AddMetadataToStory(a.newContextWithConfig(), story, object, key, value)
 }
 
-func (a *appController) ShowStoryMetadata(storyName string) error {
+func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, error) {
 	_, object, err := a.findStoryObject(storyName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	entries, err := metadata.ReadAll(a.omniStore, object)
-	if err != nil {
-		return err
-	}
-
-	printer := metadata.NewPlaintextPrintscanner()
-	if err := printer.Print(a.stdout, entries); err != nil {
-		return err
-	}
-
-	return nil
+	return metadata.ReadAll(a.omniStore, object)
 }

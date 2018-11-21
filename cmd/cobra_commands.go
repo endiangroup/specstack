@@ -21,7 +21,8 @@ func WireUpCobraHarness(harness *CobraHarness) *cobra.Command {
 
 func commandConfig(harness *CobraHarness) *cobra.Command {
 	root := &cobra.Command{
-		Use: "config",
+		Use:   "config",
+		Short: "Manage configuration",
 	}
 	list := &cobra.Command{
 		Use:  "list",
@@ -45,7 +46,7 @@ func commandConfig(harness *CobraHarness) *cobra.Command {
 
 	list.RunE = harness.ConfigList
 	get.RunE = harness.ConfigGet
-	set.Args = harness.ConfigSetArgs
+	set.Args = harness.SetKeyValueArgs
 	set.RunE = harness.ConfigSet
 
 	return root
@@ -53,16 +54,19 @@ func commandConfig(harness *CobraHarness) *cobra.Command {
 
 func commandMetadata(harness *CobraHarness) *cobra.Command {
 	root := &cobra.Command{
-		Use: "metadata",
+		Use:     "metadata",
+		Aliases: []string{"md"},
+		Short:   "Manage low level metadata",
 	}
 	add := &cobra.Command{
-		Use:  "add",
-		Args: cobra.ExactArgs(2),
+		Use:     "add",
+		Example: "$ spec metadata add --story my_story key=value",
 	}
 	list := &cobra.Command{
 		Use:     "list",
 		Args:    cobra.ExactArgs(0),
 		Aliases: []string{"ls"},
+		Example: "$ spec metadata list --story my_story",
 	}
 
 	root.AddCommand(
@@ -72,6 +76,7 @@ func commandMetadata(harness *CobraHarness) *cobra.Command {
 
 	root.PersistentFlags().String("story", "", "")
 	add.RunE = harness.MetadataAdd
+	add.Args = harness.SetKeyValueArgs
 	list.RunE = harness.MetadataList
 
 	return root
