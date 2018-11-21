@@ -97,7 +97,7 @@
         },
         Comments: p0,
       },
-      Source: "features/a.feature",
+      SourceIdentifier: "features/a.feature",
     },
   },
 }

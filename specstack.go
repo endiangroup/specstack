@@ -2,14 +2,18 @@ package specstack
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"io"
 	"path/filepath"
 
 	"github.com/endiangroup/specstack/config"
+	"github.com/endiangroup/specstack/errors"
+	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
 	"github.com/endiangroup/specstack/repository"
+	"github.com/endiangroup/specstack/specification"
+	"github.com/spf13/afero"
 )
 
 type MissingRequiredConfigValueErr string
@@ -28,23 +32,36 @@ type Controller interface {
 	ListConfiguration() (map[string]string, error)
 	GetConfiguration(string) (string, error)
 	SetConfiguration(string, string) error
+	AddMetadataToStory(storyName, key, value string) error
+	GetStoryMetadata(string) ([]*metadata.Entry, error)
 }
 
-func New(path string, repo repository.Repository, developer personas.Developer, configStore config.Storer) Controller {
+func New(
+	path string,
+	repo repository.Repository,
+	developer personas.Developer,
+	omniStore *persistence.Store,
+	stdout io.Writer,
+	stderr io.Writer,
+) Controller {
 	return &appController{
-		path:        path,
-		repo:        repo,
-		developer:   developer,
-		configStore: configStore,
+		path:      path,
+		repo:      repo,
+		developer: developer,
+		omniStore: omniStore,
+		stdout:    stdout,
+		stderr:    stderr,
 	}
 }
 
 type appController struct {
-	path        string
-	repo        repository.Repository
-	configStore config.Storer
-	developer   personas.Developer
-	config      *config.Config
+	path      string
+	repo      repository.Repository
+	omniStore *persistence.Store
+	developer personas.Developer
+	config    *config.Config
+	stdout    io.Writer
+	stderr    io.Writer
 }
 
 func (a *appController) Initialise() error {
@@ -59,7 +76,7 @@ func (a *appController) Initialise() error {
 }
 
 func (a *appController) loadOrCreateConfig() (*config.Config, error) {
-	c, err := config.Load(a.configStore)
+	c, err := config.Load(a.omniStore)
 	if a.isFirstRun(err) {
 		return a.createDefaultConfig()
 	} else if err != nil {
@@ -81,7 +98,7 @@ func (a *appController) createDefaultConfig() (*config.Config, error) {
 		return nil, err
 	}
 
-	return config.Create(a.configStore, c)
+	return config.Create(a.omniStore, c)
 }
 
 func (a *appController) setProjectDefaults(c *config.Config) {
@@ -95,7 +112,7 @@ func (a *appController) setUserDefaults(c *config.Config) error {
 
 	c.User.Name, err = a.repo.GetConfig(userName)
 	if err != nil {
-		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
+		if err == persistence.ErrNoConfigFound {
 			return MissingRequiredConfigValueErr(userName)
 		}
 
@@ -104,7 +121,7 @@ func (a *appController) setUserDefaults(c *config.Config) error {
 
 	c.User.Email, err = a.repo.GetConfig(userEmail)
 	if err != nil {
-		if _, ok := err.(repository.GitConfigMissingKeyErr); ok {
+		if err == persistence.ErrNoConfigFound {
 			return MissingRequiredConfigValueErr(userEmail)
 		}
 
@@ -128,4 +145,55 @@ func (a *appController) SetConfiguration(name, value string) error {
 
 func (a *appController) newContextWithConfig() context.Context {
 	return config.InContext(context.TODO(), a.config)
+}
+
+func (a *appController) specificationReader() specification.Reader {
+	return specification.NewFilesystemReader(afero.NewOsFs(), a.config.Project.FeaturesDir)
+}
+
+func (a *appController) warning(warning error) {
+	fmt.Fprintf(a.stderr, "WARNING: %s\n", warning.Error())
+}
+
+func (a *appController) findStoryObject(name string) (*specification.Story, io.Reader, error) {
+	reader := a.specificationReader()
+
+	spec, warnings, err := reader.Read()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, warning := range warnings {
+		a.warning(warning)
+	}
+
+	story, err := spec.FindStory(name)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	object, err := reader.ReadSource(story)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return story, object, nil
+}
+
+func (a *appController) AddMetadataToStory(storyName, key, value string) error {
+	story, object, err := a.findStoryObject(storyName)
+	if err != nil {
+		return err
+	}
+
+	return a.developer.AddMetadataToStory(a.newContextWithConfig(), story, object, key, value)
+}
+
+func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, error) {
+	_, object, err := a.findStoryObject(storyName)
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata.ReadAll(a.omniStore, object)
 }

@@ -15,7 +15,7 @@ type stdInOutErr struct {
 }
 
 func Test_PersistenPreRunE_ReturnsInitialiseError(t *testing.T) {
-	mockSs := &specstack.MockSpecStack{}
+	mockSs := &specstack.MockController{}
 	h, _ := setupHarness(mockSs)
 
 	mockSs.On("Initialise").Return(errors.New("!!!"))
@@ -25,7 +25,7 @@ func Test_PersistenPreRunE_ReturnsInitialiseError(t *testing.T) {
 	assert.Equal(t, err, NewCliErr(1, errors.New("!!!")))
 }
 
-func setupHarness(mockSs *specstack.MockSpecStack) (*CobraHarness, *stdInOutErr) {
+func setupHarness(mockSs *specstack.MockController) (*CobraHarness, *stdInOutErr) {
 	io := stdInOutErr{}
 	return NewCobraHarness(mockSs, &io.stdin, &io.stdout, &io.stderr), &io
 }

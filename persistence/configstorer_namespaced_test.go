@@ -1,4 +1,4 @@
-package repository
+package persistence
 
 import (
 	"testing"
@@ -75,5 +75,5 @@ func Test_All_ReturnsKeyMissingErrorIfNoKeysInNamespace(t *testing.T) {
 
 	_, err := configstorer.AllConfig()
 
-	assert.Equal(t, GitConfigMissingKeyErr{}, err)
+	assert.Equal(t, ErrNoConfigFound, err)
 }

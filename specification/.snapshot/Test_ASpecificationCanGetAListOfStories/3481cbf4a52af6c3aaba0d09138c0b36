@@ -95,7 +95,7 @@
       },
       Comments: p0,
     },
-    Source: "features/a.feature",
+    SourceIdentifier: "features/a.feature",
   },
   &specification.Story{
     Feature: &gherkin.Feature{
@@ -192,6 +192,6 @@
       },
       Comments: p0,
     },
-    Source: "features/b.feature",
+    SourceIdentifier: "features/b.feature",
   },
 }

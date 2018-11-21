@@ -17,11 +17,22 @@ func main() {
 	}
 
 	gitRepo := repository.NewGitRepository(dir)
-	repoStore := persistence.NewRepositoryStore(repository.NewNamespacedKeyValueStorer(gitRepo, "specstack"))
+	repoStore := persistence.NewStore(
+		persistence.NewNamespacedKeyValueStorer(gitRepo, "specstack"),
+		gitRepo,
+	)
 	developer := personas.NewDeveloper(repoStore)
-	app := specstack.New(dir, gitRepo, developer, repoStore)
-
-	cobra := cmd.WireUpCobraHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))
+	app := specstack.New(
+		dir,
+		gitRepo,
+		developer,
+		repoStore,
+		os.Stdout,
+		os.Stderr,
+	)
+	cobra := cmd.WireUpCobraHarness(
+		cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr),
+	)
 
 	if err := cobra.Execute(); err != nil {
 		if cliErr, ok := err.(cmd.CliErr); ok {

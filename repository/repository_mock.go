@@ -53,27 +53,6 @@ func (_m *MockRepository) GetConfig(_a0 string) (string, error) {
 	return r0, r1
 }
 
-// GetMetadata provides a mock function with given fields: key
-func (_m *MockRepository) GetMetadata(key string) (string, error) {
-	ret := _m.Called(key)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(key)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(key)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Init provides a mock function with given fields:
 func (_m *MockRepository) Init() error {
 	ret := _m.Called()
@@ -109,20 +88,6 @@ func (_m *MockRepository) SetConfig(_a0 string, _a1 string) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, string) error); ok {
 		r0 = rf(_a0, _a1)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SetMetadata provides a mock function with given fields: key, value
-func (_m *MockRepository) SetMetadata(key string, value string) error {
-	ret := _m.Called(key, value)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(key, value)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -1,7 +1,10 @@
 package metadata
 
-// Storer allows the creation (via appending) and deletion of metadata
+import (
+	"io"
+)
+
 type Storer interface {
-	Append() (EntryReadWriter, error)
-	Delete(EntryReader) error
+	StoreMetadata(key io.Reader, value interface{}) error
+	ReadAllMetadata(key io.Reader, into interface{}) error
 }

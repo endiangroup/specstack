@@ -3,6 +3,7 @@ package specification
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -48,6 +49,10 @@ func (f *Filesystem) Read() (*Specification, errors.Warnings, error) {
 	}
 
 	return spec, warnings, nil
+}
+
+func (f *Filesystem) ReadSource(s Sourcer) (io.Reader, error) {
+	return f.Fs.Open(s.Source())
 }
 
 func (f *Filesystem) featuresAndStoriesWalkFunc(spec *Specification, warnings *errors.Warnings) filepath.WalkFunc {

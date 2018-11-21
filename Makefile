@@ -1,3 +1,16 @@
+.PHONY: install
+install: vendor $(GOPATH)/bin/spec
+
+$(GOPATH)/bin/spec:
+	@go install github.com/endiangroup/specstack/cmd/spec
+
+.PHONY: clean
+clean:
+	@rm -rf vendor $(GOPATH)/bin/spec
+
+vendor: dep
+	@dep ensure --vendor-only
+
 .PHONY: test
 test: dep godog
 	go test ./...

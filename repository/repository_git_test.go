@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,6 +17,8 @@ func tempDirectory(t *testing.T) (path string, shutdown func()) {
 	require.Nil(t, err)
 	require.NotEmpty(t, dir)
 
+	require.Nil(t, os.Chdir(dir))
+
 	return dir, func() {
 		require.Nil(t, os.RemoveAll(dir))
 	}
@@ -24,7 +27,7 @@ func tempDirectory(t *testing.T) (path string, shutdown func()) {
 func initialisedGitRepoDir(t *testing.T) (path string, r *Git, shutdown func()) {
 
 	dir, shutdown := tempDirectory(t)
-	repo := NewGitRepository(dir).(*Git)
+	repo := NewGitRepository(dir)
 
 	require.Nil(t, repo.Init())
 
@@ -35,6 +38,40 @@ func initialisedGitRepoDir(t *testing.T) (path string, r *Git, shutdown func()) 
 	require.Nil(t, err)
 
 	return dir, repo, shutdown
+}
+
+func assertGitCmd(t *testing.T, repo *Git, expectedOutput string, input ...string) {
+
+	output, err := repo.runGitCommand(input...)
+	require.Nil(t, err)
+
+	if expectedOutput != "" {
+		require.Equal(t, expectedOutput, output)
+	}
+}
+
+func setFileMetadata(t *testing.T, repo *Git, fileName, value string) {
+	f0, err := os.Open(fileName)
+	require.NotNil(t, f0)
+	require.Nil(t, err)
+	require.Nil(t, repo.SetMetadata(f0, []byte(value)))
+	require.Nil(t, f0.Close())
+}
+
+func getFileMetadata(t *testing.T, repo *Git, fileName string) (value []string) {
+	f0, err := os.Open(fileName)
+	require.NotNil(t, f0)
+	require.Nil(t, err)
+
+	raw, err := repo.GetMetadata(f0)
+	require.Nil(t, err)
+
+	for _, v := range raw {
+		value = append(value, string(v))
+	}
+
+	require.Nil(t, f0.Close())
+	return
 }
 
 func Test_AnUnitialisedGitRepositoryCanBeRecognisedByAGitInstance(t *testing.T) {
@@ -68,24 +105,93 @@ func Test_AnInitialisedGitRepositoryCanHashObjects(t *testing.T) {
 		{"some other long string", "5370464603c6098cb422c98b0f3e9a0fdb9c83f8"},
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.input), func(t *testing.T) {
-			output, err := repo.objectID(test.input)
+			output, err := repo.objectID(bytes.NewBufferString(test.input))
 			require.Nil(t, err)
 			require.Equal(t, test.output, output)
 		})
 	}
 }
 
-func Test_AnInitialisedGitRepositoryCanSetMetadata(t *testing.T) {
+func Test_AnInitialisedGitRepositoryCanSetBasicMetadata(t *testing.T) {
 
 	_, repo, shutdown := initialisedGitRepoDir(t)
 	defer shutdown()
 
-	key, data := time.Now().String(), time.Now().String()
+	key, data := time.Now().String(), []byte(time.Now().String())
 
-	require.Nil(t, repo.SetMetadata(key, data))
+	require.Nil(t, repo.SetMetadata(bytes.NewBufferString(key), data))
 
-	output, err := repo.GetMetadata(key)
-	require.Nil(t, err)
+	t.Run("Get correct output", func(t *testing.T) {
+		output, err := repo.GetMetadata(bytes.NewBufferString(key))
+		require.Nil(t, err)
+		require.Equal(t, [][]byte{data}, output)
+	})
 
-	require.Equal(t, data, output)
+	t.Run("Get nothing when there's no note", func(t *testing.T) {
+		output, err := repo.GetMetadata(bytes.NewBufferString("doesn't exist"))
+		require.Nil(t, err)
+		require.Equal(t, [][]byte{}, output)
+	})
+}
+
+func Test_AnInitialisedGitRepoCanTrackAndSetMetadataAtTheFileLevel(t *testing.T) {
+
+	_, repo, shutdown := initialisedGitRepoDir(t)
+	defer shutdown()
+
+	t.Run("Create a file", func(t *testing.T) {
+		require.Nil(t, ioutil.WriteFile("a.txt", []byte("1"), os.ModePerm))
+	})
+
+	t.Run("Commit the file", func(t *testing.T) {
+		assertGitCmd(t, repo, "", "add", "a.txt")
+		assertGitCmd(t, repo, "", "commit", "-m", "Commit A")
+	})
+
+	t.Run("Set some metadata", func(t *testing.T) {
+		setFileMetadata(t, repo, "a.txt", "m0")
+	})
+
+	t.Run("Verify the metadata", func(t *testing.T) {
+		require.Equal(t, getFileMetadata(t, repo, "a.txt"), []string{"m0"})
+	})
+
+	t.Run("Change the file", func(t *testing.T) {
+		require.Nil(t, ioutil.WriteFile("a.txt", []byte("2"), os.ModePerm))
+	})
+
+	t.Run("Commit the file again", func(t *testing.T) {
+		assertGitCmd(t, repo, "", "add", "a.txt")
+		assertGitCmd(t, repo, "", "commit", "-m", "Commit B")
+	})
+
+	t.Run("Check the metadata after commit", func(t *testing.T) {
+		require.Equal(t, []string{"m0"}, getFileMetadata(t, repo, "a.txt"))
+	})
+
+	t.Run("Add some more metadata", func(t *testing.T) {
+		setFileMetadata(t, repo, "a.txt", "m1")
+		require.Equal(t, []string{"m0", "m1"}, getFileMetadata(t, repo, "a.txt"))
+	})
+
+	t.Run("Rename the file", func(t *testing.T) {
+		require.Nil(t, os.Rename("a.txt", "b.txt"))
+		require.Equal(t, []string{"m0", "m1"}, getFileMetadata(t, repo, "b.txt"))
+	})
+
+	t.Run("Commit the file again", func(t *testing.T) {
+		assertGitCmd(t, repo, "", "add", "a.txt")
+		assertGitCmd(t, repo, "", "add", "b.txt")
+		assertGitCmd(t, repo, "", "commit", "-m", "Commit c")
+	})
+
+	t.Run("Check the metadata after commit", func(t *testing.T) {
+		require.Equal(t, []string{"m0", "m1"}, getFileMetadata(t, repo, "b.txt"))
+	})
+
+	t.Run("Add some more metadata whtout a commit", func(t *testing.T) {
+		setFileMetadata(t, repo, "b.txt", "m2")
+		setFileMetadata(t, repo, "b.txt", "m3")
+		require.Equal(t, []string{"m0", "m1", "m2", "m3"}, getFileMetadata(t, repo, "b.txt"))
+	})
 }
