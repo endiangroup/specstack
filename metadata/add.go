@@ -6,8 +6,7 @@ import (
 )
 
 func assertHeaders(entry *Entry) error {
-	zeroTime := time.Time{}
-	if entry.CreatedAt == zeroTime {
+	if entry.CreatedAt.IsZero() {
 		entry.CreatedAt = time.Now()
 	}
 
