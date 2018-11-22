@@ -313,7 +313,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have a configured project directory$`, th.iHaveAConfiguredProjectDirectory)
 	s.Step(`^The metadata "([^"]*)" should be added to story "([^"]*)" with the value "([^"]*)"$`, th.theMetadataShouldBeAddedToStory)
 	s.Step(`^I should see no errors$`, th.iShouldSeeNoErrors)
-	s.Step(`^"([^"]*)" has the following metadata:$`, th.hasTheFollowingMetadata)
+	s.Step(`^My story "([^"]*)" has the following metadata:$`, th.hasTheFollowingMetadata)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }

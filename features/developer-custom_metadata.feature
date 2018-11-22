@@ -31,7 +31,7 @@ Feature: Manage custom metadata
       """
       Feature: Story1
       """
-    And "story1" has the following metadata:
+    And My story "story1" has the following metadata:
       | Name                 | Value                                                                                       |
       | Metadata one         | Value one                                                                                   |
       | Metadata two         | Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit |
