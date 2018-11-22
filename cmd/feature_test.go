@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/DATA-DOG/godog"
@@ -91,7 +92,24 @@ func (t *testHarness) iHaveAProjectDirectory() error {
 }
 
 func (t *testHarness) iRunTheCommand(cmd string) error {
-	t.cobra.SetArgs(strings.Split(cmd, " "))
+	r := regexp.MustCompile(`[^\s"']+|"([^"]*)"|'([^']*)`)
+
+	processed := []string{}
+	concat := false
+	index := 0
+	for i, arg := range r.FindAllString(cmd, -1) {
+		value := strings.Trim(arg, `"`)
+		if i > 0 && (arg == "=" || concat) {
+			processed[index-1] += value
+			concat = true
+			continue
+		}
+		processed = append(processed, value)
+		concat = false
+		index++
+	}
+
+	t.cobra.SetArgs(processed)
 	err := t.cobra.Execute()
 	if err != nil {
 		if cliErr, ok := err.(CliErr); ok {
@@ -250,6 +268,22 @@ func (t *testHarness) iShouldSeeNoErrors() error {
 	return nil
 }
 
+func (t *testHarness) hasTheFollowingMetadata(storyName string, table *gherkin.DataTable) error {
+	for _, row := range table.Rows[1:] {
+		if err := t.iRunTheCommand(
+			fmt.Sprintf(
+				`metadata add --story "%s" "%s"="%s"`,
+				storyName,
+				row.Cells[0].Value, row.Cells[1].Value,
+			),
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (t *testHarness) Errorf(format string, args ...interface{}) {
 	t.assertError = fmt.Errorf(format, args...)
 }
@@ -279,6 +313,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have a configured project directory$`, th.iHaveAConfiguredProjectDirectory)
 	s.Step(`^The metadata "([^"]*)" should be added to story "([^"]*)" with the value "([^"]*)"$`, th.theMetadataShouldBeAddedToStory)
 	s.Step(`^I should see no errors$`, th.iShouldSeeNoErrors)
+	s.Step(`^"([^"]*)" has the following metadata:$`, th.hasTheFollowingMetadata)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }
