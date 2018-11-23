@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/cucumber/gherkin-go"
-	"github.com/cucumber/pretty-formatter-go"
+	pretty "github.com/endiangroup/pretty-formatter-go"
 )
 
 var dialectFlag = flag.String("dialect", "en", "Gherkin Dialect")
@@ -20,7 +20,12 @@ var lintFlag = flag.Bool("l", false, "list files whoe formatting differes from s
 func main() {
 	flag.Parse()
 	paths := flag.Args()
-	output, shutdown := outputStream(paths[0])
+	path := ""
+
+	if len(paths) > 0 {
+		path = paths[0]
+	}
+	output, shutdown := outputStream(path)
 	defer func() {
 		output.Flush()
 		shutdown()
@@ -83,7 +88,7 @@ func assertFileLint(path string) bool {
 }
 
 func outputStream(finalPath string) (stream *bufio.Writer, shutdown func()) {
-	if !*writeFlag {
+	if !*writeFlag || finalPath == "" {
 		return bufio.NewWriter(os.Stdout), func() {}
 	}
 

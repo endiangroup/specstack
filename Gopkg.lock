@@ -30,20 +30,20 @@
   version = "v6.0.15"
 
 [[projects]]
-  branch = "master"
-  digest = "1:ec1710b2b0dfe9fd7d2957e7e343aece56d72a31c408362a1d46e303faad1650"
-  name = "github.com/cucumber/pretty-formatter-go"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "efeae4a82a5742d4b10fe45fa212956ff6a0d288"
-
-[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:32297b8fdeb42ba4ace38e9d9bd1325aa35d2f715f53fb1d90a683c92864ef4c"
+  name = "github.com/endiangroup/pretty-formatter-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "11cde72238f557e2f52052ed42bf18baa11ea330"
 
 [[projects]]
   branch = "master"
@@ -168,7 +168,7 @@
     "github.com/DATA-DOG/godog",
     "github.com/DATA-DOG/godog/gherkin",
     "github.com/cucumber/gherkin-go",
-    "github.com/cucumber/pretty-formatter-go",
+    "github.com/endiangroup/pretty-formatter-go",
     "github.com/endiangroup/snaptest",
     "github.com/schollz/closestmatch",
     "github.com/spf13/afero",
