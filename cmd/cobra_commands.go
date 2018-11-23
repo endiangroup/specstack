@@ -11,7 +11,10 @@ func WireUpCobraHarness(harness *CobraHarness) *cobra.Command {
 
 	root.AddCommand(
 		commandConfig(harness),
+		commandGitHooks(harness),
 		commandMetadata(harness),
+		commandPull(harness),
+		commandPush(harness),
 	)
 
 	root.PersistentPreRunE = harness.PersistentPreRunE
@@ -52,6 +55,27 @@ func commandConfig(harness *CobraHarness) *cobra.Command {
 	return root
 }
 
+func commandGitHooks(harness *CobraHarness) *cobra.Command {
+	root := &cobra.Command{
+		Use:     "git-hook",
+		Aliases: []string{"gh"},
+		Short:   "Low-level git hook interactions",
+	}
+	exec := &cobra.Command{
+		Use:     "exec <pre-commit|post-commit>",
+		Args:    cobra.ExactArgs(1),
+		Example: "$ spec git-hook exec pre-commit",
+	}
+
+	root.AddCommand(
+		exec,
+	)
+
+	exec.RunE = harness.GitHookExec
+
+	return root
+}
+
 func commandMetadata(harness *CobraHarness) *cobra.Command {
 	root := &cobra.Command{
 		Use:     "metadata",
@@ -78,6 +102,28 @@ func commandMetadata(harness *CobraHarness) *cobra.Command {
 	add.RunE = harness.MetadataAdd
 	add.Args = harness.SetKeyValueArgs
 	list.RunE = harness.MetadataList
+
+	return root
+}
+
+func commandPull(harness *CobraHarness) *cobra.Command {
+	root := &cobra.Command{
+		Use:   "pull",
+		Short: "Update local repository's metadata",
+	}
+
+	root.RunE = harness.Pull
+
+	return root
+}
+
+func commandPush(harness *CobraHarness) *cobra.Command {
+	root := &cobra.Command{
+		Use:   "push",
+		Short: "Update remote repository's metadata",
+	}
+
+	root.RunE = harness.Push
 
 	return root
 }

@@ -34,6 +34,10 @@ type Controller interface {
 	SetConfiguration(string, string) error
 	AddMetadataToStory(storyName, key, value string) error
 	GetStoryMetadata(string) ([]*metadata.Entry, error)
+	RunRepoPostCommitHook() error
+	RunRepoPreCommitHook() error
+	Push() error
+	Pull() error
 }
 
 func New(
@@ -196,4 +200,21 @@ func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, e
 	}
 
 	return metadata.ReadAll(a.omniStore, object)
+}
+
+func (a *appController) RunRepoPreCommitHook() error {
+	return nil
+}
+
+func (a *appController) RunRepoPostCommitHook() error {
+	return nil
+}
+
+func (a *appController) Pull() error {
+	return nil
+}
+
+func (a *appController) Push() error {
+	fmt.Println("FIXME")
+	return nil
 }

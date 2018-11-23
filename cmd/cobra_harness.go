@@ -45,6 +45,16 @@ func (c *CobraHarness) error(cmd *cobra.Command, returnCode int, err error) erro
 	return NewCliErr(returnCode, err)
 }
 
+func (c *CobraHarness) errorOrNil(cmd *cobra.Command, returnCode int, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	cmd.Root().SetOutput(c.stderr)
+
+	return NewCliErr(returnCode, err)
+}
+
 func (c *CobraHarness) flagValueString(cmd *cobra.Command, name string) string {
 	return cmd.Flag(name).Value.String()
 }
@@ -144,4 +154,24 @@ func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
 
 	printer := metadata.NewPlaintextPrintscanner()
 	return printer.Print(c.stdout, entries)
+}
+
+func (c *CobraHarness) GitHookExec(cmd *cobra.Command, args []string) error {
+	switch args[0] {
+	case "pre-commit":
+		return c.errorOrNil(cmd, 1, c.app.RunRepoPreCommitHook())
+
+	case "post-commit":
+		return c.errorOrNil(cmd, 1, c.app.RunRepoPostCommitHook())
+	}
+
+	return c.error(cmd, 1, fmt.Errorf("invalid hook name"))
+}
+
+func (c *CobraHarness) Pull(cmd *cobra.Command, args []string) error {
+	return c.errorOrNil(cmd, 1, c.app.Pull())
+}
+
+func (c *CobraHarness) Push(cmd *cobra.Command, args []string) error {
+	return c.errorOrNil(cmd, 1, c.app.Push())
 }

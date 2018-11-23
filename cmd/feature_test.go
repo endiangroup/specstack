@@ -250,6 +250,66 @@ func (t *testHarness) iShouldSeeNoErrors() error {
 	return nil
 }
 
+func (t *testHarness) iHaveAGitinitialisedProjectDirectory() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iHaveNotSetAGitRemote() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iHaveSetThePullingModeToSemiautomatic() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iAddSomeMetadata() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iRunAGitPull() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iMakeACommit() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iHaveSetThePullingModeToAutomatic() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iHaveAProperlyConfiguredProjectDirectory() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) theRemoteGitServerIsntRespondingProperly() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iShouldSeeAnAppropriateErrorFromGit() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iShouldSeeAnAppropriateWarningFromGit() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) thereAreNewMetadataOnTheRemoteGitServer() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) myMetadataShouldBeFetchedFromTheRemoteGitServer() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iShouldNotSeeAnError() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) myMetadataShouldBePushedToTheRemoteGitServer() error {
+	return godog.ErrPending
+}
+
 func (t *testHarness) Errorf(format string, args ...interface{}) {
 	t.assertError = fmt.Errorf(format, args...)
 }
@@ -279,6 +339,21 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have a configured project directory$`, th.iHaveAConfiguredProjectDirectory)
 	s.Step(`^The metadata "([^"]*)" should be added to story "([^"]*)" with the value "([^"]*)"$`, th.theMetadataShouldBeAddedToStory)
 	s.Step(`^I should see no errors$`, th.iShouldSeeNoErrors)
+	s.Step(`^I have a git-initialised project directory$`, th.iHaveAGitinitialisedProjectDirectory)
+	s.Step(`^I have not set a git remote$`, th.iHaveNotSetAGitRemote)
+	s.Step(`^I have set the pulling mode to semi-automatic$`, th.iHaveSetThePullingModeToSemiautomatic)
+	s.Step(`^I add some metadata$`, th.iAddSomeMetadata)
+	s.Step(`^I run a git pull$`, th.iRunAGitPull)
+	s.Step(`^I make a commit$`, th.iMakeACommit)
+	s.Step(`^I have set the pulling mode to automatic$`, th.iHaveSetThePullingModeToAutomatic)
+	s.Step(`^I have a properly configured project directory$`, th.iHaveAProperlyConfiguredProjectDirectory)
+	s.Step(`^The remote git server isn\'t responding properly$`, th.theRemoteGitServerIsntRespondingProperly)
+	s.Step(`^I should see an appropriate error from git$`, th.iShouldSeeAnAppropriateErrorFromGit)
+	s.Step(`^I should see an appropriate warning from git$`, th.iShouldSeeAnAppropriateWarningFromGit)
+	s.Step(`^there are new metadata on the remote git server$`, th.thereAreNewMetadataOnTheRemoteGitServer)
+	s.Step(`^my metadata should be fetched from the remote git server$`, th.myMetadataShouldBeFetchedFromTheRemoteGitServer)
+	s.Step(`^I should not see an error$`, th.iShouldNotSeeAnError)
+	s.Step(`^my metadata should be pushed to the remote git server$`, th.myMetadataShouldBePushedToTheRemoteGitServer)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }
