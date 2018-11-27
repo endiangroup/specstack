@@ -75,8 +75,11 @@ func (a *appController) Initialise() error {
 
 	var err error
 	a.config, err = a.loadOrCreateConfig()
+	if err != nil {
+		return err
+	}
 
-	return err
+	return metadata.PrepareSync(a.repo)
 }
 
 func (a *appController) loadOrCreateConfig() (*config.Config, error) {
@@ -217,7 +220,10 @@ func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, e
 }
 
 func (a *appController) RunRepoPostCommitHook() error {
-	return nil
+	if a.config.Project.PushingMode != config.ModeSemiAuto {
+		return nil
+	}
+	return a.Push()
 }
 func (a *appController) RunRepoPostUpdateHook() error {
 	return nil

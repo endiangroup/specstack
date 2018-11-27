@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
@@ -130,7 +132,7 @@ func (t *testHarness) iShouldSeeAnErrorMessageInformingMe(msg string) error {
 
 func (t *testHarness) iShouldSeeAWarningMessageInformingMe(msg string) error {
 	if !assert.Contains(t, t.stderr.String(), msg) {
-		t.Errorf("%d, %s, %s", t.exitCode, t.stdout.String(), t.stderr.String())
+		t.Errorf("%d\nstdout=%s\nstderr=%s", t.exitCode, t.stdout.String(), t.stderr.String())
 		return t.AssertError()
 	}
 
@@ -289,28 +291,87 @@ func (t *testHarness) iHaveNotConfiguredAProjectRemote() error {
 
 func (t *testHarness) iHaveNotSetAGitRemote() error {
 	t.gitServer = nil
+	return t.iRunTheCommand(`config set project.remote=`)
+}
+
+func (t *testHarness) overwriteHooks() error {
+	goPath := os.Getenv("GOPATH")
+	cmd := "go run " + filepath.Join(
+		goPath,
+		"src/github.com/endiangroup/specstack/cmd/spec/*.go",
+	)
+
+	if err := t.repo.WriteHookFile("post-commit", cmd+" git-hook exec post-commit"); err != nil {
+		return err
+	}
+
+	if err := t.repo.WriteHookFile("post-update", cmd+" git-hook exec post-update"); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (t *testHarness) iHaveSetThePullingModeToSemiautomatic() error {
-	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeSemiAuto)
+	if err := t.overwriteHooks(); err != nil {
+		return err
+	}
+	return t.iRunTheCommand(`config set project.pullingmode=` + config.ModeSemiAuto)
 }
 
 func (t *testHarness) iHaveSetThePullingModeToAutomatic() error {
+	if err := t.overwriteHooks(); err != nil {
+		return err
+	}
+	return t.iRunTheCommand(`config set project.pullingmode=` + config.ModeAuto)
+}
+
+func (t *testHarness) iHaveSetThePushingModeToSemiautomatic() error {
+	if err := t.overwriteHooks(); err != nil {
+		return err
+	}
+	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeSemiAuto)
+}
+
+func (t *testHarness) iHaveSetThePushingModeToAutomatic() error {
+	if err := t.overwriteHooks(); err != nil {
+		return err
+	}
 	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeAuto)
 }
 
 func (t *testHarness) iAddSomeMetadata() error {
-	return t.iRunTheCommand(`metadata add --story story1 key1=value1`)
+	if err := t.iRunTheCommand(`metadata add --story story1 key1=value1`); err != nil {
+		return err
+	}
+	// FIXME! Check for errors
+	// FIXME! Debug this error
+	return nil
 }
 
 func (t *testHarness) iRunAGitPull() error {
-	_, err := t.repo.RunGitCommand("pull")
-	return err
+	return t.RunGitCommand("pull")
 }
 
 func (t *testHarness) iMakeACommit() error {
-	return godog.ErrPending
+	if err := afero.WriteFile(
+		t.fs,
+		"features/story1.feature",
+		[]byte(`Feature: Story1 (modified)`),
+		os.ModePerm,
+	); err != nil {
+		return err
+	}
+
+	if err := t.RunGitCommand("add", "features/story1.feature"); err != nil {
+		return err
+	}
+
+	if err := t.RunGitCommand("commit", "-m", "iMakeACommit"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (t *testHarness) iHaveAProperlyConfiguredProjectDirectory() error {
@@ -362,6 +423,28 @@ func (t *testHarness) RunNoArgSteps(fns ...func() error) error {
 	return nil
 }
 
+func (t *testHarness) RunGitCommand(args ...string) error {
+
+	cmd := exec.Command("git", args...)
+	cmd.Dir = t.path
+	cmd.Stdout = t.stdout
+	cmd.Stderr = t.stderr
+	cmd.Stdin = t.stdin
+
+	err := cmd.Run()
+
+	if err != nil {
+		t.exitCode = 1
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				t.exitCode = status.ExitStatus()
+			}
+		}
+	}
+
+	return err
+}
+
 func FeatureContext(s *godog.Suite) {
 	th := newTestHarness()
 
@@ -392,6 +475,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I run a git pull$`, th.iRunAGitPull)
 	s.Step(`^I make a commit$`, th.iMakeACommit)
 	s.Step(`^I have set the pulling mode to automatic$`, th.iHaveSetThePullingModeToAutomatic)
+	s.Step(`^I have set the pushing mode to semi-automatic$`, th.iHaveSetThePushingModeToSemiautomatic)
+	s.Step(`^I have set the pushing mode to automatic$`, th.iHaveSetThePushingModeToAutomatic)
 	s.Step(`^I have a properly configured project directory$`, th.iHaveAProperlyConfiguredProjectDirectory)
 	s.Step(`^The remote git server isn\'t responding properly$`, th.theRemoteGitServerIsntRespondingProperly)
 	s.Step(`^I should see an appropriate error from git$`, th.iShouldSeeAnAppropriateErrorFromGit)

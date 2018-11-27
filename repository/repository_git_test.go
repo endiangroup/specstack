@@ -32,10 +32,10 @@ func initialisedGitRepoDir(t *testing.T) (path string, r *Git, shutdown func()) 
 
 	require.Nil(t, repo.Init())
 
-	_, err := repo.RunGitCommand("config", "user.name", "SpecStack")
+	_, err := repo.runGitCommand("config", "user.name", "SpecStack")
 	require.Nil(t, err)
 
-	_, err = repo.RunGitCommand("config", "user.email", "test@specstack.io")
+	_, err = repo.runGitCommand("config", "user.email", "test@specstack.io")
 	require.Nil(t, err)
 
 	return dir, repo, shutdown
@@ -43,7 +43,7 @@ func initialisedGitRepoDir(t *testing.T) (path string, r *Git, shutdown func()) 
 
 func assertGitCmd(t *testing.T, repo *Git, expectedOutput string, input ...string) {
 
-	output, err := repo.RunGitCommand(input...)
+	output, err := repo.runGitCommand(input...)
 	require.Nil(t, err)
 
 	if expectedOutput != "" {

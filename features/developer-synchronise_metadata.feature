@@ -41,23 +41,23 @@ Feature: Synchronise metadata
     Given I have a git-initialised project directory
     But I have not set a git remote
     When I run "push"
-    Then I should see an error message informing me "Error: fatal: No such remote 'orgin'"
+    Then I should see an error message informing me "configure a project remote first"
 
-  @next
   Scenario: Git remote not set for semi-automatic push
     Given I have a git-initialised project directory
-    And I have set the pulling mode to semi-automatic
+    And I have set the pushing mode to semi-automatic
     But I have not set a git remote
     When I add some metadata
     And I make a commit
-    Then I should see a warning message informing me "set a git remote first"
+    Then I should see a warning message informing me "configure a project remote first"
 
+  @next
   Scenario: Git remote not set for automatic push
     Given I have a git-initialised project directory
-    And I have set the pulling mode to automatic
+    And I have set the pushing mode to automatic
     But I have not set a git remote
     When I add some metadata
-    Then I should see a warning message informing me "set a git remote first"
+    Then I should see a warning message informing me "configure a project remote first"
 
   Scenario: Unexpected error for manual pull
     Given I have a properly configured project directory
@@ -81,7 +81,7 @@ Feature: Synchronise metadata
 
   Scenario: Unexpected error for semi-automatic push
     Given I have a properly configured project directory
-    And I have set the pulling mode to semi-automatic
+    And I have set the pushing mode to semi-automatic
     But The remote git server isn't responding properly
     When I add some metadata
     And I make a commit
@@ -89,7 +89,7 @@ Feature: Synchronise metadata
 
   Scenario: Unexpected error for automatic push
     Given I have a properly configured project directory
-    And I have set the pulling mode to automatic
+    And I have set the pushing mode to automatic
     But The remote git server isn't responding properly
     When I add some metadata
     Then I should see an appropriate warning from git
@@ -118,7 +118,7 @@ Feature: Synchronise metadata
 
   Scenario: Successful semi-automatic push
     Given I have a properly configured project directory
-    And I have set the pulling mode to semi-automatic
+    And I have set the pushing mode to semi-automatic
     When I add some metadata
     And I make a commit
     Then my metadata should be pushed to the remote git server
@@ -126,7 +126,7 @@ Feature: Synchronise metadata
 
   Scenario: Successful automatic push
     Given I have a properly configured project directory
-    And I have set the pulling mode to semi-automatic
+    And I have set the pushing mode to automatic
     When I add some metadata
     Then my metadata should be pushed to the remote git server
     And I should not see an error

@@ -97,12 +97,12 @@ func (repo *Git) IsInitialised() bool {
 }
 
 func (repo *Git) Init() error {
-	_, err := repo.RunGitCommand("init")
+	_, err := repo.runGitCommand("init")
 	return err
 }
 
 func (repo *Git) AllConfig() (map[string]string, error) {
-	result, err := repo.RunGitCommand("config", repo.configReadScopeArgs(), "--null", "--list")
+	result, err := repo.runGitCommand("config", repo.configReadScopeArgs(), "--null", "--list")
 	if err != nil {
 		return nil, NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -126,7 +126,7 @@ func (repo *Git) AllConfig() (map[string]string, error) {
 }
 
 func (repo *Git) GetConfig(key string) (string, error) {
-	result, err := repo.RunGitCommand("config", repo.configReadScopeArgs(), "--get", key)
+	result, err := repo.runGitCommand("config", repo.configReadScopeArgs(), "--get", key)
 	if err != nil {
 		return "", NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -135,7 +135,7 @@ func (repo *Git) GetConfig(key string) (string, error) {
 }
 
 func (repo *Git) SetConfig(key, value string) error {
-	_, err := repo.RunGitCommand("config", repo.configWriteScopeArg(), key, value)
+	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), key, value)
 	if err != nil {
 		return NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -144,7 +144,7 @@ func (repo *Git) SetConfig(key, value string) error {
 }
 
 func (repo *Git) UnsetConfig(key string) error {
-	_, err := repo.RunGitCommand("config", repo.configWriteScopeArg(), "--unset", key)
+	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), "--unset", key)
 	if err != nil {
 		return NewGitConfigErr(err.(*GitCmdErr))
 	}
@@ -191,7 +191,7 @@ func (repo *Git) extractJsonMessagesFromNote(note string, raw *[][]byte) error {
 }
 
 func (repo *Git) extractJsonMessagesFromObjectId(id string, raw *[][]byte) error {
-	note, err := repo.RunGitCommand("notes", "--ref", gitNotesRef, "show", id)
+	note, err := repo.runGitCommand("notes", "--ref", gitNotesRef, "show", id)
 
 	// If there is no check and the note recovery fails, it's not an always
 	// error; it may mean there are no notes for the id.
@@ -220,7 +220,7 @@ func (repo *Git) extractJsonMessagesFromRevisionList(revisions [][]string, raw *
 					continue
 				}
 
-				if note, err := repo.RunGitCommand("notes", "--ref", gitNotesRef, "show", ref); err == nil {
+				if note, err := repo.runGitCommand("notes", "--ref", gitNotesRef, "show", ref); err == nil {
 					if err := repo.extractJsonMessagesFromNote(note, raw); err != nil {
 						return err
 					}
@@ -245,30 +245,30 @@ func (repo *Git) SetMetadata(target io.Reader, value []byte) error {
 
 	var note string
 
-	if existingNote, err := repo.RunGitCommand("notes", "--ref", gitNotesRef, "show", id); err == nil {
+	if existingNote, err := repo.runGitCommand("notes", "--ref", gitNotesRef, "show", id); err == nil {
 		note = existingNote + "\n" + string(encodedValue)
 	} else {
 		note = string(encodedValue)
 	}
 
-	_, err = repo.RunGitCommand("notes", "--ref", gitNotesRef, "add", "-f", id, "-m", note)
+	_, err = repo.runGitCommand("notes", "--ref", gitNotesRef, "add", "-f", id, "-m", note)
 
 	return err
 }
 
 func (repo *Git) PrepareMetadataSync() error {
-	if err := repo.writeHookFile("post-commit", "spec git-hook exec post-commit"); err != nil {
+	if err := repo.WriteHookFile("post-commit", "spec git-hook exec post-commit"); err != nil {
 		return err
 	}
 
-	if err := repo.writeHookFile("post-update", "spec git-hook exec post-update"); err != nil {
+	if err := repo.WriteHookFile("post-update", "spec git-hook exec post-update"); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (repo *Git) writeHookFile(name, command string) error {
+func (repo *Git) WriteHookFile(name, command string) error {
 	hooksDir, err := repo.gitHooksDirectory()
 	if err != nil {
 		return err
@@ -289,14 +289,14 @@ func (repo *Git) writeHookFile(name, command string) error {
 }
 
 func (repo *Git) PullMetadata(from string) error {
-	if _, err := repo.RunGitCommand("remote", "get-url", from); err != nil {
+	if _, err := repo.runGitCommand("remote", "get-url", from); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (repo *Git) PushMetadata(to string) error {
-	if _, err := repo.RunGitCommand("remote", "get-url", "--push", to); err != nil {
+	if _, err := repo.runGitCommand("remote", "get-url", "--push", to); err != nil {
 		return err
 	}
 	return nil
@@ -310,7 +310,7 @@ the first column is the hash of the commit, and the subsequent
 the commits.
 */
 func (repo *Git) revList(id string) ([][]string, error) {
-	output, err := repo.RunGitCommand("rev-list", "--all", "--objects", id)
+	output, err := repo.runGitCommand("rev-list", "--all", "--objects", id)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +342,7 @@ func (repo *Git) gitDirectory() (string, error) {
 }
 
 func (repo *Git) topDirectory() (string, error) {
-	return repo.RunGitCommand("rev-parse", "--show-toplevel")
+	return repo.runGitCommand("rev-parse", "--show-toplevel")
 }
 
 func (repo *Git) runGitCommandRaw(stdin io.Reader, args ...string) (string, string, int, error) {
@@ -369,7 +369,7 @@ func (repo *Git) runGitCommandRaw(stdin io.Reader, args ...string) (string, stri
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), exitCode, err
 }
 
-func (repo *Git) RunGitCommand(args ...string) (string, error) {
+func (repo *Git) runGitCommand(args ...string) (string, error) {
 	stdout, stderr, exitCode, err := repo.runGitCommandRaw(nil, args...)
 	if err != nil {
 		return "", NewGitCmdErr(stderr, exitCode, args...)
@@ -388,18 +388,10 @@ func (repo *Git) runGitCommandStdIn(stdin io.Reader, args ...string) (string, er
 }
 
 func (repo *Git) configReadScopeArgs() string {
-
-	switch repo.configReadScope {
-	case GitConfigScopeLocal:
+	if repo.configReadScope == GitConfigScopeLocal {
 		return "--local"
-	case GitConfigScopeGlobal:
-		return "--global"
-	case GitConfigScopeSystem:
-		return "--system"
 	}
-
 	return ""
-
 }
 
 func (repo *Git) configWriteScopeArg() string {
