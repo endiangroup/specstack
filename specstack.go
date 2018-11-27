@@ -35,7 +35,7 @@ type Controller interface {
 	AddMetadataToStory(storyName, key, value string) error
 	GetStoryMetadata(string) ([]*metadata.Entry, error)
 	RunRepoPostCommitHook() error
-	RunRepoPreCommitHook() error
+	RunRepoPostUpdateHook() error
 	Push() error
 	Pull() error
 }
@@ -155,7 +155,7 @@ func (a *appController) specificationReader() specification.Reader {
 	return specification.NewFilesystemReader(afero.NewOsFs(), a.config.Project.FeaturesDir)
 }
 
-func (a *appController) warning(warning error) {
+func (a *appController) emitWarning(warning error) {
 	fmt.Fprintf(a.stderr, "WARNING: %s\n", warning.Error())
 }
 
@@ -168,7 +168,7 @@ func (a *appController) findStoryObject(name string) (*specification.Story, io.R
 	}
 
 	for _, warning := range warnings {
-		a.warning(warning)
+		a.emitWarning(warning)
 	}
 
 	story, err := spec.FindStory(name)
@@ -190,7 +190,21 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 		return err
 	}
 
-	return a.developer.AddMetadataToStory(a.newContextWithConfig(), story, object, key, value)
+	if err := a.developer.AddMetadataToStory(
+		a.newContextWithConfig(),
+		story,
+		object,
+		key,
+		value,
+	); err != nil {
+		return err
+	}
+
+	if a.config.Project.PushingMode == config.ModeAuto {
+		return errors.WarningOrNil(a.Push())
+	}
+
+	return nil
 }
 
 func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, error) {
@@ -202,19 +216,23 @@ func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, e
 	return metadata.ReadAll(a.omniStore, object)
 }
 
-func (a *appController) RunRepoPreCommitHook() error {
+func (a *appController) RunRepoPostCommitHook() error {
 	return nil
 }
-
-func (a *appController) RunRepoPostCommitHook() error {
+func (a *appController) RunRepoPostUpdateHook() error {
 	return nil
 }
 
 func (a *appController) Pull() error {
-	return nil
+	if a.config.Project.Remote == "" {
+		return fmt.Errorf("configure a project remote first")
+	}
+	return metadata.Pull(a.repo, a.config.Project.Remote)
 }
 
 func (a *appController) Push() error {
-	fmt.Println("FIXME")
-	return nil
+	if a.config.Project.Remote == "" {
+		return fmt.Errorf("configure a project remote first")
+	}
+	return metadata.Push(a.repo, a.config.Project.Remote)
 }

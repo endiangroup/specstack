@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -31,10 +32,10 @@ func initialisedGitRepoDir(t *testing.T) (path string, r *Git, shutdown func()) 
 
 	require.Nil(t, repo.Init())
 
-	_, err := repo.runGitCommand("config", "user.name", "SpecStack")
+	_, err := repo.RunGitCommand("config", "user.name", "SpecStack")
 	require.Nil(t, err)
 
-	_, err = repo.runGitCommand("config", "user.email", "test@specstack.io")
+	_, err = repo.RunGitCommand("config", "user.email", "test@specstack.io")
 	require.Nil(t, err)
 
 	return dir, repo, shutdown
@@ -42,7 +43,7 @@ func initialisedGitRepoDir(t *testing.T) (path string, r *Git, shutdown func()) 
 
 func assertGitCmd(t *testing.T, repo *Git, expectedOutput string, input ...string) {
 
-	output, err := repo.runGitCommand(input...)
+	output, err := repo.RunGitCommand(input...)
 	require.Nil(t, err)
 
 	if expectedOutput != "" {
@@ -193,5 +194,72 @@ func Test_AnInitialisedGitRepoCanTrackAndSetMetadataAtTheFileLevel(t *testing.T)
 		setFileMetadata(t, repo, "b.txt", "m2")
 		setFileMetadata(t, repo, "b.txt", "m3")
 		require.Equal(t, []string{"m0", "m1", "m2", "m3"}, getFileMetadata(t, repo, "b.txt"))
+	})
+}
+
+func Test_AnInitialisedGitRepoThrowsAnErrorOnNoRemotePullAndPush(t *testing.T) {
+
+	_, repo, shutdown := initialisedGitRepoDir(t)
+	defer shutdown()
+
+	t.Run("Pull", func(t *testing.T) {
+		err := repo.PullMetadata("doesntexist")
+		require.NotNil(t, err)
+		require.Equal(t, "fatal: No such remote 'doesntexist'", err.Error())
+	})
+	t.Run("Push", func(t *testing.T) {
+		err := repo.PushMetadata("doesntexist")
+		require.NotNil(t, err)
+		require.Equal(t, "fatal: No such remote 'doesntexist'", err.Error())
+	})
+}
+
+func Test_AnInitialisedGitRepoKnowsItsGitDirectories(t *testing.T) {
+
+	dir, repo, shutdown := initialisedGitRepoDir(t)
+	defer shutdown()
+
+	expectedGitDir := filepath.Join(dir, ".git")
+	expectedHooksDir := filepath.Join(expectedGitDir, "hooks")
+
+	topDir, err := repo.topDirectory()
+	require.Nil(t, err)
+	require.Equal(t, dir, topDir)
+
+	gitDir, err := repo.gitDirectory()
+	require.Nil(t, err)
+	require.Equal(t, expectedGitDir, gitDir)
+
+	hooksDir, err := repo.gitHooksDirectory()
+	require.Nil(t, err)
+	require.Equal(t, expectedHooksDir, hooksDir)
+}
+
+func Test_AnInitialisedGitRepoCanWriteItsHooksWhenAppropriate(t *testing.T) {
+
+	_, repo, shutdown := initialisedGitRepoDir(t)
+	defer shutdown()
+
+	hooksDir, err := repo.gitHooksDirectory()
+	require.Nil(t, err)
+
+	pc, pu := filepath.Join(hooksDir, "post-commit"), filepath.Join(hooksDir, "post-update")
+
+	t.Run("Make sure hooks don't exist initially", func(t *testing.T) {
+		_, err := os.Stat(pc)
+		require.True(t, os.IsNotExist(err))
+
+		_, err = os.Stat(pu)
+		require.True(t, os.IsNotExist(err))
+	})
+
+	t.Run("Hooks shoulf exist afrer preparation", func(t *testing.T) {
+		require.Nil(t, repo.PrepareMetadataSync())
+
+		_, err := os.Stat(pc)
+		require.False(t, os.IsNotExist(err))
+
+		_, err = os.Stat(pu)
+		require.False(t, os.IsNotExist(err))
 	})
 }

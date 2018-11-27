@@ -12,40 +12,52 @@ Feature: Synchronise metadata
     When I run "push"
     Then I should see an error message informing me "initialise repository first"
 
-  Scenario: Git remote not set for manual pull
+  Scenario: Git remote not configured for manual pull
     Given I have a git-initialised project directory
-    But I have not set a git remote
+    But I have not configured a project remote
     When I run "pull"
-    Then I should see an error message informing me "track this git branch first"
+    Then I should see an error message informing me "configure a project remote first"
+
+  Scenario: Project remote not configured for manual push
+    Given I have a git-initialised project directory
+    But I have not configured a project remote
+    When I run "push"
+    Then I should see an error message informing me "configure a project remote first"
+
+  Scenario: Project remote not set configured automatic push
+    Given I have a git-initialised project directory
+    And I have set the pulling mode to automatic
+    But I have not configured a project remote
+    When I add some metadata
+    Then I should see a warning message informing me "configure a project remote first"
+
+  Scenario: Project remote not set for manual pull
+    Given I have a git-initialised project directory
+    But I have not configured a project remote
+    When I run "pull"
+    Then I should see an error message informing me "configure a project remote first"
 
   Scenario: Git remote not set for manual push
     Given I have a git-initialised project directory
     But I have not set a git remote
     When I run "push"
-    Then I should see an error message informing me "set a git remote first"
+    Then I should see an error message informing me "Error: fatal: No such remote 'orgin'"
 
-  Scenario: Git remote not set for semi-automatic pull
-    Given I have a git-initialised project directory
-    And I have set the pulling mode to semi-automatic
-    But I have not set a git remote
-    When I add some metadata
-    And I run a git pull
-    Then I should see an error message informing me "track this git branch first"
-
+  @next
   Scenario: Git remote not set for semi-automatic push
     Given I have a git-initialised project directory
     And I have set the pulling mode to semi-automatic
     But I have not set a git remote
     When I add some metadata
     And I make a commit
-    Then I should see an error message informing me "set a git remote first"
+    Then I should see a warning message informing me "set a git remote first"
 
   Scenario: Git remote not set for automatic push
     Given I have a git-initialised project directory
     And I have set the pulling mode to automatic
     But I have not set a git remote
     When I add some metadata
-    Then I should see an error message informing me "set a git remote first"
+    Then I should see a warning message informing me "set a git remote first"
 
   Scenario: Unexpected error for manual pull
     Given I have a properly configured project directory

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/endiangroup/specstack"
+	"github.com/endiangroup/specstack/errors"
 	"github.com/endiangroup/specstack/metadata"
 	"github.com/spf13/cobra"
 )
@@ -39,10 +40,20 @@ type CobraHarness struct {
 	stderr io.Writer
 }
 
-func (c *CobraHarness) error(cmd *cobra.Command, returnCode int, err error) error {
+func (c *CobraHarness) errorWithReturnCode(cmd *cobra.Command, returnCode int, err error) error {
 	cmd.Root().SetOutput(c.stderr)
 
 	return NewCliErr(returnCode, err)
+}
+
+func (c *CobraHarness) error(cmd *cobra.Command, err error) error {
+	returnCode := 1
+
+	if errors.IsWarning(err) {
+		returnCode = 0
+	}
+
+	return c.errorWithReturnCode(cmd, returnCode, err)
 }
 
 func (c *CobraHarness) errorOrNil(cmd *cobra.Command, returnCode int, err error) error {
@@ -61,7 +72,7 @@ func (c *CobraHarness) flagValueString(cmd *cobra.Command, name string) string {
 
 func (c *CobraHarness) PersistentPreRunE(cmd *cobra.Command, args []string) error {
 	if err := c.app.Initialise(); err != nil {
-		return c.error(cmd, 1, err)
+		return c.error(cmd, err)
 	}
 
 	return nil
@@ -70,7 +81,7 @@ func (c *CobraHarness) PersistentPreRunE(cmd *cobra.Command, args []string) erro
 func (c *CobraHarness) ConfigList(cmd *cobra.Command, args []string) error {
 	configMap, err := c.app.ListConfiguration()
 	if err != nil {
-		return c.error(cmd, 1, err)
+		return c.error(cmd, err)
 	}
 
 	for key, value := range configMap {
@@ -83,7 +94,7 @@ func (c *CobraHarness) ConfigList(cmd *cobra.Command, args []string) error {
 func (c *CobraHarness) ConfigGet(cmd *cobra.Command, args []string) error {
 	value, err := c.app.GetConfiguration(args[0])
 	if err != nil {
-		return c.error(cmd, 1, err)
+		return c.error(cmd, err)
 	}
 
 	cmd.Print(value)
@@ -93,11 +104,11 @@ func (c *CobraHarness) ConfigGet(cmd *cobra.Command, args []string) error {
 
 func (c *CobraHarness) SetKeyValueArgs(cmd *cobra.Command, args []string) error {
 	if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
-		return c.error(cmd, 1, err)
+		return c.error(cmd, err)
 	}
 
 	if err := IsKeyEqualsValueFormat(args[0]); err != nil {
-		return c.error(cmd, 1, err)
+		return c.error(cmd, err)
 	}
 
 	return nil
@@ -109,7 +120,7 @@ func (c *CobraHarness) ConfigSet(cmd *cobra.Command, args []string) error {
 
 	err := c.app.SetConfiguration(keyValueParts[0], keyValueParts[1])
 	if err != nil {
-		return c.error(cmd, 1, err)
+		return c.error(cmd, err)
 	}
 
 	return nil
@@ -123,13 +134,13 @@ func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
 		for _, arg := range args {
 			kv := strings.Split(arg, "=")
 			if err := c.app.AddMetadataToStory(storyName, kv[0], kv[1]); err != nil {
-				return c.error(cmd, 1, err)
+				return c.error(cmd, err)
 			}
 		}
 	}
 
 	if !entityFound {
-		return c.error(cmd, 0, fmt.Errorf("specify a story"))
+		return c.errorWithReturnCode(cmd, 0, fmt.Errorf("specify a story"))
 	}
 
 	return nil
@@ -143,13 +154,13 @@ func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
 		var err error
 		entries, err = c.app.GetStoryMetadata(storyName)
 		if err != nil {
-			return c.error(cmd, 1, err)
+			return c.error(cmd, err)
 		}
 		entityFound = true
 	}
 
 	if !entityFound {
-		return c.error(cmd, 0, fmt.Errorf("specify a story"))
+		return c.errorWithReturnCode(cmd, 0, fmt.Errorf("specify a story"))
 	}
 
 	printer := metadata.NewPlaintextPrintscanner()
@@ -158,14 +169,14 @@ func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
 
 func (c *CobraHarness) GitHookExec(cmd *cobra.Command, args []string) error {
 	switch args[0] {
-	case "pre-commit":
-		return c.errorOrNil(cmd, 1, c.app.RunRepoPreCommitHook())
-
 	case "post-commit":
 		return c.errorOrNil(cmd, 1, c.app.RunRepoPostCommitHook())
+
+	case "post-update":
+		return c.errorOrNil(cmd, 1, c.app.RunRepoPostUpdateHook())
 	}
 
-	return c.error(cmd, 1, fmt.Errorf("invalid hook name"))
+	return c.errorWithReturnCode(cmd, 1, fmt.Errorf("invalid hook name"))
 }
 
 func (c *CobraHarness) Pull(cmd *cobra.Command, args []string) error {

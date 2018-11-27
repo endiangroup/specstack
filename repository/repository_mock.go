@@ -53,8 +53,22 @@ func (_m *MockRepository) GetConfig(_a0 string) (string, error) {
 	return r0, r1
 }
 
-// Init provides a mock function with given fields:
-func (_m *MockRepository) Init() error {
+// IsInitialised provides a mock function with given fields:
+func (_m *MockRepository) IsInitialised() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// PrepareMetadataSync provides a mock function with given fields:
+func (_m *MockRepository) PrepareMetadataSync() error {
 	ret := _m.Called()
 
 	var r0 error
@@ -67,15 +81,29 @@ func (_m *MockRepository) Init() error {
 	return r0
 }
 
-// IsInitialised provides a mock function with given fields:
-func (_m *MockRepository) IsInitialised() bool {
-	ret := _m.Called()
+// PullMetadata provides a mock function with given fields: from
+func (_m *MockRepository) PullMetadata(from string) error {
+	ret := _m.Called(from)
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(from)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// PushMetadata provides a mock function with given fields: to
+func (_m *MockRepository) PushMetadata(to string) error {
+	ret := _m.Called(to)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(to)
+	} else {
+		r0 = ret.Error(0)
 	}
 
 	return r0

@@ -9,7 +9,9 @@ import (
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
+	"github.com/dmathieu/gitest"
 	"github.com/endiangroup/specstack"
+	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
@@ -54,13 +56,15 @@ func newTestHarness() *testHarness {
 
 type testHarness struct {
 	fs    afero.Fs
-	repo  repository.Repository
+	repo  *repository.Git
 	path  string
 	cobra *cobra.Command
 
 	stdout *bytes.Buffer
 	stdin  *bytes.Buffer
 	stderr *bytes.Buffer
+
+	gitServer *gitest.Server
 
 	assertError error
 	exitCode    int
@@ -87,7 +91,16 @@ func (t *testHarness) iHaveAProjectDirectory() error {
 		return nil
 	}
 
-	return t.fs.MkdirAll(filepath.Join(t.path, "features"), 0755)
+	if err := t.fs.MkdirAll(filepath.Join(t.path, "features"), 0755); err != nil {
+		return nil
+	}
+
+	return afero.WriteFile(
+		t.fs,
+		"features/story1.feature",
+		[]byte(`Feature: Story1`),
+		os.ModePerm,
+	)
 }
 
 func (t *testHarness) iRunTheCommand(cmd string) error {
@@ -112,6 +125,18 @@ func (t *testHarness) iShouldSeeAnErrorMessageInformingMe(msg string) error {
 		return t.AssertError()
 	}
 
+	return nil
+}
+
+func (t *testHarness) iShouldSeeAWarningMessageInformingMe(msg string) error {
+	if !assert.Contains(t, t.stderr.String(), msg) {
+		t.Errorf("%d, %s, %s", t.exitCode, t.stdout.String(), t.stderr.String())
+		return t.AssertError()
+	}
+
+	if !assert.Equal(t, 0, t.exitCode, "Non-zero exit coded returned") {
+		return t.AssertError()
+	}
 	return nil
 }
 
@@ -251,30 +276,40 @@ func (t *testHarness) iShouldSeeNoErrors() error {
 }
 
 func (t *testHarness) iHaveAGitinitialisedProjectDirectory() error {
-	return godog.ErrPending
+	return t.RunNoArgSteps(
+		t.iHaveAProjectDirectory,
+		t.iHaveInitialisedGit,
+		t.iHaveSetMyUserDetails,
+	)
+}
+
+func (t *testHarness) iHaveNotConfiguredAProjectRemote() error {
+	return t.iRunTheCommand(`config set project.remote=`)
 }
 
 func (t *testHarness) iHaveNotSetAGitRemote() error {
-	return godog.ErrPending
+	t.gitServer = nil
+	return nil
 }
 
 func (t *testHarness) iHaveSetThePullingModeToSemiautomatic() error {
-	return godog.ErrPending
-}
-
-func (t *testHarness) iAddSomeMetadata() error {
-	return godog.ErrPending
-}
-
-func (t *testHarness) iRunAGitPull() error {
-	return godog.ErrPending
-}
-
-func (t *testHarness) iMakeACommit() error {
-	return godog.ErrPending
+	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeSemiAuto)
 }
 
 func (t *testHarness) iHaveSetThePullingModeToAutomatic() error {
+	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeAuto)
+}
+
+func (t *testHarness) iAddSomeMetadata() error {
+	return t.iRunTheCommand(`metadata add --story story1 key1=value1`)
+}
+
+func (t *testHarness) iRunAGitPull() error {
+	_, err := t.repo.RunGitCommand("pull")
+	return err
+}
+
+func (t *testHarness) iMakeACommit() error {
 	return godog.ErrPending
 }
 
@@ -318,6 +353,15 @@ func (t *testHarness) AssertError() error {
 	return t.assertError
 }
 
+func (t *testHarness) RunNoArgSteps(fns ...func() error) error {
+	for _, fn := range fns {
+		if err := fn(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func FeatureContext(s *godog.Suite) {
 	th := newTestHarness()
 
@@ -325,6 +369,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have a project directory$`, th.iHaveAProjectDirectory)
 	s.Step(`^I run "([^"]*)"$`, th.iRunTheCommand)
 	s.Step(`^I should see an error message informing me "([^"]*)"$`, th.iShouldSeeAnErrorMessageInformingMe)
+	s.Step(`^I should see a warning message informing me "([^"]*)"$`, th.iShouldSeeAWarningMessageInformingMe)
 	s.Step(`^I have initialised git$`, th.iHaveInitialisedGit)
 	s.Step(`^I should see the following:$`, th.iShouldSeeTheFollowing)
 	s.Step(`^I should see some configuration keys and values$`, th.iShouldSeeSomeConfigurationKeysAndValues)
@@ -340,6 +385,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^The metadata "([^"]*)" should be added to story "([^"]*)" with the value "([^"]*)"$`, th.theMetadataShouldBeAddedToStory)
 	s.Step(`^I should see no errors$`, th.iShouldSeeNoErrors)
 	s.Step(`^I have a git-initialised project directory$`, th.iHaveAGitinitialisedProjectDirectory)
+	s.Step(`^I have not configured a project remote$`, th.iHaveNotConfiguredAProjectRemote)
 	s.Step(`^I have not set a git remote$`, th.iHaveNotSetAGitRemote)
 	s.Step(`^I have set the pulling mode to semi-automatic$`, th.iHaveSetThePullingModeToSemiautomatic)
 	s.Step(`^I add some metadata$`, th.iAddSomeMetadata)

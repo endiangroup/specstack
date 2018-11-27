@@ -62,7 +62,7 @@ func commandGitHooks(harness *CobraHarness) *cobra.Command {
 		Short:   "Low-level git hook interactions",
 	}
 	exec := &cobra.Command{
-		Use:     "exec <pre-commit|post-commit>",
+		Use:     "exec <post-commit|post-update>",
 		Args:    cobra.ExactArgs(1),
 		Example: "$ spec git-hook exec pre-commit",
 	}
