@@ -24,9 +24,9 @@ const (
 	GitConfigScopeGlobal = 4
 )
 
-// NewGitConfigErr creates the appropriate typed error for a Git failure, if
+// NewGitCmdConfigErr creates the appropriate typed error for a Git failure, if
 // possible.
-func NewGitConfigErr(gitCmdErr *GitCmdErr) error {
+func NewGitCmdConfigErr(gitCmdErr *GitCmdErr) error {
 	if gitCmdErr.ExitCode == 1 {
 		return persistence.ErrNoConfigFound
 	}
@@ -60,6 +60,20 @@ func (err GitCmdErr) Error() string {
 	}
 
 	return err.Stderr
+}
+
+type GitConfigErr struct {
+	err string
+}
+
+func (e GitConfigErr) Error() string {
+	return e.err
+}
+
+func NewGitConfigErr(body string, args ...interface{}) error {
+	return &GitConfigErr{
+		err: fmt.Sprintf(body, args...),
+	}
 }
 
 type Git struct {
@@ -104,7 +118,7 @@ func (repo *Git) Init() error {
 func (repo *Git) AllConfig() (map[string]string, error) {
 	result, err := repo.runGitCommand("config", repo.configReadScopeArgs(), "--null", "--list")
 	if err != nil {
-		return nil, NewGitConfigErr(err.(*GitCmdErr))
+		return nil, NewGitCmdConfigErr(err.(*GitCmdErr))
 	}
 
 	configMap := map[string]string{}
@@ -128,16 +142,21 @@ func (repo *Git) AllConfig() (map[string]string, error) {
 func (repo *Git) GetConfig(key string) (string, error) {
 	result, err := repo.runGitCommand("config", repo.configReadScopeArgs(), "--get", key)
 	if err != nil {
-		return "", NewGitConfigErr(err.(*GitCmdErr))
+		return "", NewGitCmdConfigErr(err.(*GitCmdErr))
 	}
 
 	return result, nil
 }
 
 func (repo *Git) SetConfig(key, value string) error {
-	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), key, value)
+	var err error
+	if value == "" {
+		_, err = repo.runGitCommand("config", repo.configWriteScopeArg(), "--unset", key)
+	} else {
+		_, err = repo.runGitCommand("config", repo.configWriteScopeArg(), key, value)
+	}
 	if err != nil {
-		return NewGitConfigErr(err.(*GitCmdErr))
+		return NewGitCmdConfigErr(err.(*GitCmdErr))
 	}
 
 	return nil
@@ -146,7 +165,7 @@ func (repo *Git) SetConfig(key, value string) error {
 func (repo *Git) UnsetConfig(key string) error {
 	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), "--unset", key)
 	if err != nil {
-		return NewGitConfigErr(err.(*GitCmdErr))
+		return NewGitCmdConfigErr(err.(*GitCmdErr))
 	}
 
 	return nil
@@ -289,17 +308,40 @@ func (repo *Git) WriteHookFile(name, command string) error {
 }
 
 func (repo *Git) PullMetadata(from string) error {
-	if _, err := repo.runGitCommand("remote", "get-url", from); err != nil {
+	exists, err := repo.hasRemote(from)
+	if err != nil {
 		return err
+	}
+	if !exists {
+		return NewGitConfigErr("set git remote '%s' first", from)
 	}
 	return nil
 }
 
 func (repo *Git) PushMetadata(to string) error {
-	if _, err := repo.runGitCommand("remote", "get-url", "--push", to); err != nil {
+	exists, err := repo.hasRemote(to)
+	if err != nil {
 		return err
 	}
+	if !exists {
+		return NewGitConfigErr("set git remote '%s' first", to)
+	}
 	return nil
+}
+
+func (repo *Git) hasRemote(name string) (bool, error) {
+	output, err := repo.runGitCommand("remote")
+	if err != nil {
+		return false, err
+	}
+	lines := strings.Split(output, "\n")
+
+	for _, line := range lines {
+		if name == line {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 /*

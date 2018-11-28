@@ -9,5 +9,6 @@ func Pull(puller Puller, from string) error {
 }
 
 func Push(pusher Pusher, to string) error {
-	return pusher.PushMetadata(to)
+	err := pusher.PushMetadata(to)
+	return err
 }

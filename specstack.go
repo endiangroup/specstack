@@ -230,7 +230,6 @@ func (a *appController) RunRepoPostUpdateHook() error {
 }
 
 func (a *appController) Pull() error {
-	fmt.Println(a.config.Project)
 	if a.config.Project.Remote == "" {
 		return fmt.Errorf("configure a project remote first")
 	}

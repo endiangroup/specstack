@@ -376,12 +376,7 @@ func (t *testHarness) iHaveSetThePushingModeToAutomatic() error {
 }
 
 func (t *testHarness) iAddSomeMetadata() error {
-	if err := t.iRunTheCommand(`metadata add --story story1 key1=value1`); err != nil {
-		return err
-	}
-	// FIXME! Check for errors
-	// FIXME! Debug this error
-	return nil
+	return t.iRunTheCommand(`metadata add --story story1 key1=value1`)
 }
 
 func (t *testHarness) iRunAGitPull() error {
