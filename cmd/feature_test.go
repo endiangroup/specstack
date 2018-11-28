@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -106,7 +107,24 @@ func (t *testHarness) iHaveAProjectDirectory() error {
 }
 
 func (t *testHarness) iRunTheCommand(cmd string) error {
-	t.cobra.SetArgs(strings.Split(cmd, " "))
+	r := regexp.MustCompile(`[^\s"']+|"([^"]*)"|'([^']*)`)
+
+	processed := []string{}
+	concat := false
+	index := 0
+	for i, arg := range r.FindAllString(cmd, -1) {
+		value := strings.Trim(arg, `"`)
+		if i > 0 && (arg == "=" || concat) {
+			processed[index-1] += value
+			concat = true
+			continue
+		}
+		processed = append(processed, value)
+		concat = false
+		index++
+	}
+
+	t.cobra.SetArgs(processed)
 	err := t.cobra.Execute()
 	if err != nil {
 		if cliErr, ok := err.(CliErr); ok {
@@ -313,6 +331,22 @@ func (t *testHarness) overwriteHooks() error {
 	return nil
 }
 
+func (t *testHarness) hasTheFollowingMetadata(storyName string, table *gherkin.DataTable) error {
+	for _, row := range table.Rows[1:] {
+		if err := t.iRunTheCommand(
+			fmt.Sprintf(
+				`metadata add --story "%s" "%s"="%s"`,
+				storyName,
+				row.Cells[0].Value, row.Cells[1].Value,
+			),
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (t *testHarness) iHaveSetThePullingModeToSemiautomatic() error {
 	if err := t.overwriteHooks(); err != nil {
 		return err
@@ -486,6 +520,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^my metadata should be fetched from the remote git server$`, th.myMetadataShouldBeFetchedFromTheRemoteGitServer)
 	s.Step(`^I should not see an error$`, th.iShouldNotSeeAnError)
 	s.Step(`^my metadata should be pushed to the remote git server$`, th.myMetadataShouldBePushedToTheRemoteGitServer)
+	s.Step(`^My story "([^"]*)" has the following metadata:$`, th.hasTheFollowingMetadata)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }
