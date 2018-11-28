@@ -346,7 +346,13 @@ func (repo *Git) topDirectory() (string, error) {
 }
 
 func (repo *Git) runGitCommandRaw(stdin io.Reader, args ...string) (string, string, int, error) {
-	cmd := exec.Command("git", args...)
+	finalArgs := []string{}
+	for _, arg := range args {
+		if arg != "" {
+			finalArgs = append(finalArgs, arg)
+		}
+	}
+	cmd := exec.Command("git", finalArgs...)
 	cmd.Dir = repo.path
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

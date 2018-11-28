@@ -286,12 +286,13 @@ func (t *testHarness) iHaveAGitinitialisedProjectDirectory() error {
 }
 
 func (t *testHarness) iHaveNotConfiguredAProjectRemote() error {
-	return t.iRunTheCommand(`config set project.remote=`)
+	err := t.iRunTheCommand(`config set project.remote=`)
+	return err
 }
 
 func (t *testHarness) iHaveNotSetAGitRemote() error {
 	t.gitServer = nil
-	return t.iRunTheCommand(`config set project.remote=`)
+	return nil
 }
 
 func (t *testHarness) overwriteHooks() error {
