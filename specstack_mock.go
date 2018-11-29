@@ -147,8 +147,8 @@ func (_m *MockController) RunRepoPostCommitHook() error {
 	return r0
 }
 
-// RunRepoPostUpdateHook provides a mock function with given fields:
-func (_m *MockController) RunRepoPostUpdateHook() error {
+// RunRepoPostMergeHook provides a mock function with given fields:
+func (_m *MockController) RunRepoPostMergeHook() error {
 	ret := _m.Called()
 
 	var r0 error

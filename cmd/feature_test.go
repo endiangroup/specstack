@@ -331,7 +331,7 @@ func (t *testHarness) overwriteHooks() error {
 		return err
 	}
 
-	if err := t.repo.WriteHookFile("post-merge", cmd+" git-hook exec post-update"); err != nil {
+	if err := t.repo.WriteHookFile("post-merge", cmd+" git-hook exec post-merge"); err != nil {
 		return err
 	}
 

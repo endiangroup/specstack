@@ -35,7 +35,7 @@ type Controller interface {
 	AddMetadataToStory(storyName, key, value string) error
 	GetStoryMetadata(string) ([]*metadata.Entry, error)
 	RunRepoPostCommitHook() error
-	RunRepoPostUpdateHook() error
+	RunRepoPostMergeHook() error
 	Push() error
 	Pull() error
 }
@@ -226,8 +226,7 @@ func (a *appController) RunRepoPostCommitHook() error {
 	return a.Push()
 }
 
-// FIXME! Rename to merge
-func (a *appController) RunRepoPostUpdateHook() error {
+func (a *appController) RunRepoPostMergeHook() error {
 	if a.config.Project.PullingMode != config.ModeSemiAuto {
 		return nil
 	}

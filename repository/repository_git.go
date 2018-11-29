@@ -280,7 +280,7 @@ func (repo *Git) PrepareMetadataSync() error {
 		return err
 	}
 
-	if err := repo.WriteHookFile("post-update", "spec git-hook exec post-update"); err != nil {
+	if err := repo.WriteHookFile("post-merge", "spec git-hook exec post-merge"); err != nil {
 		return err
 	}
 
