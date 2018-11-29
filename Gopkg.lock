@@ -39,6 +39,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:169ce16366c2a4410c50d4efa8efd98fcad96dc0b99025ad8e8022a5aa601119"
+  name = "github.com/endiangroup/gitest"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "8bd9873832d276d9f3f6a21532d491037c2ae93b"
+
+[[projects]]
+  branch = "master"
   digest = "1:32297b8fdeb42ba4ace38e9d9bd1325aa35d2f715f53fb1d90a683c92864ef4c"
   name = "github.com/endiangroup/pretty-formatter-go"
   packages = ["."]
@@ -66,6 +74,14 @@
   pruneopts = "UT"
   revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
   version = "v1.1.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:e420c2c5eaffc7645bd49f058129bd465ffb3d37a2188bc6d5eb90f9906c57c4"
+  name = "github.com/heroku/pat"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "95f5f62e96949c9c3f8cf9337b1282039654c665"
 
 [[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
@@ -168,6 +184,7 @@
     "github.com/DATA-DOG/godog",
     "github.com/DATA-DOG/godog/gherkin",
     "github.com/cucumber/gherkin-go",
+    "github.com/endiangroup/gitest",
     "github.com/endiangroup/pretty-formatter-go",
     "github.com/endiangroup/snaptest",
     "github.com/schollz/closestmatch",
