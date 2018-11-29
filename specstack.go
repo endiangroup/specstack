@@ -225,8 +225,13 @@ func (a *appController) RunRepoPostCommitHook() error {
 	}
 	return a.Push()
 }
+
+// FIXME! Rename to merge
 func (a *appController) RunRepoPostUpdateHook() error {
-	return nil
+	if a.config.Project.PullingMode != config.ModeSemiAuto {
+		return nil
+	}
+	return a.Pull()
 }
 
 func (a *appController) Pull() error {

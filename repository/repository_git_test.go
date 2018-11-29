@@ -205,12 +205,12 @@ func Test_AnInitialisedGitRepoThrowsAnErrorOnNoRemotePullAndPush(t *testing.T) {
 	t.Run("Pull", func(t *testing.T) {
 		err := repo.PullMetadata("doesntexist")
 		require.NotNil(t, err)
-		require.Equal(t, "fatal: No such remote 'doesntexist'", err.Error())
+		require.Equal(t, "set git remote 'doesntexist' first", err.Error())
 	})
 	t.Run("Push", func(t *testing.T) {
 		err := repo.PushMetadata("doesntexist")
 		require.NotNil(t, err)
-		require.Equal(t, "fatal: No such remote 'doesntexist'", err.Error())
+		require.Equal(t, "set git remote 'doesntexist' first", err.Error())
 	})
 }
 

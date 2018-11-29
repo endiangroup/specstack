@@ -315,7 +315,13 @@ func (repo *Git) PullMetadata(from string) error {
 	if !exists {
 		return NewGitConfigErr("set git remote '%s' first", from)
 	}
-	return nil
+
+	_, err = repo.runGitCommand(
+		"fetch",
+		from,
+		fmt.Sprintf("%s:%s", gitNotesRef, gitNotesRef),
+	)
+	return err
 }
 
 func (repo *Git) PushMetadata(to string) error {
@@ -326,7 +332,12 @@ func (repo *Git) PushMetadata(to string) error {
 	if !exists {
 		return NewGitConfigErr("set git remote '%s' first", to)
 	}
-	return nil
+	_, err = repo.runGitCommand(
+		"push",
+		to,
+		gitNotesRef,
+	)
+	return err
 }
 
 func (repo *Git) hasRemote(name string) (bool, error) {

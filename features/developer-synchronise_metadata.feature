@@ -58,34 +58,18 @@ Feature: Synchronise metadata
     When I add some metadata
     Then I should see a warning message informing me "set git remote 'origin' first"
 
-  @next
   Scenario: Unexpected error for manual pull
     Given I have a properly configured project directory
     But The remote git server isn't responding properly
-    When I run "spec pull"
+    When I run "pull"
     Then I should see an appropriate error from git
 
   Scenario: Unexpected error for manual push
     Given I have a properly configured project directory
     But The remote git server isn't responding properly
-    When I run "spec push"
-    Then I should see an appropriate warning from git
-
-  Scenario: Unexpected error for semi-automatic pull
-    Given I have a properly configured project directory
-    And I have set the pulling mode to semi-automatic
-    But The remote git server isn't responding properly
     When I add some metadata
-    And I run a git pull
-    Then I should see an appropriate warning from git
-
-  Scenario: Unexpected error for semi-automatic push
-    Given I have a properly configured project directory
-    And I have set the pushing mode to semi-automatic
-    But The remote git server isn't responding properly
-    When I add some metadata
-    And I make a commit
-    Then I should see an appropriate warning from git
+    And I run "push"
+    Then I should see an appropriate error from git
 
   Scenario: Unexpected error for automatic push
     Given I have a properly configured project directory
@@ -99,14 +83,15 @@ Feature: Synchronise metadata
     And there are new metadata on the remote git server
     When I run "pull"
     Then my metadata should be fetched from the remote git server
-    And I should not see an error
+    And I should see no errors
 
   Scenario: Successful manual push
     Given I have a properly configured project directory
+    And the pushing mode is not set to automatic
     When I add some metadata
-    When I run "push"
+    And I run "push"
     Then my metadata should be pushed to the remote git server
-    And I should not see an error
+    And I should see no errors
 
   Scenario: Successful semi-automatic pull
     Given I have a properly configured project directory
@@ -114,7 +99,7 @@ Feature: Synchronise metadata
     And there are new metadata on the remote git server
     When I run a git pull
     Then my metadata should be fetched from the remote git server
-    And I should not see an error
+    And I should see no errors
 
   Scenario: Successful semi-automatic push
     Given I have a properly configured project directory
@@ -122,11 +107,11 @@ Feature: Synchronise metadata
     When I add some metadata
     And I make a commit
     Then my metadata should be pushed to the remote git server
-    And I should not see an error
+    And I should see no errors
 
   Scenario: Successful automatic push
     Given I have a properly configured project directory
     And I have set the pushing mode to automatic
     When I add some metadata
     Then my metadata should be pushed to the remote git server
-    And I should not see an error
+    And I should see no errors

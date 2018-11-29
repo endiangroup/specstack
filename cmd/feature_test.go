@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
-	"github.com/dmathieu/gitest"
+	"github.com/endiangroup/gitest"
 	"github.com/endiangroup/specstack"
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/metadata"
@@ -76,6 +79,10 @@ type testHarness struct {
 func (t *testHarness) ScenarioCleanup(_ interface{}, _ error) {
 	if err := t.fs.RemoveAll(t.path); err != nil {
 		panic(err)
+	}
+
+	if t.gitServer != nil {
+		t.gitServer.Close()
 	}
 
 	*t = *newTestHarness()
@@ -324,7 +331,7 @@ func (t *testHarness) overwriteHooks() error {
 		return err
 	}
 
-	if err := t.repo.WriteHookFile("post-update", cmd+" git-hook exec post-update"); err != nil {
+	if err := t.repo.WriteHookFile("post-merge", cmd+" git-hook exec post-update"); err != nil {
 		return err
 	}
 
@@ -375,6 +382,13 @@ func (t *testHarness) iHaveSetThePushingModeToAutomatic() error {
 	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeAuto)
 }
 
+func (t *testHarness) thePushingModeIsNotSetToAutomatic() error {
+	if err := t.overwriteHooks(); err != nil {
+		return err
+	}
+	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeSemiAuto)
+}
+
 func (t *testHarness) iAddSomeMetadata() error {
 	return t.iRunTheCommand(`metadata add --story story1 key1=value1`)
 }
@@ -405,35 +419,110 @@ func (t *testHarness) iMakeACommit() error {
 }
 
 func (t *testHarness) iHaveAProperlyConfiguredProjectDirectory() error {
-	return godog.ErrPending
+	if err := t.iHaveAnEmptyDirectory(); err != nil {
+		return err
+	}
+
+	_, f, _, _ := runtime.Caller(1)
+	var err error
+	t.gitServer, err = gitest.NewServer(filepath.Join(path.Dir(f), "fixtures/git/starting"))
+	if err != nil {
+		return err
+	}
+
+	if err := t.RunGitCommand(
+		"clone",
+		fmt.Sprintf("%s/%s.git", t.gitServer.URL, t.gitServer.ValidRepo),
+		".",
+	); err != nil {
+		return err
+	}
+
+	if err := t.iHaveSetTheGitUserNameTo("Speck Stack"); err != nil {
+		return err
+	}
+
+	if err := t.iHaveSetTheGitUserEmailTo("dev@specstack.io"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (t *testHarness) theRemoteGitServerIsntRespondingProperly() error {
-	return godog.ErrPending
+	t.gitServer.Server.Close()
+	return nil
 }
 
 func (t *testHarness) iShouldSeeAnAppropriateErrorFromGit() error {
-	return godog.ErrPending
+	if !assert.True(t, t.exitCode > 0, "Zero exit coded returned, expected > 0") {
+		return t.AssertError()
+	}
+
+	if assert.Empty(t, t.stderr.String(), "Expected an error string") {
+		return t.AssertError()
+	}
+
+	return nil
 }
 
 func (t *testHarness) iShouldSeeAnAppropriateWarningFromGit() error {
-	return godog.ErrPending
+	if !assert.Equal(t, t.exitCode, 0, "non-zero exit coded returned, expected 0") {
+		return t.AssertError()
+	}
+
+	if assert.Empty(t, t.stderr.String(), "Expected an error string") {
+		return t.AssertError()
+	}
+
+	return nil
 }
 
 func (t *testHarness) thereAreNewMetadataOnTheRemoteGitServer() error {
-	return godog.ErrPending
+	_, f, _, _ := runtime.Caller(1)
+	p := filepath.Join(path.Dir(f), "fixtures/git/with-commits")
+	return t.gitServer.SetTemplate(p)
 }
 
 func (t *testHarness) myMetadataShouldBeFetchedFromTheRemoteGitServer() error {
-	return godog.ErrPending
-}
+	if err := t.iRunTheCommand("metadata list --story story1"); err != nil {
+		return nil
+	}
 
-func (t *testHarness) iShouldNotSeeAnError() error {
-	return godog.ErrPending
+	scanner := metadata.NewPlaintextPrintscanner()
+	entries, err := scanner.Scan(t.stdout)
+	if err != nil {
+		return nil
+	}
+
+	expectedEntries := []metadata.Entry{
+		{Name: "a", Value: "a"},
+	}
+
+	if !assert.Equal(t, expectedEntries, entries) {
+		return fmt.Errorf("Entries not not match as expected")
+	}
+
+	return nil
 }
 
 func (t *testHarness) myMetadataShouldBePushedToTheRemoteGitServer() error {
-	return godog.ErrPending
+	timeout := time.After(10 * time.Millisecond)
+	for {
+		select {
+		case res := <-t.gitServer.RefsEventChan:
+			// This is an imperfect test because the mock server
+			// doesn't do very much, but we know the client must
+			// send git-receive-pack messages tro update the remote,
+			// so we count that as valid.
+			if res.FormValue("service") == "git-receive-pack" {
+				return nil
+			}
+		case <-timeout:
+			return fmt.Errorf("Timed out")
+		}
+	}
+	return fmt.Errorf("Unexpected error")
 }
 
 func (t *testHarness) Errorf(format string, args ...interface{}) {
@@ -507,13 +596,13 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have set the pulling mode to automatic$`, th.iHaveSetThePullingModeToAutomatic)
 	s.Step(`^I have set the pushing mode to semi-automatic$`, th.iHaveSetThePushingModeToSemiautomatic)
 	s.Step(`^I have set the pushing mode to automatic$`, th.iHaveSetThePushingModeToAutomatic)
+	s.Step(`^the pushing mode is not set to automatic$`, th.thePushingModeIsNotSetToAutomatic)
 	s.Step(`^I have a properly configured project directory$`, th.iHaveAProperlyConfiguredProjectDirectory)
 	s.Step(`^The remote git server isn\'t responding properly$`, th.theRemoteGitServerIsntRespondingProperly)
 	s.Step(`^I should see an appropriate error from git$`, th.iShouldSeeAnAppropriateErrorFromGit)
 	s.Step(`^I should see an appropriate warning from git$`, th.iShouldSeeAnAppropriateWarningFromGit)
 	s.Step(`^there are new metadata on the remote git server$`, th.thereAreNewMetadataOnTheRemoteGitServer)
 	s.Step(`^my metadata should be fetched from the remote git server$`, th.myMetadataShouldBeFetchedFromTheRemoteGitServer)
-	s.Step(`^I should not see an error$`, th.iShouldNotSeeAnError)
 	s.Step(`^my metadata should be pushed to the remote git server$`, th.myMetadataShouldBePushedToTheRemoteGitServer)
 	s.Step(`^My story "([^"]*)" has the following metadata:$`, th.hasTheFollowingMetadata)
 
