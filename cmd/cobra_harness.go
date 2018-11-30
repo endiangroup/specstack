@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/endiangroup/specstack"
@@ -63,8 +64,15 @@ func (c *CobraHarness) ConfigList(cmd *cobra.Command, args []string) error {
 		return c.error(cmd, 1, err)
 	}
 
+	outputs := []string{}
+
 	for key, value := range configMap {
-		cmd.Printf("%s=%s\n", key, value)
+		outputs = append(outputs, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	sort.Strings(outputs)
+	for _, output := range outputs {
+		cmd.Printf("%s\n", output)
 	}
 
 	return nil
