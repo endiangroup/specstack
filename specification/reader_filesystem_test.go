@@ -112,7 +112,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 				"features/a.feature": mockFeatureA,
 			},
 			inputDir: "notfeatures",
-			warnings: errors.NewWarnings(),
+			warnings: errors.Warnings{},
 			err:      fmt.Errorf("failed to read directory notfeatures: open notfeatures: file does not exist"),
 		},
 	} {
