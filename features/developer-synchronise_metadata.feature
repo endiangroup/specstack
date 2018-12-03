@@ -4,7 +4,6 @@ Feature: Synchronise metadata
   So that I can stay up to date with my team
   But I know that git has limitations, so I will accept three modes of operation
   for pushes and pulls, which can be set independently:
-  
   1. Manual mode, where I can push and pull metadata explicity. I will use this
   when I want to push or pull metadata without making changes to my source code,
   or in unusual tech setups.
