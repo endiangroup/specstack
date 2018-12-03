@@ -1,6 +1,6 @@
 package errors
 
-type Warnings Errors
+import "strings"
 
 type Warning struct {
 	err error
@@ -8,6 +8,32 @@ type Warning struct {
 
 func (w *Warning) Error() string {
 	return w.err.Error()
+}
+
+type Warnings []*Warning
+
+func NewWarnings(errs ...error) Warnings {
+	w := Warnings{}
+	for _, err := range errs {
+		w = append(w, NewWarning(err))
+	}
+	return w
+}
+
+func (errs Warnings) Error() string {
+	components := []string{}
+	for _, err := range errs {
+		components = append(components, err.Error())
+	}
+	return strings.Join(components, ", ")
+}
+
+func (w Warnings) Append(err error) Warnings {
+	return append(w, NewWarning(err))
+}
+
+func (w Warnings) Any() bool {
+	return len(w) > 0
 }
 
 func NewWarning(err error) *Warning {
@@ -23,6 +49,7 @@ func WarningOrNil(err error) error {
 }
 
 func IsWarning(err error) bool {
-	_, ok := err.(*Warning)
-	return ok
+	_, isWarning := err.(*Warning)
+	_, isWarnings := err.(Warnings)
+	return isWarning || isWarnings
 }

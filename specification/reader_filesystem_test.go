@@ -102,9 +102,9 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 				"features/b.feature": "--invalid--",
 			},
 			inputDir: "features",
-			warnings: errors.Warnings{
+			warnings: errors.NewWarnings(
 				fmt.Errorf("failed to parse features/b.feature: Parser errors:\n(1:1): expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty, got '--invalid--'\n(2:0): unexpected end of file, expected: #Language, #TagLine, #FeatureLine, #Comment, #Empty"), //nolint:lll
-			},
+			),
 		},
 		{
 			description: "Sad path: no dir",
@@ -112,7 +112,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 				"features/a.feature": mockFeatureA,
 			},
 			inputDir: "notfeatures",
-			warnings: []error{},
+			warnings: errors.NewWarnings(),
 			err:      fmt.Errorf("failed to read directory notfeatures: open notfeatures: file does not exist"),
 		},
 	} {

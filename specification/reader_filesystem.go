@@ -68,7 +68,7 @@ func (f *Filesystem) featuresAndStoriesWalkFunc(spec *Specification, warnings *e
 		switch filepath.Ext(path) {
 		case FileExtFeature, FileExtStory:
 			if err := f.addFeatureFile(spec, path); err != nil {
-				*warnings = append(*warnings, err)
+				*warnings = warnings.Append(err)
 			}
 		}
 
