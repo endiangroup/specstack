@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/endiangroup/specstack/persistence"
 )
@@ -300,9 +301,9 @@ func (repo *Git) WriteHookFile(name, command string) error {
 
 	content := fmt.Sprintf(
 		`#!/bin/sh
-# Added by spec command.
+# Added by spec command on %s
 %s
-`, command)
+`, time.Now().Format(time.RFC3339), command)
 
 	return ioutil.WriteFile(path, []byte(content), 0774)
 }
