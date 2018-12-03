@@ -12,8 +12,9 @@ Feature: Manage custom metadata
 
   Scenario: Attempt to add metadata to non-existent story
     Given I have a configured project directory
-    When I run "metadata add --story doesnotexist key=value"
-    Then I should see an error message informing me "no story matching doesnotexist"
+    And the pushing mode is not set to automatic
+    When I run "metadata add --story xxx key=value"
+    Then I should see an error message informing me "no story matching xxx"
 
   Scenario: Successfully add metadata to extant story
     Given I have a configured project directory

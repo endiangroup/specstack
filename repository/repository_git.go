@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/endiangroup/specstack/persistence"
 )
@@ -21,9 +25,9 @@ const (
 	GitConfigScopeGlobal = 4
 )
 
-// NewGitConfigErr creates the appropriate typed error for a Git failure, if
+// NewGitCmdConfigErr creates the appropriate typed error for a Git failure, if
 // possible.
-func NewGitConfigErr(gitCmdErr *GitCmdErr) error {
+func NewGitCmdConfigErr(gitCmdErr *GitCmdErr) error {
 	if gitCmdErr.ExitCode == 1 {
 		return persistence.ErrNoConfigFound
 	}
@@ -57,6 +61,20 @@ func (err GitCmdErr) Error() string {
 	}
 
 	return err.Stderr
+}
+
+type GitConfigErr struct {
+	err string
+}
+
+func (e GitConfigErr) Error() string {
+	return e.err
+}
+
+func NewGitConfigErr(body string, args ...interface{}) error {
+	return &GitConfigErr{
+		err: fmt.Sprintf(body, args...),
+	}
 }
 
 type Git struct {
@@ -101,7 +119,7 @@ func (repo *Git) Init() error {
 func (repo *Git) AllConfig() (map[string]string, error) {
 	result, err := repo.runGitCommand("config", repo.configReadScopeArgs(), "--null", "--list")
 	if err != nil {
-		return nil, NewGitConfigErr(err.(*GitCmdErr))
+		return nil, NewGitCmdConfigErr(err.(*GitCmdErr))
 	}
 
 	configMap := map[string]string{}
@@ -125,16 +143,21 @@ func (repo *Git) AllConfig() (map[string]string, error) {
 func (repo *Git) GetConfig(key string) (string, error) {
 	result, err := repo.runGitCommand("config", repo.configReadScopeArgs(), "--get", key)
 	if err != nil {
-		return "", NewGitConfigErr(err.(*GitCmdErr))
+		return "", NewGitCmdConfigErr(err.(*GitCmdErr))
 	}
 
 	return result, nil
 }
 
 func (repo *Git) SetConfig(key, value string) error {
-	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), key, value)
+	var err error
+	if value == "" {
+		_, err = repo.runGitCommand("config", repo.configWriteScopeArg(), "--unset", key)
+	} else {
+		_, err = repo.runGitCommand("config", repo.configWriteScopeArg(), key, value)
+	}
 	if err != nil {
-		return NewGitConfigErr(err.(*GitCmdErr))
+		return NewGitCmdConfigErr(err.(*GitCmdErr))
 	}
 
 	return nil
@@ -143,7 +166,7 @@ func (repo *Git) SetConfig(key, value string) error {
 func (repo *Git) UnsetConfig(key string) error {
 	_, err := repo.runGitCommand("config", repo.configWriteScopeArg(), "--unset", key)
 	if err != nil {
-		return NewGitConfigErr(err.(*GitCmdErr))
+		return NewGitCmdConfigErr(err.(*GitCmdErr))
 	}
 
 	return nil
@@ -253,6 +276,87 @@ func (repo *Git) SetMetadata(target io.Reader, value []byte) error {
 	return err
 }
 
+func (repo *Git) PrepareMetadataSync() error {
+	if err := repo.WriteHookFile("pre-push", "spec git-hook exec pre-push"); err != nil {
+		return err
+	}
+
+	if err := repo.WriteHookFile("post-merge", "spec git-hook exec post-merge"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Git) WriteHookFile(name, command string) error {
+	hooksDir, err := repo.gitHooksDirectory()
+	if err != nil {
+		return err
+	}
+
+	path := filepath.Join(hooksDir, name)
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		return nil
+	}
+
+	content := fmt.Sprintf(
+		`#!/bin/sh
+# Added by spec command on %s
+%s
+`, time.Now().Format(time.RFC3339), command)
+
+	return ioutil.WriteFile(path, []byte(content), 0774)
+}
+
+func (repo *Git) PullMetadata(from string) error {
+	exists, err := repo.hasRemote(from)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return NewGitConfigErr("set git remote '%s' first", from)
+	}
+
+	_, err = repo.runGitCommand(
+		"fetch",
+		from,
+		fmt.Sprintf("%s:%s", gitNotesRef, gitNotesRef),
+	)
+	return err
+}
+
+func (repo *Git) PushMetadata(to string) error {
+	exists, err := repo.hasRemote(to)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return NewGitConfigErr("set git remote '%s' first", to)
+	}
+	_, err = repo.runGitCommand(
+		"push",
+		"--no-verify",
+		to,
+		gitNotesRef,
+	)
+	return err
+}
+
+func (repo *Git) hasRemote(name string) (bool, error) {
+	output, err := repo.runGitCommand("remote")
+	if err != nil {
+		return false, err
+	}
+	lines := strings.Split(output, "\n")
+
+	for _, line := range lines {
+		if name == line {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 /*
 revList gets a list of object revisions for a given hash ID.
 The information is returned reverse-chronlogically, in N columns:
@@ -276,8 +380,34 @@ func (repo *Git) revList(id string) ([][]string, error) {
 	return revisions, nil
 }
 
+func (repo *Git) gitHooksDirectory() (string, error) {
+	gitDir, err := repo.gitDirectory()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(gitDir, "hooks"), nil
+}
+
+func (repo *Git) gitDirectory() (string, error) {
+	topDir, err := repo.topDirectory()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(topDir, ".git"), nil
+}
+
+func (repo *Git) topDirectory() (string, error) {
+	return repo.runGitCommand("rev-parse", "--show-toplevel")
+}
+
 func (repo *Git) runGitCommandRaw(stdin io.Reader, args ...string) (string, string, int, error) {
-	cmd := exec.Command("git", args...)
+	finalArgs := []string{}
+	for _, arg := range args {
+		if arg != "" {
+			finalArgs = append(finalArgs, arg)
+		}
+	}
+	cmd := exec.Command("git", finalArgs...)
 	cmd.Dir = repo.path
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -319,18 +449,10 @@ func (repo *Git) runGitCommandStdIn(stdin io.Reader, args ...string) (string, er
 }
 
 func (repo *Git) configReadScopeArgs() string {
-
-	switch repo.configReadScope {
-	case GitConfigScopeLocal:
+	if repo.configReadScope == GitConfigScopeLocal {
 		return "--local"
-	case GitConfigScopeGlobal:
-		return "--global"
-	case GitConfigScopeSystem:
-		return "--system"
 	}
-
 	return ""
-
 }
 
 func (repo *Git) configWriteScopeArg() string {

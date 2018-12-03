@@ -33,6 +33,7 @@ func Test_Initialise_CreatesConfigOnFirstRun(t *testing.T) {
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("username", nil)
 	mockRepo.On("GetConfig", "user.email").Return("user@email", nil)
+	mockRepo.On("PrepareMetadataSync").Return(nil)
 	mockConfigStore.On("AllConfig").Return(map[string]string{}, nil)
 
 	assert.NoError(t, app.Initialise())
@@ -87,6 +88,7 @@ func Test_Initialise_SetsConfigDefaults(t *testing.T) {
 	mockRepo.On("IsInitialised").Return(true)
 	mockRepo.On("GetConfig", "user.name").Return("username", nil)
 	mockRepo.On("GetConfig", "user.email").Return("user@email", nil)
+	mockRepo.On("PrepareMetadataSync").Return(nil)
 	mockConfigStore.On("SetConfig", mock.Anything, mock.Anything).Return(nil)
 	mockConfigStore.On("AllConfig").Return(map[string]string{}, persistence.ErrNoConfigFound)
 	mockConfigStore.On("StoreConfig", mock.Anything).Return(nil, nil)
@@ -105,6 +107,7 @@ func Test_Initialise_LoadsExistingConfigIfNotFirstRun(t *testing.T) {
 	expectedConfig := config.NewWithDefaults()
 
 	mockRepo.On("IsInitialised").Return(true)
+	mockRepo.On("PrepareMetadataSync").Return(nil)
 	mockDeveloper.On("ListConfiguration", mock.Anything).Return(nil, nil)
 	mockConfigStore.On("AllConfig").Return(config.ToMap(expectedConfig), nil)
 
