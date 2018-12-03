@@ -276,7 +276,7 @@ func (repo *Git) SetMetadata(target io.Reader, value []byte) error {
 }
 
 func (repo *Git) PrepareMetadataSync() error {
-	if err := repo.WriteHookFile("post-commit", "spec git-hook exec post-commit"); err != nil {
+	if err := repo.WriteHookFile("pre-push", "spec git-hook exec pre-push"); err != nil {
 		return err
 	}
 
@@ -334,6 +334,7 @@ func (repo *Git) PushMetadata(to string) error {
 	}
 	_, err = repo.runGitCommand(
 		"push",
+		"--no-verify",
 		to,
 		gitNotesRef,
 	)

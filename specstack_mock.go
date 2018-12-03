@@ -133,8 +133,8 @@ func (_m *MockController) Push() error {
 	return r0
 }
 
-// RunRepoPostCommitHook provides a mock function with given fields:
-func (_m *MockController) RunRepoPostCommitHook() error {
+// RunRepoPrePushHook provides a mock function with given fields:
+func (_m *MockController) RunRepoPrePushHook() error {
 	ret := _m.Called()
 
 	var r0 error

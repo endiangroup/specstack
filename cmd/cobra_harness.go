@@ -169,8 +169,8 @@ func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
 
 func (c *CobraHarness) GitHookExec(cmd *cobra.Command, args []string) error {
 	switch args[0] {
-	case "post-commit":
-		return c.errorOrNil(cmd, 1, c.app.RunRepoPostCommitHook())
+	case "pre-push":
+		return c.errorOrNil(cmd, 1, c.app.RunRepoPrePushHook())
 
 	case "post-merge":
 		return c.errorOrNil(cmd, 1, c.app.RunRepoPostMergeHook())

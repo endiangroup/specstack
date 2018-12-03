@@ -243,7 +243,7 @@ func Test_AnInitialisedGitRepoCanWriteItsHooksWhenAppropriate(t *testing.T) {
 	hooksDir, err := repo.gitHooksDirectory()
 	require.Nil(t, err)
 
-	pc, pu := filepath.Join(hooksDir, "post-commit"), filepath.Join(hooksDir, "post-merge")
+	pc, pu := filepath.Join(hooksDir, "pre-push"), filepath.Join(hooksDir, "post-merge")
 
 	t.Run("Make sure hooks don't exist initially", func(t *testing.T) {
 		_, err := os.Stat(pc)

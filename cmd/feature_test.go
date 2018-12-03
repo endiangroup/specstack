@@ -327,7 +327,7 @@ func (t *testHarness) overwriteHooks() error {
 		"src/github.com/endiangroup/specstack/cmd/spec/*.go",
 	)
 
-	if err := t.repo.WriteHookFile("post-commit", cmd+" git-hook exec post-commit"); err != nil {
+	if err := t.repo.WriteHookFile("pre-push", cmd+" git-hook exec pre-push"); err != nil {
 		return err
 	}
 
@@ -395,6 +395,10 @@ func (t *testHarness) iAddSomeMetadata() error {
 
 func (t *testHarness) iRunAGitPull() error {
 	return t.RunGitCommand("pull")
+}
+
+func (t *testHarness) iRunAGitPush() error {
+	return t.RunGitCommand("push")
 }
 
 func (t *testHarness) iMakeACommit() error {
@@ -513,9 +517,9 @@ func (t *testHarness) myMetadataShouldBePushedToTheRemoteGitServer() error {
 		case res := <-t.gitServer.RefsEventChan:
 			// This is an imperfect test because the mock server
 			// doesn't do very much, but we know the client must
-			// send git-receive-pack messages tro update the remote,
+			// send git-upload-pack messages to update the remote,
 			// so we count that as valid.
-			if res.FormValue("service") == "git-receive-pack" {
+			if res.FormValue("service") == "git-upload-pack" {
 				return nil
 			}
 		case <-timeout:
@@ -591,7 +595,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have not set a git remote$`, th.iHaveNotSetAGitRemote)
 	s.Step(`^I have set the pulling mode to semi-automatic$`, th.iHaveSetThePullingModeToSemiautomatic)
 	s.Step(`^I add some metadata$`, th.iAddSomeMetadata)
+	s.Step(`^I have added some metadata$`, th.iAddSomeMetadata)
 	s.Step(`^I run a git pull$`, th.iRunAGitPull)
+	s.Step(`^I run a git push$`, th.iRunAGitPush)
 	s.Step(`^I make a commit$`, th.iMakeACommit)
 	s.Step(`^I have set the pulling mode to automatic$`, th.iHaveSetThePullingModeToAutomatic)
 	s.Step(`^I have set the pushing mode to semi-automatic$`, th.iHaveSetThePushingModeToSemiautomatic)

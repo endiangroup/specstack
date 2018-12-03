@@ -34,7 +34,7 @@ type Controller interface {
 	SetConfiguration(string, string) error
 	AddMetadataToStory(storyName, key, value string) error
 	GetStoryMetadata(string) ([]*metadata.Entry, error)
-	RunRepoPostCommitHook() error
+	RunRepoPrePushHook() error
 	RunRepoPostMergeHook() error
 	Push() error
 	Pull() error
@@ -219,7 +219,7 @@ func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, e
 	return metadata.ReadAll(a.omniStore, object)
 }
 
-func (a *appController) RunRepoPostCommitHook() error {
+func (a *appController) RunRepoPrePushHook() error {
 	if a.config.Project.PushingMode != config.ModeSemiAuto {
 		return nil
 	}

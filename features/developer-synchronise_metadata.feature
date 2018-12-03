@@ -43,14 +43,6 @@ Feature: Synchronise metadata
     When I run "push"
     Then I should see an error message informing me "set git remote 'origin' first"
 
-  Scenario: Git remote not set for semi-automatic push
-    Given I have a git-initialised project directory
-    And I have set the pushing mode to semi-automatic
-    And I have added some metadata
-    But I have not set a git remote
-    When I make run a git push
-    Then I should see an error message informing me "set git remote 'origin' first"
-
   Scenario: Git remote not set for automatic push
     Given I have a git-initialised project directory
     And I have set the pushing mode to automatic
