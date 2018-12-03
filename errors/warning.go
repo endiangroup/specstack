@@ -41,7 +41,8 @@ func NewWarning(err error) *Warning {
 }
 
 func WarningOrNil(err error) error {
-	if err == nil {
+	warnings, isWarnings := err.(Warnings)
+	if err == nil || (isWarnings && !warnings.Any()) {
 		return nil
 	}
 
@@ -50,6 +51,6 @@ func WarningOrNil(err error) error {
 
 func IsWarning(err error) bool {
 	_, isWarning := err.(*Warning)
-	_, isWarnings := err.(Warnings)
-	return isWarning || isWarnings
+	warnings, isWarnings := err.(Warnings)
+	return isWarning || (isWarnings && warnings.Any())
 }
