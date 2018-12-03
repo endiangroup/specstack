@@ -3,6 +3,7 @@ package repository
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,8 +13,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/endiangroup/specstack/persistence"
 )
 
 const (
@@ -25,11 +24,13 @@ const (
 	GitConfigScopeGlobal = 4
 )
 
+var ErrNoConfigFound = errors.New("no config found")
+
 // NewGitCmdConfigErr creates the appropriate typed error for a Git failure, if
 // possible.
 func NewGitCmdConfigErr(gitCmdErr *GitCmdErr) error {
 	if gitCmdErr.ExitCode == 1 {
-		return persistence.ErrNoConfigFound
+		return ErrNoConfigFound
 	}
 
 	return gitCmdErr

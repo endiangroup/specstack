@@ -84,7 +84,7 @@ func (a *appController) Initialise() error {
 
 func (a *appController) loadOrCreateConfig() (*config.Config, error) {
 	c, err := config.Load(a.omniStore)
-	if a.isFirstRun(err) {
+	if a.isErrConfigNotFound(err) {
 		return a.createDefaultConfig()
 	} else if err != nil {
 		return nil, err
@@ -93,8 +93,8 @@ func (a *appController) loadOrCreateConfig() (*config.Config, error) {
 	return c, nil
 }
 
-func (a *appController) isFirstRun(err error) bool {
-	return err == persistence.ErrNoConfigFound
+func (a *appController) isErrConfigNotFound(err error) bool {
+	return err == persistence.ErrNoConfigFound || err == repository.ErrNoConfigFound
 }
 
 func (a *appController) createDefaultConfig() (*config.Config, error) {
@@ -119,7 +119,7 @@ func (a *appController) setUserDefaults(c *config.Config) error {
 
 	c.User.Name, err = a.repo.GetConfig(userName)
 	if err != nil {
-		if err == persistence.ErrNoConfigFound {
+		if a.isErrConfigNotFound(err) {
 			return MissingRequiredConfigValueErr(userName)
 		}
 
@@ -128,7 +128,7 @@ func (a *appController) setUserDefaults(c *config.Config) error {
 
 	c.User.Email, err = a.repo.GetConfig(userEmail)
 	if err != nil {
-		if err == persistence.ErrNoConfigFound {
+		if a.isErrConfigNotFound(err) {
 			return MissingRequiredConfigValueErr(userEmail)
 		}
 
