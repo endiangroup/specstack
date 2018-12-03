@@ -1,4 +1,18 @@
 Feature: Synchronise metadata
+  As a Developer
+  I want to synchronise my specification's metadata
+  So that I can stay up to date with my team
+  But I know that git has limitations, so I will accept three modes of operation
+  for pushes and pulls, which can be set independently:
+  1. Manual mode, where I can push and pull metadata explicity. I will use this
+  when I want to push or pull metadata without making changes to my source code,
+  or in unusual tech setups.
+  2. Semi-automatic mode, where my metadata is pulled after a merge (generally a
+  git pull) or pushed when I push my code changes to git. This is the way that
+  I will generally fetch metadata.
+  3. Automatic push mode, where my metadata are pushed to the git server as soon
+  as I add them, without me having to do anything. I want this to be the default
+  behaviour.
 
   Scenario: Git not initialised for manual pull
     Given I have a project directory
