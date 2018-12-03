@@ -88,8 +88,8 @@ Feature: Synchronise metadata
   Scenario: Successful manual push
     Given I have a properly configured project directory
     And the pushing mode is not set to automatic
-    And I add some metadata
-    And I run "push"
+    And I have added some metadata
+    When I run "push"
     Then my metadata should be pushed to the remote git server
     And I should see no errors
 
