@@ -47,11 +47,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:32297b8fdeb42ba4ace38e9d9bd1325aa35d2f715f53fb1d90a683c92864ef4c"
+  digest = "1:ab6baec7aeb4bbb74c2378811517babd533f3748d911a97c4462d1af094de02e"
   name = "github.com/endiangroup/pretty-formatter-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "11cde72238f557e2f52052ed42bf18baa11ea330"
+  revision = "d137989aa420a694faa276d15fd2a6c890baa162"
 
 [[projects]]
   branch = "master"
