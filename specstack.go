@@ -34,6 +34,10 @@ type Controller interface {
 	SetConfiguration(string, string) error
 	AddMetadataToStory(storyName, key, value string) error
 	GetStoryMetadata(string) ([]*metadata.Entry, error)
+	RunRepoPrePushHook() error
+	RunRepoPostMergeHook() error
+	Push() error
+	Pull() error
 }
 
 func New(
@@ -71,8 +75,11 @@ func (a *appController) Initialise() error {
 
 	var err error
 	a.config, err = a.loadOrCreateConfig()
+	if err != nil {
+		return err
+	}
 
-	return err
+	return metadata.PrepareSync(a.repo)
 }
 
 func (a *appController) loadOrCreateConfig() (*config.Config, error) {
@@ -151,7 +158,7 @@ func (a *appController) specificationReader() specification.Reader {
 	return specification.NewFilesystemReader(afero.NewOsFs(), a.config.Project.FeaturesDir)
 }
 
-func (a *appController) warning(warning error) {
+func (a *appController) emitWarning(warning error) {
 	fmt.Fprintf(a.stderr, "WARNING: %s\n", warning.Error())
 }
 
@@ -164,7 +171,7 @@ func (a *appController) findStoryObject(name string) (*specification.Story, io.R
 	}
 
 	for _, warning := range warnings {
-		a.warning(warning)
+		a.emitWarning(warning)
 	}
 
 	story, err := spec.FindStory(name)
@@ -186,7 +193,21 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 		return err
 	}
 
-	return a.developer.AddMetadataToStory(a.newContextWithConfig(), story, object, key, value)
+	if err := a.developer.AddMetadataToStory(
+		a.newContextWithConfig(),
+		story,
+		object,
+		key,
+		value,
+	); err != nil {
+		return err
+	}
+
+	if a.config.Project.PushingMode == config.ModeAuto {
+		return errors.WarningOrNil(a.Push())
+	}
+
+	return nil
 }
 
 func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, error) {
@@ -196,4 +217,32 @@ func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, e
 	}
 
 	return metadata.ReadAll(a.omniStore, object)
+}
+
+func (a *appController) RunRepoPrePushHook() error {
+	if a.config.Project.PushingMode != config.ModeSemiAuto {
+		return nil
+	}
+	return a.Push()
+}
+
+func (a *appController) RunRepoPostMergeHook() error {
+	if a.config.Project.PullingMode != config.ModeSemiAuto {
+		return nil
+	}
+	return a.Pull()
+}
+
+func (a *appController) Pull() error {
+	if a.config.Project.Remote == "" {
+		return fmt.Errorf("configure a project remote first")
+	}
+	return metadata.Pull(a.repo, a.config.Project.Remote)
+}
+
+func (a *appController) Push() error {
+	if a.config.Project.Remote == "" {
+		return fmt.Errorf("configure a project remote first")
+	}
+	return metadata.Push(a.repo, a.config.Project.Remote)
 }

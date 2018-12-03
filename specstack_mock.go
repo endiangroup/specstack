@@ -105,6 +105,62 @@ func (_m *MockController) ListConfiguration() (map[string]string, error) {
 	return r0, r1
 }
 
+// Pull provides a mock function with given fields:
+func (_m *MockController) Pull() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Push provides a mock function with given fields:
+func (_m *MockController) Push() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RunRepoPrePushHook provides a mock function with given fields:
+func (_m *MockController) RunRepoPrePushHook() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RunRepoPostMergeHook provides a mock function with given fields:
+func (_m *MockController) RunRepoPostMergeHook() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SetConfiguration provides a mock function with given fields: _a0, _a1
 func (_m *MockController) SetConfiguration(_a0 string, _a1 string) error {
 	ret := _m.Called(_a0, _a1)

@@ -4,17 +4,25 @@ package repository
 type Repository interface {
 	Initialiser
 	Configurer
+	MetadataSyncer
 }
 
 // Initialiser initialises a repo
 type Initialiser interface {
-	Init() error
 	IsInitialised() bool
 }
 
+// Configurer allows for low level config settings
 type Configurer interface {
 	GetConfig(string) (string, error)
 	SetConfig(string, string) error
 	UnsetConfig(string) error
 	AllConfig() (map[string]string, error)
+}
+
+// MetadataSyncer allows for low level metadata management
+type MetadataSyncer interface {
+	PrepareMetadataSync() error
+	PullMetadata(from string) error
+	PushMetadata(to string) error
 }
