@@ -355,38 +355,23 @@ func (t *testHarness) hasTheFollowingMetadata(storyName string, table *gherkin.D
 }
 
 func (t *testHarness) iHaveSetThePullingModeToSemiautomatic() error {
-	if err := t.overwriteHooks(); err != nil {
-		return err
-	}
-	return t.iRunTheCommand(`config set project.pullingmode=` + config.ModeSemiAuto)
+	return t.SetSyncMode("pulling", config.ModeSemiAuto)
 }
 
 func (t *testHarness) iHaveSetThePullingModeToAutomatic() error {
-	if err := t.overwriteHooks(); err != nil {
-		return err
-	}
-	return t.iRunTheCommand(`config set project.pullingmode=` + config.ModeAuto)
+	return t.SetSyncMode("pulling", config.ModeAuto)
 }
 
 func (t *testHarness) iHaveSetThePushingModeToSemiautomatic() error {
-	if err := t.overwriteHooks(); err != nil {
-		return err
-	}
-	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeSemiAuto)
+	return t.SetSyncMode("pushing", config.ModeSemiAuto)
 }
 
 func (t *testHarness) iHaveSetThePushingModeToAutomatic() error {
-	if err := t.overwriteHooks(); err != nil {
-		return err
-	}
-	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeAuto)
+	return t.SetSyncMode("pushing", config.ModeAuto)
 }
 
 func (t *testHarness) thePushingModeIsNotSetToAutomatic() error {
-	if err := t.overwriteHooks(); err != nil {
-		return err
-	}
-	return t.iRunTheCommand(`config set project.pushingmode=` + config.ModeSemiAuto)
+	return t.SetSyncMode("pushing", config.ModeSemiAuto)
 }
 
 func (t *testHarness) iAddSomeMetadata() error {
@@ -566,6 +551,13 @@ func (t *testHarness) RunGitCommand(args ...string) error {
 	}
 
 	return err
+}
+
+func (t *testHarness) SetSyncMode(mode, value string) error {
+	if err := t.overwriteHooks(); err != nil {
+		return err
+	}
+	return t.iRunTheCommand(fmt.Sprintf(`config set project.%smode=%s`, mode, value))
 }
 
 func FeatureContext(s *godog.Suite) {
