@@ -102,7 +102,7 @@ func (t *testHarness) iHaveAProjectDirectory() error {
 	}
 
 	if err := t.fs.MkdirAll(filepath.Join(t.path, "features"), 0755); err != nil {
-		return nil
+		return err
 	}
 
 	return afero.WriteFile(
