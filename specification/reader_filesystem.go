@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	// FIXME:	gherkin "github.com/cucumber/gherkin-go"
 	// OR github.com/cucumber/cucumber/gherkin/go ?
@@ -80,30 +81,43 @@ func (f *Filesystem) featuresAndStoriesWalkFunc(spec *Specification, warnings *e
 // Filesystem state.
 func (f *Filesystem) addFeatureFile(spec *Specification, path string) error {
 
-	story, err := f.parseFeatureFile(f.Fs, path)
+	story, scenarios, err := f.parseFeatureFile(f.Fs, path)
 
 	if err != nil {
 		return err
 	}
 
 	spec.StorySources[path] = story
+	spec.ScenarioSources[story] = scenarios
 
 	return nil
 }
 
-func (f *Filesystem) parseFeatureFile(fs afero.Fs, path string) (*Story, error) {
+func (f *Filesystem) parseFeatureFile(fs afero.Fs, path string) (*Story, []*Scenario, error) {
 	content, err := afero.ReadFile(fs, path)
 
 	if err != nil {
-		return &Story{}, fmt.Errorf("failed to read %s: %s", path, err)
+		return &Story{}, nil, fmt.Errorf("failed to read %s: %s", path, err)
 	}
 
 	buf := bytes.NewBuffer(content)
 	feature, err := gherkin.ParseFeature(buf)
 
 	if err != nil {
-		return &Story{}, fmt.Errorf("failed to parse %s: %s", path, err)
+		return &Story{}, nil, fmt.Errorf("failed to parse %s: %s", path, err)
 	}
 
-	return newStoryFromGherkinFeature(feature, path), nil
+	story := newStoryFromGherkinFeature(feature, path)
+	scenarios := []*Scenario{}
+
+	for _, s := range feature.ScenarioDefinitions {
+		switch scenario := s.(type) {
+		case *gherkin.Scenario:
+			scenarios = append(scenarios, newScenarioFromGherkinScenario(scenario, story))
+		default:
+			return nil, nil, fmt.Errorf("Unhandled type %s", reflect.TypeOf(s))
+		}
+	}
+
+	return story, scenarios, nil
 }
