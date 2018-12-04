@@ -79,18 +79,6 @@ func (s *Specification) Scenarios() []*Scenario {
 	return scenarios
 }
 
-type Scenario struct {
-	*gherkin.Scenario
-	Story *Story
-}
-
-func newScenarioFromGherkinScenario(scenario *gherkin.Scenario, story *Story) *Scenario {
-	return &Scenario{
-		Scenario: scenario,
-		Story:    story,
-	}
-}
-
 // FindStory performs a fuzzy match on the source (usually file name) and
 // name of all known stories, then returns the closest match. The base source
 // (usually directory path) and any file extensions are omitted from the
