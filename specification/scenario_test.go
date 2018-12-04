@@ -151,6 +151,14 @@ func Test_ScenarioRelated(t *testing.T) {
 					Then I should see an error message informing me "initialise repository first"`,
 		},
 		{
+			description: "One line changed, another removed",
+			related:     true,
+			new: `Scenario: Git not initialised for manual pull
+					Given Some other line
+					But I have not initialised git
+					Then I should see an error message informing me "initialise repository first"`,
+		},
+		{
 			description: "Two lines changed",
 			related:     true,
 			new: `Scenario: Git not initialised for manual pull
