@@ -1,7 +1,7 @@
 &specification.Specification{
   Source: "",
   StorySources: map[string]*specification.Story{
-    "features/a.feature": &specification.Story{
+    "features/a.feature": &specification.Story{ // p2
       Feature: &gherkin.Feature{
         Node: gherkin.Node{
           Location: &gherkin.Location{
@@ -18,7 +18,7 @@
         Description: "  In order to test application behavior\n  As a test suite\n  I need to be able to run features",
         Background: nil,
         ScenarioDefinitions: []interface {}{
-          &gherkin.Scenario{
+          &gherkin.Scenario{ // p1
             ScenarioDefinition: gherkin.ScenarioDefinition{
               Node: gherkin.Node{
                 Location: &gherkin.Location{
@@ -98,6 +98,14 @@
         Comments: p0,
       },
       SourceIdentifier: "features/a.feature",
+    },
+  },
+  ScenarioSources: map[*specification.Story][]*specification.Scenario{
+    p2: []*specification.Scenario{
+      &specification.Scenario{
+        Scenario: p1,
+        Story: p2,
+      },
     },
   },
 }

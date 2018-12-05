@@ -20,13 +20,15 @@ example, []int{2,3,4}) at the cost of speed.
 var stringMatchBags = []int{2, 3}
 
 type Specification struct {
-	Source       string
-	StorySources map[string]*Story
+	Source          string
+	StorySources    map[string]*Story
+	ScenarioSources map[*Story][]*Scenario
 }
 
 func NewSpecification() *Specification {
 	return &Specification{
-		StorySources: make(map[string]*Story),
+		StorySources:    make(map[string]*Story),
+		ScenarioSources: make(map[*Story][]*Scenario),
 	}
 }
 
@@ -64,6 +66,17 @@ func (f *Specification) Stories() []*Story {
 	}
 
 	return stories
+}
+
+// Scenarios fetches a complete list of scenarios from all loaded feature
+// files. Scenarios are returned in the order they appear in their feature
+// file, grouped by file name in alphabetical order.
+func (s *Specification) Scenarios() []*Scenario {
+	scenarios := []*Scenario{}
+	for _, story := range s.Stories() {
+		scenarios = append(scenarios, s.ScenarioSources[story]...)
+	}
+	return scenarios
 }
 
 // FindStory performs a fuzzy match on the source (usually file name) and
