@@ -81,6 +81,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 			description: "Happy path: easy",
 			fileContent: map[string]string{
 				"features/a.feature": mockFeatureA,
+				"features/b.feature": mockFeatureA,
 			},
 			inputDir: "features",
 			warnings: errors.Warnings{},
