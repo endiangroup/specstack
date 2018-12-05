@@ -204,7 +204,7 @@ func (t *testHarness) iShouldSeeTheFollowing(output *gherkin.DocString) error {
 }
 
 func (t *testHarness) iShouldSeeSomeConfigurationKeysAndValues() error {
-	if !assert.True(t, len(strings.Split(t.stdout.String(), "\n")) > 0, "Nothing outputed, expected some lines") {
+	if !assert.True(t, len(strings.Split(t.stdout.String(), "\n")) > 0, "Nothing outputted, expected some lines") {
 		return t.AssertError()
 	}
 
@@ -508,10 +508,10 @@ func (t *testHarness) myMetadataShouldBePushedToTheRemoteGitServer() error {
 				return nil
 			}
 		case <-timeout:
-			return fmt.Errorf("Timed out")
+			break
 		}
 	}
-	return fmt.Errorf("Unexpected error")
+	return fmt.Errorf("Timed out")
 }
 
 func (t *testHarness) Errorf(format string, args ...interface{}) {

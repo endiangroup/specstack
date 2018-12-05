@@ -61,11 +61,11 @@ func (p *PlaintextPrintScanner) Scan(reader io.Reader) ([]Entry, error) {
 	return entries, nil
 }
 
-func (p *PlaintextPrintScanner) padRight(str, pad string, lenght int) string {
+func (p *PlaintextPrintScanner) padRight(str, pad string, length int) string {
 	for {
 		str += pad
-		if len(str) > lenght {
-			return str[0:lenght]
+		if len(str) > length {
+			return str[0:length]
 		}
 	}
 }
