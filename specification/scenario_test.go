@@ -31,7 +31,7 @@ func Test_AScenarioCanReturnItsBareString(t *testing.T) {
 	snaptest.Snapshot(t, raw.bareString())
 }
 
-func Test_ScenarioRelated(t *testing.T) {
+func Test_ScenarioRelated_BasicTest(t *testing.T) {
 	startingScenario := newMockScenario(
 		t,
 		`Scenario: Git not initialised for manual pull
@@ -221,4 +221,114 @@ func Test_ScenarioRelated(t *testing.T) {
 			require.Equal(t, test.related, ScenarioRelated(old, newMockScenario(t, test.new)))
 		})
 	}
+}
+
+func Test_ScenarioRelated_ProgressiveTests(t *testing.T) {
+	for _, test := range []struct {
+		description string
+		progression []string
+	}{
+		{
+			description: "Simple progression",
+			progression: []string{
+				`Scenario: Declined request
+				Given the account is in credit
+				And the card is invalid
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned`,
+
+				`Scenario: Declined request
+				Given the account is in credit
+				And the card is valid
+				And the pin is entered incorrectly
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned`,
+			},
+		},
+		{
+			description: "More complex progression",
+			progression: []string{
+				`Scenario: Declined request
+				Given the account is not in credit
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned `,
+
+				`Scenario: Declined request
+				Given the account is not in credit
+				And the card is valid
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned `,
+
+				`Scenario: Declined request
+				Given the account is not in credit
+				And the card is valid
+				And the pin is entered correctly
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned`,
+			},
+		},
+		{
+			description: "High variation",
+			progression: []string{
+				`Scenario: A
+				Given the account is not in credit
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned`,
+
+				`Scenario: A
+				Given the account is in credit
+				And the card is invalid
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned`,
+
+				`Scenario: A
+				Given the account is not in credit
+				And the card is valid
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned`,
+
+				`Scenario: A
+				Given the account is not in credit
+				And the card is valid
+				And the pin is entered correctly
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned`,
+
+				`Scenario: A
+				Given the account is in credit
+				And the card is valid
+				And the pin is entered incorrectly
+				When the customer requests cash
+				Then the request is declined
+				And the card is returned`,
+
+				`Scenario: A
+				Given the account is in credit
+				And the card is valid
+				And the pin is entered correctly
+				When the customer requests cash
+				Then the request is accepted
+				And the account is debited
+				And the cash is dispensed`,
+			},
+		},
+	} {
+		t.Run(fmt.Sprintf("input '%s'", test.description), func(t *testing.T) {
+			for i := 1; i < len(test.progression); i++ {
+				old := newMockScenario(t, test.progression[i-1])
+				new := newMockScenario(t, test.progression[i])
+				require.True(t, ScenarioRelated(old, new))
+			}
+		})
+	}
+
 }
