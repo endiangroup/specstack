@@ -1,5 +1,5 @@
 &specification.Specification{
-  Source: "",
+  Source: "features",
   StorySources: map[string]*specification.Story{
     "features/a.feature": &specification.Story{
       Feature: &gherkin.Feature{

@@ -124,13 +124,7 @@ func Test_AFilesystemReaderCanReadASpecificationFromDisk(t *testing.T) {
 			if test.err == nil {
 				require.Nil(t, err)
 				require.Equal(t, test.warnings, warnings)
-				snaptest.Snapshot(t, spec.Source)
-				snaptest.Snapshot(t, spec.StorySources)
-				for _, story := range spec.Stories() {
-					t.Run(fmt.Sprintf("Story '%s' scenarios", story.Name), func(t *testing.T) {
-						snaptest.Snapshot(t, spec.ScenarioSources[story])
-					})
-				}
+				snaptest.Snapshot(t, spec)
 			} else {
 				require.Equal(t, test.err, err)
 			}

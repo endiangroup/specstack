@@ -103,13 +103,3 @@ func Test_ASpecificationCanAddressStories(t *testing.T) {
 		})
 	}
 }
-
-func Test_ASpecificationCanGetAListOfScenarios(t *testing.T) {
-	spec := generateAndReadSpec(t,
-		map[string]string{
-			"features/a.feature": mockFeatureA,
-			"features/b.feature": mockFeatureA,
-		},
-	)
-	snaptest.Snapshot(t, spec.Scenarios())
-}

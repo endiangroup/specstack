@@ -1,1 +1,0 @@
-"Git not initialised for manual pull\nI have a project directory\nI have not initialised git\nI run \"pull\"\nI should see an error message informing me \"initialise repository first\""

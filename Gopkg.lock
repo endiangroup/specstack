@@ -14,14 +14,6 @@
   version = "v0.7.6"
 
 [[projects]]
-  branch = "master"
-  digest = "1:98a49d9edf7d250fe280c04f903b4379710f340eda4e48fa6a5a13ab71531b8c"
-  name = "github.com/antzucaro/matchr"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "cbc221335f3c9d9eff15d1d9d5983ddf70b906b6"
-
-[[projects]]
   digest = "1:c77e3e35960e9aeda8f3a3ad17c778b9e898cdd5d6eb907e8d7f870baed91105"
   name = "github.com/cucumber/cucumber-messages-go"
   packages = ["v2"]
@@ -191,7 +183,6 @@
   input-imports = [
     "github.com/DATA-DOG/godog",
     "github.com/DATA-DOG/godog/gherkin",
-    "github.com/antzucaro/matchr",
     "github.com/cucumber/gherkin-go",
     "github.com/endiangroup/gitest",
     "github.com/endiangroup/pretty-formatter-go",
