@@ -2,9 +2,11 @@ package specification
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/endiangroup/snaptest"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
@@ -331,4 +333,35 @@ func Test_ScenarioRelated_ProgressiveTests(t *testing.T) {
 		})
 	}
 
+}
+
+// This test reads real-world scenario progressions from the
+// disk and makes sure the scenario tracking works in all cases.
+// The progressions are taken from the specstack project itself.
+func Test_ScenarioRelated_SpecstackScenarios(t *testing.T) {
+	fs := afero.NewOsFs()
+	files, err := afero.ReadDir(fs, "fixtures/progression")
+	require.Nil(t, err)
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		t.Run(fmt.Sprintf("file '%s'", file.Name()), func(t *testing.T) {
+
+			data, err := afero.ReadFile(fs, filepath.Join("fixtures/progression", file.Name()))
+			require.Nil(t, err)
+
+			spec := generateAndReadSpec(
+				t, map[string]string{
+					fmt.Sprintf("features/%s.feature", t.Name()): string(data),
+				},
+			)
+
+			scenarios := spec.Scenarios()
+			for i := 1; i < len(scenarios); i++ {
+				require.True(t, ScenarioRelated(scenarios[i-1], scenarios[i]))
+			}
+		})
+	}
 }
