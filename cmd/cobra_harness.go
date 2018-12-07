@@ -137,18 +137,28 @@ func (c *CobraHarness) ConfigSet(cmd *cobra.Command, args []string) error {
 func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
 	entityFound := false
 
-	if storyName := c.flagValueString(cmd, "story"); storyName != "" {
+	if name := c.flagValueString(cmd, "story"); name != "" {
 		entityFound = true
 		for _, arg := range args {
 			kv := strings.Split(arg, "=")
-			if err := c.app.AddMetadataToStory(storyName, kv[0], kv[1]); err != nil {
+			if err := c.app.AddMetadataToStory(name, kv[0], kv[1]); err != nil {
+				return c.error(cmd, err)
+			}
+		}
+	}
+
+	if name := c.flagValueString(cmd, "scenario"); name != "" {
+		entityFound = true
+		for _, arg := range args {
+			kv := strings.Split(arg, "=")
+			if err := c.app.AddMetadataToScenario(name, kv[0], kv[1]); err != nil {
 				return c.error(cmd, err)
 			}
 		}
 	}
 
 	if !entityFound {
-		return c.errorWithReturnCode(cmd, 0, fmt.Errorf("specify a story"))
+		return c.errorWithReturnCode(cmd, 0, fmt.Errorf("specify a story or scenario"))
 	}
 
 	return nil

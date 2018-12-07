@@ -20,8 +20,9 @@ Feature: Manage custom metadata
     Given I have a configured project directory
     And I have a story called "story1"
     And I have a story called "story2"
+    And the pushing mode is not set to automatic
     When I run "metadata add --story story key=value"
-    Then I should see an error message informing me "story name is ambiguous. Did you mean 'story1' or 'story2'?"
+    Then I should see an error message informing me "story name is ambiguous. The most similar story names are 'story1' and 'story2'"
 
   Scenario: Successfully add metadata to extant story
     Given I have a configured project directory
@@ -45,6 +46,7 @@ Feature: Manage custom metadata
       Metadata two        : Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur...
       """
 
+  @next
   Scenario: Attempt to add metadata to non-existent scenario
     Given I have a configured project directory
     And the pushing mode is not set to automatic

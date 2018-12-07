@@ -43,6 +43,12 @@ const (
   As a test suite
   I need to be able to run features
 `
+	mockFeatureE = `Feature: ABC
+  In order to test application behavior
+  As a test suite
+  I need to be able to run features
+
+`
 )
 
 func generateAndReadSpec(t *testing.T, files map[string]string) *Specification {
@@ -75,6 +81,9 @@ func Test_ASpecificationCanAddressStories(t *testing.T) {
 			"features/update_config.feature": mockFeatureB,
 			"features/create_config.feature": mockFeatureC,
 			"features/add_metadata.feature":  mockFeatureD,
+			"features/similar1.feature":      mockFeatureA,
+			"features/similar2.feature":      mockFeatureA,
+			"features/BBC.feature":           mockFeatureE,
 		},
 	)
 
@@ -89,6 +98,11 @@ func Test_ASpecificationCanAddressStories(t *testing.T) {
 		{term: "different"},
 		{term: "managemeta"},
 		{term: "zzz", err: fmt.Errorf("no story matching zzz")},
+		{term: "similar", err: fmt.Errorf("story name is ambiguous. The most similar story names are 'similar1' and 'similar2'")}, //nolint:lll
+		// In this case, there are two equal matches (the file name
+		// and the story title) which point to the same thing, so there
+		// should be no error
+		{term: "C"},
 	} {
 		t.Run(test.term, func(t *testing.T) {
 			story, err := spec.FindStory(test.term)

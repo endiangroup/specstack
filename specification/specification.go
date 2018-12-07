@@ -6,18 +6,8 @@ import (
 	"strings"
 
 	gherkin "github.com/DATA-DOG/godog/gherkin"
-	"github.com/schollz/closestmatch"
+	"github.com/endiangroup/specstack/fuzzy"
 )
-
-/*
-Used for the closestmatch system, which uses bag-of-words approach for
-calculating string distance. Each integer represents a 'bag' of n-grams for the
-match (see https://en.wikipedia.org/wiki/Bag-of-words_model).
-
-Match accuracy can be improved by adding more bags of increasing size (for
-example, []int{2,3,4}) at the cost of speed.
-*/
-var stringMatchBags = []int{2, 3}
 
 type Specification struct {
 	Source          string
@@ -80,10 +70,10 @@ func (s *Specification) Scenarios() []*Scenario {
 }
 
 // FindStory performs a fuzzy match on the source (usually file name) and
-// name of all known stories, then returns the closest match. The base source
-// (usually directory path) and any file extensions are omitted from the
-// match. In the event of a tie (that is, two equal matches) the story is chosen
-// on its alphabetical primacy.
+// name of all known stories, then returns the closest match, if any. The base
+// source (usually directory path) and any file extensions are omitted from the
+// match. In the event of a tie (that is, two roughly equal matches) then an
+// error is returned.
 func (f *Specification) FindStory(input string) (*Story, error) {
 	allStorySources := make(map[string]*Story)
 	for k, v := range f.StorySources {
@@ -106,15 +96,50 @@ func (f *Specification) FindStory(input string) (*Story, error) {
 		finalSources = append(finalSources, fs)
 	}
 
-	sort.Strings(finalSources)
-	cm := closestmatch.New(finalSources, stringMatchBags)
-	match := cm.Closest(input)
+	matches := f.closetMatch(input, finalSources)
 
-	if match == "" {
+	if matches == nil {
 		return nil, fmt.Errorf("no story matching %s", input)
 	}
 
-	return allStorySources[lookup[match]], nil
+	if len(matches) > 1 {
+		// The matches may point to the same underlying object
+		if a, b := allStorySources[lookup[matches[0]]], allStorySources[lookup[matches[1]]]; a == b {
+			return a, nil
+		}
+
+		return nil, fmt.Errorf(
+			"story name is ambiguous. The most similar story names are '%s' and '%s'",
+			matches[0],
+			matches[1],
+		)
+	}
+
+	return allStorySources[lookup[matches[0]]], nil
+}
+
+func (s *Specification) FindScenario(query string) (*Scenario, error) {
+	return nil, fmt.Errorf("TODO: implement and test FindScenario")
+}
+
+func (f *Specification) closetMatch(term string, pool []string) []string {
+	ranked := fuzzy.Rank(term, pool)
+
+	if len(ranked) == 0 {
+		return nil
+	}
+
+	if ranked[0].Negligible() {
+		return nil
+	}
+
+	if len(ranked) > 1 && fuzzy.Adjacent(ranked[0], ranked[1]) {
+		outputs := []string{ranked[0].Term, ranked[1].Term}
+		sort.Strings(outputs)
+		return outputs
+	}
+
+	return []string{ranked[0].Term}
 }
 
 func (f *Specification) trimSource(input string) string {

@@ -33,6 +33,7 @@ type Controller interface {
 	GetConfiguration(string) (string, error)
 	SetConfiguration(string, string) error
 	AddMetadataToStory(storyName, key, value string) error
+	AddMetadataToScenario(storyName, key, value string) error
 	GetStoryMetadata(string) ([]*metadata.Entry, error)
 	RunRepoPrePushHook() error
 	RunRepoPostMergeHook() error
@@ -162,7 +163,7 @@ func (a *appController) emitWarning(warning error) {
 	fmt.Fprintf(a.stderr, "WARNING: %s\n", warning.Error())
 }
 
-func (a *appController) findStoryObject(name string) (*specification.Story, io.Reader, error) {
+func (a *appController) specification() (*specification.Specification, specification.Reader, error) {
 	reader := a.specificationReader()
 
 	spec, warnings, err := reader.Read()
@@ -172,6 +173,14 @@ func (a *appController) findStoryObject(name string) (*specification.Story, io.R
 
 	for _, warning := range warnings {
 		a.emitWarning(warning)
+	}
+	return spec, reader, nil
+}
+
+func (a *appController) findStoryObject(name string) (*specification.Story, io.Reader, error) {
+	spec, reader, err := a.specification()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	story, err := spec.FindStory(name)
@@ -187,6 +196,26 @@ func (a *appController) findStoryObject(name string) (*specification.Story, io.R
 	return story, object, nil
 }
 
+func (a *appController) findScenarioObject(name string) (*specification.Scenario, io.Reader, error) {
+	spec, reader, err := a.specification()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	scenario, err := spec.FindScenario(name)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	//FIXME: How?
+	object, err := reader.ReadSource(scenario)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return scenario, object, nil
+}
+
 func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 	story, object, err := a.findStoryObject(storyName)
 	if err != nil {
@@ -196,6 +225,29 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 	if err := a.developer.AddMetadataToStory(
 		a.newContextWithConfig(),
 		story,
+		object,
+		key,
+		value,
+	); err != nil {
+		return err
+	}
+
+	if a.config.Project.PushingMode == config.ModeAuto {
+		return errors.WarningOrNil(a.Push())
+	}
+
+	return nil
+}
+
+func (a *appController) AddMetadataToScenario(name, key, value string) error {
+	scenario, object, err := a.findScenarioObject(name)
+	if err != nil {
+		return err
+	}
+
+	if err := a.developer.AddMetadataToScenario(
+		a.newContextWithConfig(),
+		scenario,
 		object,
 		key,
 		value,

@@ -12,6 +12,20 @@ type MockDeveloper struct {
 	mock.Mock
 }
 
+// AddMetadataToScenario provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
+func (_m *MockDeveloper) AddMetadataToScenario(_a0 context.Context, _a1 *specification.Scenario, _a2 io.Reader, _a3 string, _a4 string) error {
+	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *specification.Scenario, io.Reader, string, string) error); ok {
+		r0 = rf(_a0, _a1, _a2, _a3, _a4)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // AddMetadataToStory provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
 func (_m *MockDeveloper) AddMetadataToStory(_a0 context.Context, _a1 *specification.Story, _a2 io.Reader, _a3 string, _a4 string) error {
 	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)

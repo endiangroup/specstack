@@ -10,6 +10,20 @@ type MockController struct {
 	mock.Mock
 }
 
+// AddMetadataToScenario provides a mock function with given fields: storyName, key, value
+func (_m *MockController) AddMetadataToScenario(storyName string, key string, value string) error {
+	ret := _m.Called(storyName, key, value)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string, string) error); ok {
+		r0 = rf(storyName, key, value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // AddMetadataToStory provides a mock function with given fields: storyName, key, value
 func (_m *MockController) AddMetadataToStory(storyName string, key string, value string) error {
 	ret := _m.Called(storyName, key, value)
@@ -133,8 +147,8 @@ func (_m *MockController) Push() error {
 	return r0
 }
 
-// RunRepoPrePushHook provides a mock function with given fields:
-func (_m *MockController) RunRepoPrePushHook() error {
+// RunRepoPostMergeHook provides a mock function with given fields:
+func (_m *MockController) RunRepoPostMergeHook() error {
 	ret := _m.Called()
 
 	var r0 error
@@ -147,8 +161,8 @@ func (_m *MockController) RunRepoPrePushHook() error {
 	return r0
 }
 
-// RunRepoPostMergeHook provides a mock function with given fields:
-func (_m *MockController) RunRepoPostMergeHook() error {
+// RunRepoPrePushHook provides a mock function with given fields:
+func (_m *MockController) RunRepoPrePushHook() error {
 	ret := _m.Called()
 
 	var r0 error

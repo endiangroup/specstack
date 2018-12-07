@@ -1,0 +1,62 @@
+[]fuzzy.Match{
+  fuzzy.Match{
+    Term: "stry",
+    Rank: 0.25,
+  },
+  fuzzy.Match{
+    Term: "story",
+    Rank: 0.19999999999999996,
+  },
+  fuzzy.Match{
+    Term: "scenario",
+    Rank: 0.125,
+  },
+  fuzzy.Match{
+    Term: "scenario2",
+    Rank: 0.11111111111111116,
+  },
+  fuzzy.Match{
+    Term: "scenario1",
+    Rank: 0.11111111111111116,
+  },
+  fuzzy.Match{
+    Term: "run custom metadata",
+    Rank: 0.052631578947368474,
+  },
+  fuzzy.Match{
+    Term: "add custom metadata",
+    Rank: 0.052631578947368474,
+  },
+  fuzzy.Match{
+    Term: "sync custom metadata",
+    Rank: 0.050000000000000044,
+  },
+  fuzzy.Match{
+    Term: "feature",
+    Rank: 0,
+  },
+  fuzzy.Match{
+    Term: "rule",
+    Rank: 0,
+  },
+  fuzzy.Match{
+    Term: "cucumber",
+    Rank: 0,
+  },
+  fuzzy.Match{
+    Term: "gherkin",
+    Rank: 0,
+  },
+  fuzzy.Match{
+    Term: "actor",
+    Rank: 0,
+  },
+  fuzzy.Match{
+    Term: "zz",
+    Rank: 0,
+  },
+  fuzzy.Match{
+    Term: "aa",
+    Rank: 0,
+  },
+}
