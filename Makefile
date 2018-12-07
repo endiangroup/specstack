@@ -5,12 +5,13 @@ $(GOPATH)/bin/spec:
 	@go install github.com/endiangroup/specstack/cmd/spec
   
 $(GOPATH)/bin/specfmt:
-	go install github.com/endiangroup/specstack/cmd/specfmt
+	@go install github.com/endiangroup/specstack/cmd/specfmt
 
 .PHONY: clean
 clean:
 	@rm -rf vendor $(GOPATH)/bin/spec $(GOPATH)/bin/specfmt
 
+.PHONY: vendor
 vendor: dep
 	@dep ensure --vendor-only
 
@@ -58,7 +59,6 @@ dep:
 ifndef DEP_BIN
 	@echo "Installing dep..."
 	@go get github.com/golang/dep/cmd/dep
-	@dep ensure --vendor-only
 endif
 
 .PHONY: golangci-lint
