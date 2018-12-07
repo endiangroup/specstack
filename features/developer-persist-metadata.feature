@@ -16,5 +16,5 @@ Feature: Persist metadata
     And I have a story called "story1"
     And My story "story1" has a scenario called "scenario1" with some metadata
     And I make minor changes to scenario "scenario1"
-    When run any spec command
+    When I run any spec command
     Then the metadata on "scenario1" should still exist
