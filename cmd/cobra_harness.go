@@ -136,29 +136,30 @@ func (c *CobraHarness) ConfigSet(cmd *cobra.Command, args []string) error {
 
 func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
 	entityFound := false
+	storyName := c.flagValueString(cmd, "story")
+	scenarioName := c.flagValueString(cmd, "scenario")
 
-	if name := c.flagValueString(cmd, "story"); name != "" {
+	if scenarioName != "" {
 		entityFound = true
 		for _, arg := range args {
 			kv := strings.Split(arg, "=")
-			if err := c.app.AddMetadataToStory(name, kv[0], kv[1]); err != nil {
+			if err := c.app.AddMetadataToScenario(scenarioName, storyName, kv[0], kv[1]); err != nil {
+				fmt.Println("!!", err)
 				return c.error(cmd, err)
 			}
 		}
-	}
-
-	if name := c.flagValueString(cmd, "scenario"); name != "" {
+	} else if storyName != "" {
 		entityFound = true
 		for _, arg := range args {
 			kv := strings.Split(arg, "=")
-			if err := c.app.AddMetadataToScenario(name, kv[0], kv[1]); err != nil {
+			if err := c.app.AddMetadataToStory(storyName, kv[0], kv[1]); err != nil {
 				return c.error(cmd, err)
 			}
 		}
 	}
 
 	if !entityFound {
-		return c.errorWithReturnCode(cmd, 0, fmt.Errorf("specify a story or scenario"))
+		return c.errorWithReturnCode(cmd, 1, fmt.Errorf("specify a story or scenario"))
 	}
 
 	return nil
@@ -167,8 +168,17 @@ func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
 func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
 	var entries []*metadata.Entry
 	entityFound := false
+	storyName := c.flagValueString(cmd, "story")
+	scenarioName := c.flagValueString(cmd, "scenario")
 
-	if storyName := c.flagValueString(cmd, "story"); storyName != "" {
+	if scenarioName != "" {
+		var err error
+		entries, err = c.app.GetScenarioMetadata(scenarioName, storyName)
+		if err != nil {
+			return c.error(cmd, err)
+		}
+		entityFound = true
+	} else if storyName != "" {
 		var err error
 		entries, err = c.app.GetStoryMetadata(storyName)
 		if err != nil {
@@ -178,7 +188,7 @@ func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
 	}
 
 	if !entityFound {
-		return c.errorWithReturnCode(cmd, 0, fmt.Errorf("specify a story"))
+		return c.errorWithReturnCode(cmd, 1, fmt.Errorf("specify a story or scenario"))
 	}
 
 	printer := metadata.NewPlaintextPrintscanner()

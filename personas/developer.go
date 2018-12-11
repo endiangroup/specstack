@@ -61,7 +61,7 @@ func (d *developer) AddMetadataToStory(
 
 func (d *developer) AddMetadataToScenario(
 	ctx context.Context,
-	story *specification.Scenario,
+	scenario *specification.Scenario,
 	object io.Reader,
 	name, value string,
 ) error {

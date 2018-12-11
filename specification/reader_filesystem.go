@@ -53,7 +53,15 @@ func (f *Filesystem) Read() (*Specification, errors.Warnings, error) {
 }
 
 func (f *Filesystem) ReadSource(s Sourcer) (io.Reader, error) {
-	return f.Fs.Open(s.Source())
+	source := s.Source()
+
+	if source.Type == SourceTypeFile {
+		return f.Fs.Open(source.Body)
+	} else if source.Type == SourceTypeText {
+		return bytes.NewBufferString(source.Body), nil
+	}
+
+	return nil, fmt.Errorf("Unknown source type %d", source.Type)
 }
 
 func (f *Filesystem) featuresAndStoriesWalkFunc(spec *Specification, warnings *errors.Warnings) filepath.WalkFunc {

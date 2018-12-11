@@ -10,13 +10,13 @@ type MockController struct {
 	mock.Mock
 }
 
-// AddMetadataToScenario provides a mock function with given fields: storyName, key, value
-func (_m *MockController) AddMetadataToScenario(storyName string, key string, value string) error {
-	ret := _m.Called(storyName, key, value)
+// AddMetadataToScenario provides a mock function with given fields: scenarioName, storyName, key, value
+func (_m *MockController) AddMetadataToScenario(scenarioName string, storyName string, key string, value string) error {
+	ret := _m.Called(scenarioName, storyName, key, value)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string) error); ok {
-		r0 = rf(storyName, key, value)
+	if rf, ok := ret.Get(0).(func(string, string, string, string) error); ok {
+		r0 = rf(scenarioName, storyName, key, value)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -52,6 +52,29 @@ func (_m *MockController) GetConfiguration(_a0 string) (string, error) {
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetScenarioMetadata provides a mock function with given fields: scenario, story
+func (_m *MockController) GetScenarioMetadata(scenario string, story string) ([]*metadata.Entry, error) {
+	ret := _m.Called(scenario, story)
+
+	var r0 []*metadata.Entry
+	if rf, ok := ret.Get(0).(func(string, string) []*metadata.Entry); ok {
+		r0 = rf(scenario, story)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*metadata.Entry)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(scenario, story)
 	} else {
 		r1 = ret.Error(1)
 	}

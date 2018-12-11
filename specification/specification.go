@@ -3,10 +3,8 @@ package specification
 import (
 	"fmt"
 	"sort"
-	"strings"
 
 	gherkin "github.com/DATA-DOG/godog/gherkin"
-	"github.com/endiangroup/specstack/fuzzy"
 )
 
 type Specification struct {
@@ -34,8 +32,8 @@ func newStoryFromGherkinFeature(feature *gherkin.Feature, source string) *Story 
 	}
 }
 
-func (s *Story) Source() string {
-	return s.SourceIdentifier
+func (s *Story) Source() Source {
+	return Source{SourceTypeFile, s.SourceIdentifier}
 }
 
 // Stories fetches a list of features derived from loaded feature files.
@@ -61,9 +59,14 @@ func (f *Specification) Stories() []*Story {
 // Scenarios fetches a complete list of scenarios from all loaded feature
 // files. Scenarios are returned in the order they appear in their feature
 // file, grouped by file name in alphabetical order.
-func (s *Specification) Scenarios() []*Scenario {
+func (s *Specification) Scenarios(stories ...*Story) []*Scenario {
 	scenarios := []*Scenario{}
-	for _, story := range s.Stories() {
+
+	if len(stories) == 0 {
+		stories = s.Stories()
+	}
+
+	for _, story := range stories {
 		scenarios = append(scenarios, s.ScenarioSources[story]...)
 	}
 	return scenarios
@@ -75,77 +78,54 @@ func (s *Specification) Scenarios() []*Scenario {
 // match. In the event of a tie (that is, two roughly equal matches) then an
 // error is returned.
 func (f *Specification) FindStory(input string) (*Story, error) {
-	allStorySources := make(map[string]*Story)
-	for k, v := range f.StorySources {
-		allStorySources[k] = v
-		allStorySources[v.Name] = v
-	}
+	filter := NewFilter(f)
+	matches := filter.StoryQuery(input).Stories()
 
-	sources := []string{}
-	for file := range allStorySources {
-		sources = append(sources, file)
-	}
-
-	lookup := make(map[string]string)
-	for _, source := range sources {
-		lookup[f.trimSource(source)] = source
-	}
-
-	finalSources := []string{}
-	for fs := range lookup {
-		finalSources = append(finalSources, fs)
-	}
-
-	matches := f.closetMatch(input, finalSources)
-
-	if matches == nil {
+	if len(matches) == 0 {
 		return nil, fmt.Errorf("no story matching %s", input)
 	}
 
 	if len(matches) > 1 {
-		// The matches may point to the same underlying object
-		if a, b := allStorySources[lookup[matches[0]]], allStorySources[lookup[matches[1]]]; a == b {
-			return a, nil
-		}
-
 		return nil, fmt.Errorf(
 			"story name is ambiguous. The most similar story names are '%s' and '%s'",
-			matches[0],
-			matches[1],
+			matches[0].Name,
+			matches[1].Name,
 		)
 	}
 
-	return allStorySources[lookup[matches[0]]], nil
+	return matches[0], nil
 }
 
-func (s *Specification) FindScenario(query string) (*Scenario, error) {
-	return nil, fmt.Errorf("TODO: implement and test FindScenario")
-}
+// FindScenario performs a fuzzy match on the name of all scenarios
+// in scope. The scope is either all scenarios, or only scenarios in
+// the provided story name. In the event of a tie (that is, two roughly
+// equal matches) an error is returned
+func (s *Specification) FindScenario(query, storyName string) (*Scenario, error) {
+	filter := NewFilter(s)
+	if storyName != "" {
+		filter.StoryQuery(storyName)
+	}
+	matches := filter.ScenarioQuery(query).Scenarios()
 
-func (f *Specification) closetMatch(term string, pool []string) []string {
-	ranked := fuzzy.Rank(term, pool)
-
-	if len(ranked) == 0 {
-		return nil
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("no scenario matching %s", query)
 	}
 
-	if ranked[0].Negligible() {
-		return nil
+	if len(matches) > 1 {
+		m0, m1 := matches[0], matches[1]
+		name0, name1 := m0.Name, m1.Name
+
+		if m0.Story != m1.Story {
+			name0 = fmt.Sprintf("%s/%s", m0.Story.Name, m0.Name)
+			name1 = fmt.Sprintf("%s/%s", m1.Story.Name, m1.Name)
+		}
+
+		return nil, fmt.Errorf(
+			"scenario query is ambiguous. The most similar scenario names are '%s' and '%s'",
+			name0,
+			name1,
+		)
 	}
 
-	if len(ranked) > 1 && fuzzy.Adjacent(ranked[0], ranked[1]) {
-		outputs := []string{ranked[0].Term, ranked[1].Term}
-		sort.Strings(outputs)
-		return outputs
-	}
-
-	return []string{ranked[0].Term}
-}
-
-func (f *Specification) trimSource(input string) string {
-	specSource := f.Source + "/"
-	trimmed := strings.TrimPrefix(input, specSource)
-	trimmed = strings.TrimSuffix(trimmed, FileExtFeature)
-	trimmed = strings.TrimSuffix(trimmed, FileExtStory)
-	return trimmed
+	return matches[0], nil
 }

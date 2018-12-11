@@ -291,23 +291,15 @@ func (t *testHarness) theMetadataShouldBeAddedToStory(metadataKey, storyId, valu
 		return err
 	}
 
-	scanner := metadata.NewPlaintextPrintscanner()
-	entries, err := scanner.Scan(t.stdout)
-	if err != nil {
+	return t.AssertMetadataFromStdout(metadataKey, value)
+}
+
+func (t *testHarness) theMetadataShouldBeAddedToScenarioWithTheValue(key, scenarioQuery, value string) error {
+	if err := t.iRunTheCommand(fmt.Sprintf("metadata ls --scenario %s", scenarioQuery)); err != nil {
 		return err
 	}
 
-	for _, entry := range entries {
-		if entry.Name == metadataKey {
-			if entry.Value == value {
-				return nil
-			} else {
-				return fmt.Errorf("Got %s, expected %s", entry.Value, value)
-			}
-		}
-	}
-
-	return fmt.Errorf("metadata not found")
+	return t.AssertMetadataFromStdout(key, value)
 }
 
 func (t *testHarness) iShouldSeeNoErrors() error {
@@ -530,10 +522,6 @@ func (t *testHarness) myMetadataShouldBePushedToTheRemoteGitServer() error {
 	return fmt.Errorf("Timed out")
 }
 
-func (t *testHarness) theMetadataShouldBeAddedToScenarioWithTheValue(arg1, arg2, arg3 string) error {
-	return godog.ErrPending
-}
-
 func (t *testHarness) myStoryHasAScenarioCalledWithTheFollowingMetadata(arg1, arg2 string, arg3 *gherkin.DataTable) error {
 	return godog.ErrPending
 }
@@ -602,6 +590,26 @@ func (t *testHarness) SetSyncMode(mode, value string) error {
 		return err
 	}
 	return t.iRunTheCommand(fmt.Sprintf(`config set project.%smode=%s`, mode, value))
+}
+
+func (t *testHarness) AssertMetadataFromStdout(key, value string) error {
+	scanner := metadata.NewPlaintextPrintscanner()
+	entries, err := scanner.Scan(t.stdout)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.Name == key {
+			if entry.Value == value {
+				return nil
+			} else {
+				return fmt.Errorf("Got %s, expected %s", entry.Value, value)
+			}
+		}
+	}
+
+	return fmt.Errorf("metadata not found")
 }
 
 func FeatureContext(s *godog.Suite) {

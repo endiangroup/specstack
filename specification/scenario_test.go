@@ -20,7 +20,7 @@ func newMockScenario(t *testing.T, body string) *Scenario {
 	return spec.Scenarios()[0]
 }
 
-func Test_AScenarioCanReturnItsBareString(t *testing.T) {
+func Test_AScenarioCanReturnItsNormalisedString(t *testing.T) {
 	raw := newMockScenario(
 		t,
 		`Scenario: Git not initialised for manual pull
@@ -30,7 +30,7 @@ func Test_AScenarioCanReturnItsBareString(t *testing.T) {
     Then I should see an error message informing me "initialise repository first"`,
 	)
 
-	snaptest.Snapshot(t, raw.bareString())
+	snaptest.Snapshot(t, raw.String())
 }
 
 func Test_ScenarioRelated_BasicTest(t *testing.T) {

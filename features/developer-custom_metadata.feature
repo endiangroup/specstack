@@ -46,14 +46,12 @@ Feature: Manage custom metadata
       Metadata two        : Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur...
       """
 
-  @next
   Scenario: Attempt to add metadata to non-existent scenario
-    Given I have a configured project directory
-    And the pushing mode is not set to automatic
+    Given I have a properly configured project directory
     When I run "metadata add --scenario xxx key=value"
     Then I should see an error message informing me "no scenario matching xxx"
 
-  Scenario: Try to identify ambiguous story
+  Scenario: Try to identify ambiguous story in one story
     Given I have a configured project directory
     And I have a file called "features/story1.feature" with the following content:
       """
@@ -68,10 +66,30 @@ Feature: Manage custom metadata
       			Then something else happens
       """
     When I run "metadata add --scenario scenario key=value"
-    Then I should see an error message informing me "scenario ID is ambiguous. Did you mean 'scenario1' or 'scenario2'?"
+    Then I should see an error message informing me "scenario query is ambiguous. The most similar scenario names are 'Scenario1' and 'Scenario2'"
+
+  Scenario: Try to identify ambiguous story in multiple stories
+    Given I have a configured project directory
+    And I have a file called "features/story1.feature" with the following content:
+      """
+      Feature: Story1
+      	    Scenario: Scenario1
+      		    Given some setup
+      			When I do something
+      			Then something happens
+      """
+    And I have a file called "features/story2.feature" with the following content:
+      """
+      Feature: Story2
+      	    Scenario: Scenario2
+      			When I do something else
+      			Then something else happens
+      """
+    When I run "metadata add --scenario scenario key=value"
+    Then I should see an error message informing me "scenario query is ambiguous. The most similar scenario names are 'Story1/Scenario1' and 'Story2/Scenario2'"
 
   Scenario: Successfully add metadata to extant scenario by name
-    Given I have a configured project directory
+    Given I have a properly configured project directory
     And I have a file called "features/story1.feature" with the following content:
       """
       Feature: Story1
@@ -84,20 +102,29 @@ Feature: Manage custom metadata
     Then The metadata "key" should be added to scenario "scenario1" with the value "value"
     And I should see no errors
 
-  Scenario: Successfully add metadata to extant scenario by deterministic ID
-    Given I have a configured project directory
+  Scenario: Successfully add metadata to extant scenario by flags
+    Given I have a properly configured project directory
     And I have a file called "features/story1.feature" with the following content:
       """
-      Feature: Story1
-      	    Scenario: Scenario1
+      Feature: StoryA
+      	    Scenario: Alpha
       		    Given some setup
       			When I do something
-      			Then Something happens
+      			Then something happens
       """
-    When I run "metadata add --scenario <FIXME:DID> key=value"
-    Then The metadata "key" should be added to scenario "DID" with the value "value"
+    And I have a file called "features/story2.feature" with the following content:
+      """
+      Feature: StoryB
+      	    Scenario: Omega
+      			When I do something else
+      			Then something else happens
+      """
+    When I run "metadata add --scenario Alpha --story StoryA key=value"
+    Then The metadata "key" should be added to scenario "Alpha" with the value "value"
     And I should see no errors
 
+	#TODO: scenario by index, address
+  @next
   Scenario: Show metadata attached to a scenario
     Given I have a configured project directory
     And I have a story called "story1"
