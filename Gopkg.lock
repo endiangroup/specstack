@@ -116,14 +116,6 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:2b97fd8c3ebafa161b3cf34948a0dd7d1ec27ab3fed686eb3639ead64344e9e6"
-  name = "github.com/schollz/closestmatch"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "56fb6b15a5e88fbcbc21b196488e749fc176514c"
-  version = "v2.1.0"
-
-[[projects]]
   digest = "1:6a4a11ba764a56d2758899ec6f3848d24698d48442ebce85ee7a3f63284526cd"
   name = "github.com/spf13/afero"
   packages = [
@@ -196,7 +188,6 @@
     "github.com/endiangroup/gitest",
     "github.com/endiangroup/pretty-formatter-go",
     "github.com/endiangroup/snaptest",
-    "github.com/schollz/closestmatch",
     "github.com/spf13/afero",
     "github.com/spf13/cobra",
     "github.com/stretchr/testify/assert",
