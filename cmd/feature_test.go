@@ -108,7 +108,7 @@ func (t *testHarness) iHaveAProjectDirectory() error {
 	return afero.WriteFile(
 		t.fs,
 		"features/story1.feature",
-		[]byte(`Feature: Story1`),
+		[]byte(`Feature: story1`),
 		os.ModePerm,
 	)
 }
@@ -362,6 +362,22 @@ func (t *testHarness) myStoryHasTheFollowingMetadata(storyName string, table *gh
 	return nil
 }
 
+func (t *testHarness) myScenarioHasTheFollowingMetadata(name string, table *gherkin.DataTable) error {
+	for _, row := range table.Rows[1:] {
+		if err := t.iRunTheCommand(
+			fmt.Sprintf(
+				`metadata add --scenario "%s" "%s"="%s"`,
+				name,
+				row.Cells[0].Value, row.Cells[1].Value,
+			),
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (t *testHarness) iHaveSetThePullingModeToSemiautomatic() error {
 	return t.SetSyncMode("pulling", config.ModeSemiAuto)
 }
@@ -522,8 +538,25 @@ func (t *testHarness) myMetadataShouldBePushedToTheRemoteGitServer() error {
 	return fmt.Errorf("Timed out")
 }
 
-func (t *testHarness) myStoryHasAScenarioCalledWithTheFollowingMetadata(arg1, arg2 string, arg3 *gherkin.DataTable) error {
-	return godog.ErrPending
+func (t *testHarness) myStoryHasAScenarioCalledWithTheFollowingMetadata(story, scenario string, table *gherkin.DataTable) error {
+	if err := t.iHaveAFileCalledWithTheFollowingContent(
+		fmt.Sprintf("features/%s.feature", story),
+		&gherkin.DocString{
+			Content: fmt.Sprintf(
+				`
+Feature: %s
+    Scenario: %s
+	    Then something happens
+				`,
+				story,
+				scenario,
+			),
+		},
+	); err != nil {
+		return err
+	}
+
+	return t.myScenarioHasTheFollowingMetadata(scenario, table)
 }
 
 func (t *testHarness) myStoryHasAScenarioCalledWithSomeMetadata(arg1, arg2 string) error {

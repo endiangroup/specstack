@@ -144,7 +144,6 @@ func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
 		for _, arg := range args {
 			kv := strings.Split(arg, "=")
 			if err := c.app.AddMetadataToScenario(scenarioName, storyName, kv[0], kv[1]); err != nil {
-				fmt.Println("!!", err)
 				return c.error(cmd, err)
 			}
 		}
