@@ -149,7 +149,7 @@ func ClosestMatch(term string, pool []string) []string {
 		return nil
 	}
 
-	if len(ranked) > 1 && fuzzy.Adjacent(ranked[0], ranked[1]) {
+	if len(ranked) > 1 && fuzzy.Equivalent(ranked[0], ranked[1]) {
 		outputs := []string{ranked[0].Term, ranked[1].Term}
 		sort.Strings(outputs)
 		return outputs

@@ -39,6 +39,6 @@ func Test_StringDistanceRanking(t *testing.T) {
 }
 
 func Test_Adjacency(t *testing.T) {
-	require.True(t, Adjacent(Match{"", 0.82}, Match{"", 0.8}))
-	require.False(t, Adjacent(Match{"", 0.52}, Match{"", 0.8}))
+	require.True(t, Equivalent(Match{"", 0.82}, Match{"", 0.8}))
+	require.False(t, Equivalent(Match{"", 0.52}, Match{"", 0.8}))
 }

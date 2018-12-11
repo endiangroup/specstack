@@ -43,6 +43,6 @@ func Strcmp(a, b string) float64 {
 	return (1 - (float64(levDist) / maxLen))
 }
 
-func Adjacent(a, b Match) bool {
+func Equivalent(a, b Match) bool {
 	return math.Abs(a.Rank-b.Rank) < AdjacentThreshold
 }
