@@ -27,6 +27,7 @@ Feature: Manage custom metadata
   Scenario: Successfully add metadata to extant story
     Given I have a configured project directory
     And I have a story called "story1"
+    And the pushing mode is not set to automatic
     When I run "metadata add --story story1 key=value"
     Then The metadata "key" should be added to story "story1" with the value "value"
     And I should see no errors
@@ -123,8 +124,42 @@ Feature: Manage custom metadata
     Then The metadata "key" should be added to scenario "Alpha" with the value "value"
     And I should see no errors
 
-	#TODO: scenario by index, address
-  @next
+  Scenario: Successfully add metadata to extant scenario by index
+    Given I have a properly configured project directory
+    And I have a file called "features/storyA.feature" with the following content:
+      """
+      Feature: StoryA
+      	    Scenario: Alpha
+      			When I do something
+      			Then something happens
+      	    Scenario: Omega
+      			When I do something else
+      			Then something else happens
+      """
+    When I run "metadata add --scenario storyA+2 key=value"
+    Then The metadata "key" should be added to scenario "Omega" with the value "value"
+    And I should see no errors
+
+  Scenario: Successfully add metadata to extant scenario by address
+    Given I have a properly configured project directory
+    And I have a file called "features/story1.feature" with the following content:
+      """
+      Feature: StoryA
+      	    Scenario: Alpha
+      			When I do something
+      			Then something happens
+      """
+    And I have a file called "features/story2.feature" with the following content:
+      """
+      Feature: StoryB
+      	    Scenario: Alpha
+      			When I do something else
+      			Then something else happens
+      """
+    When I run "metadata add --scenario StoryB/Alpha key=value"
+    Then The metadata "key" should be added to scenario "StoryB+1" with the value "value"
+    And I should see no errors
+
   Scenario: Show metadata attached to a scenario
     Given I have a configured project directory
     And I have a story called "story1"

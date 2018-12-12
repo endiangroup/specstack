@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/endiangroup/snaptest"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_AFilterCanAddressStories(t *testing.T) {
@@ -30,7 +31,7 @@ func Test_AFilterCanAddressStories(t *testing.T) {
 	} {
 		t.Run(test.term, func(t *testing.T) {
 			filter := NewFilter(spec)
-			filter.StoryQuery(test.term)
+			filter.Query(MapStories(ReduceClosestMatch(test.term)), DedupStories())
 			snaptest.Snapshot(t, filter.Stories())
 		})
 	}
@@ -58,7 +59,7 @@ func Test_AFilterCanAddressScenarios(t *testing.T) {
 	} {
 		t.Run(test.term, func(t *testing.T) {
 			filter := NewFilter(spec)
-			filter.ScenarioQuery(test.term)
+			filter.Query(MapScenarios(ReduceClosestMatch(test.term)))
 			snaptest.Snapshot(t, filter.Scenarios())
 		})
 	}
@@ -77,8 +78,39 @@ func Test_AFilterCanAddressAScenarioInAStory(t *testing.T) {
 		},
 	)
 
-	filter := NewFilter(spec)
-	filter.StoryQuery("similar1")
-	filter.ScenarioQuery("similar")
+	filter := NewFilter(spec).Query(
+		MapStories(ReduceClosestMatch("similiar1")),
+		DedupStories(),
+		MapScenarios(ReduceClosestMatch("similiar")),
+	)
 	snaptest.Snapshot(t, filter.Scenarios())
+}
+
+func Test_AFilterCanIndexAScenarioInAStory(t *testing.T) {
+	spec := generateAndReadSpec(t,
+		map[string]string{
+			"features/two_scenarios.feature": mockFeatureH,
+		},
+	)
+
+	require.Equal(t, "Scenario A",
+		NewFilter(spec).Query(
+			MapStories(ReduceClosestMatch("two_scenarios")),
+			MapScenarioIndex(1),
+		).Scenarios()[0].Name,
+	)
+
+	require.Equal(t, "Scenario B",
+		NewFilter(spec).Query(
+			MapStories(ReduceClosestMatch("two_scenarios")),
+			MapScenarioIndex(2),
+		).Scenarios()[0].Name,
+	)
+
+	require.Empty(t,
+		NewFilter(spec).Query(
+			MapStories(ReduceClosestMatch("two_scenarios")),
+			MapScenarioIndex(3),
+		).Scenarios(),
+	)
 }

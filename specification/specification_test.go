@@ -70,6 +70,14 @@ const (
   Scenario: Very similar2
 	Then this will work
 `
+	mockFeatureH = `Feature: Two scenarios
+
+  Scenario: Scenario A
+	Then this will work
+
+  Scenario: Scenario B
+	Then this will also work
+`
 )
 
 func generateAndReadSpec(t *testing.T, files map[string]string) *Specification {
@@ -177,11 +185,33 @@ func Test_ASpecificationCanAddressScenarios(t *testing.T) {
 
 			if test.err == nil {
 				require.Nil(t, err)
-				//snaptest.Snapshot(t, story)
+				snaptest.Snapshot(t, story)
 			} else {
 				require.Equal(t, test.err, err)
 				require.Nil(t, story)
 			}
+		})
+	}
+}
+
+func Test_ASpecificationCanIndexScenarios(t *testing.T) {
+
+	spec := generateAndReadSpec(t,
+		map[string]string{
+			"features/h.feature": mockFeatureH,
+		},
+	)
+
+	for _, test := range []struct {
+		term string
+	}{
+		{term: "1"},
+		{term: "2"},
+	} {
+		t.Run(test.term, func(t *testing.T) {
+			story, err := spec.FindScenario(test.term, "Two scenarios")
+			require.Nil(t, err)
+			snaptest.Snapshot(t, story)
 		})
 	}
 }

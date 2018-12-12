@@ -304,6 +304,8 @@ func (t *testHarness) theMetadataShouldBeAddedToScenarioWithTheValue(key, scenar
 
 func (t *testHarness) iShouldSeeNoErrors() error {
 	if !assert.True(t, t.exitCode == 0, "Non-zero exit coded returned, expected 0") {
+		fmt.Println("Stdout:", t.stdout)
+		fmt.Println("Stderr:", t.stderr)
 		return t.AssertError()
 	}
 
@@ -347,6 +349,9 @@ func (t *testHarness) overwriteHooks() error {
 }
 
 func (t *testHarness) myStoryHasTheFollowingMetadata(storyName string, table *gherkin.DataTable) error {
+	if err := t.thePushingModeIsNotSetToAutomatic(); err != nil {
+		return err
+	}
 	for _, row := range table.Rows[1:] {
 		if err := t.iRunTheCommand(
 			fmt.Sprintf(
@@ -363,6 +368,9 @@ func (t *testHarness) myStoryHasTheFollowingMetadata(storyName string, table *gh
 }
 
 func (t *testHarness) myScenarioHasTheFollowingMetadata(name string, table *gherkin.DataTable) error {
+	if err := t.thePushingModeIsNotSetToAutomatic(); err != nil {
+		return err
+	}
 	for _, row := range table.Rows[1:] {
 		if err := t.iRunTheCommand(
 			fmt.Sprintf(

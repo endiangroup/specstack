@@ -134,41 +134,61 @@ func (c *CobraHarness) ConfigSet(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
-	entityFound := false
-	storyName := c.flagValueString(cmd, "story")
-	scenarioName := c.flagValueString(cmd, "scenario")
-
-	if scenarioName != "" {
-		entityFound = true
-		for _, arg := range args {
-			kv := strings.Split(arg, "=")
-			if err := c.app.AddMetadataToScenario(scenarioName, storyName, kv[0], kv[1]); err != nil {
-				return c.error(cmd, err)
-			}
-		}
-	} else if storyName != "" {
-		entityFound = true
-		for _, arg := range args {
-			kv := strings.Split(arg, "=")
-			if err := c.app.AddMetadataToStory(storyName, kv[0], kv[1]); err != nil {
-				return c.error(cmd, err)
-			}
+func (c *CobraHarness) addMetadataToScenario(scenarioName, storyName string, args []string) error {
+	for _, arg := range args {
+		kv := strings.Split(arg, "=")
+		if err := c.app.AddMetadataToScenario(scenarioName, storyName, kv[0], kv[1]); err != nil {
+			return err
 		}
 	}
-
-	if !entityFound {
-		return c.errorWithReturnCode(cmd, 1, fmt.Errorf("specify a story or scenario"))
-	}
-
 	return nil
+}
+
+func (c *CobraHarness) addMetadataToStory(storyName string, args []string) error {
+	for _, arg := range args {
+		kv := strings.Split(arg, "=")
+		if err := c.app.AddMetadataToStory(storyName, kv[0], kv[1]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *CobraHarness) parseStoryAndScenarioNames(storyName, scenarioName string) (string, string) {
+	if parts := strings.Split(scenarioName, "+"); len(parts) > 1 {
+		scenarioName = parts[1]
+		storyName = parts[0]
+	} else if parts := strings.Split(scenarioName, "/"); len(parts) > 1 {
+		scenarioName = parts[1]
+		storyName = parts[0]
+	}
+	return storyName, scenarioName
+}
+
+func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
+	storyName, scenarioName := c.parseStoryAndScenarioNames(
+		c.flagValueString(cmd, "story"),
+		c.flagValueString(cmd, "scenario"),
+	)
+
+	switch {
+	case scenarioName != "":
+		return c.errorOrNil(cmd, 1, c.addMetadataToScenario(scenarioName, storyName, args))
+
+	case storyName != "":
+		return c.errorOrNil(cmd, 1, c.addMetadataToStory(storyName, args))
+	}
+
+	return c.error(cmd, fmt.Errorf("specify a story or scenario"))
 }
 
 func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
 	var entries []*metadata.Entry
 	entityFound := false
-	storyName := c.flagValueString(cmd, "story")
-	scenarioName := c.flagValueString(cmd, "scenario")
+	storyName, scenarioName := c.parseStoryAndScenarioNames(
+		c.flagValueString(cmd, "story"),
+		c.flagValueString(cmd, "scenario"),
+	)
 
 	if scenarioName != "" {
 		var err error

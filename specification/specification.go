@@ -3,6 +3,7 @@ package specification
 import (
 	"fmt"
 	"sort"
+	"strconv"
 
 	gherkin "github.com/DATA-DOG/godog/gherkin"
 )
@@ -78,8 +79,10 @@ func (s *Specification) Scenarios(stories ...*Story) []*Scenario {
 // match. In the event of a tie (that is, two roughly equal matches) then an
 // error is returned.
 func (f *Specification) FindStory(input string) (*Story, error) {
-	filter := NewFilter(f)
-	matches := filter.StoryQuery(input).Stories()
+	matches := NewFilter(f).Query(
+		MapStories(ReduceClosestMatch(input)),
+		DedupStories(),
+	).Stories()
 
 	if len(matches) == 0 {
 		return nil, fmt.Errorf("no story matching %s", input)
@@ -103,9 +106,19 @@ func (f *Specification) FindStory(input string) (*Story, error) {
 func (s *Specification) FindScenario(query, storyName string) (*Scenario, error) {
 	filter := NewFilter(s)
 	if storyName != "" {
-		filter.StoryQuery(storyName)
+		filter.Query(
+			MapStories(ReduceClosestMatch(storyName)),
+			DedupStories(),
+		)
 	}
-	matches := filter.ScenarioQuery(query).Scenarios()
+
+	if val, err := strconv.Atoi(query); err == nil {
+		filter.Query(MapScenarioIndex(val))
+	} else {
+		filter.Query(MapScenarios(ReduceClosestMatch(query)))
+	}
+
+	matches := filter.Scenarios()
 
 	if len(matches) == 0 {
 		return nil, fmt.Errorf("no scenario matching %s", query)
