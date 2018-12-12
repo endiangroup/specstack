@@ -79,8 +79,11 @@ func (s *Specification) Scenarios(stories ...*Story) []*Scenario {
 // match. In the event of a tie (that is, two roughly equal matches) then an
 // error is returned.
 func (f *Specification) FindStory(input string) (*Story, error) {
-	matches := NewFilter(f).MapReduce(
-		MapStories(ReduceClosestMatch(input)),
+	matches := NewQuery(f).MapReduce(
+		MapStories(
+			ReduceClosestMatch(input),
+			ReduceMax(2),
+		),
 		MapUniqueStories(),
 	).Stories()
 
@@ -104,18 +107,20 @@ func (f *Specification) FindStory(input string) (*Story, error) {
 // the provided story name. In the event of a tie (that is, two roughly
 // equal matches) an error is returned
 func (s *Specification) FindScenario(query, storyName string) (*Scenario, error) {
-	filter := NewFilter(s)
+	filter := NewQuery(s)
 	if storyName != "" {
 		filter.MapReduce(
-			MapStories(ReduceClosestMatch(storyName)),
-			MapUniqueStories(),
+			MapStories(
+				ReduceClosestMatch(storyName),
+				ReduceMax(1),
+			),
 		)
 	}
 
 	if val, err := strconv.Atoi(query); err == nil {
 		filter.MapReduce(MapScenarioIndex(val))
 	} else {
-		filter.MapReduce(MapScenarios(ReduceClosestMatch(query)))
+		filter.MapReduce(MapScenarios(ReduceClosestMatch(query), ReduceMax(2)))
 	}
 
 	matches := filter.Scenarios()

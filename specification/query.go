@@ -7,45 +7,45 @@ import (
 	"github.com/endiangroup/specstack/fuzzy"
 )
 
-type FilterMapFunc func(*Filter)
-type FilterReduceFunc func([]string) []string
+type QueryMapFunc func(*Query)
+type QueryReduceFunc func([]string) []string
 
-type Filter struct {
+type Query struct {
 	specification *Specification
 	stories       []*Story
 	scenarios     []*Scenario
 }
 
-func NewFilter(specification *Specification) *Filter {
-	return &Filter{
+func NewQuery(specification *Specification) *Query {
+	return &Query{
 		specification: specification,
 	}
 }
 
-func (f *Filter) MapReduce(fns ...FilterMapFunc) *Filter {
+func (q *Query) MapReduce(fns ...QueryMapFunc) *Query {
 	for _, fn := range fns {
-		fn(f)
+		fn(q)
 	}
-	return f
+	return q
 }
 
-func (f *Filter) Stories() []*Story {
-	return f.stories
+func (q *Query) Stories() []*Story {
+	return q.stories
 }
 
-func (f *Filter) Scenarios() []*Scenario {
-	return f.scenarios
+func (q *Query) Scenarios() []*Scenario {
+	return q.scenarios
 }
 
-func (f *Filter) trimSource(input string) string {
-	specSource := f.specification.Source + "/"
+func (q *Query) trimSource(input string) string {
+	specSource := q.specification.Source + "/"
 	trimmed := strings.TrimPrefix(input, specSource)
 	trimmed = strings.TrimSuffix(trimmed, FileExtFeature)
 	trimmed = strings.TrimSuffix(trimmed, FileExtStory)
 	return trimmed
 }
 
-func (f *Filter) applyReduceFns(input []string, fns []FilterReduceFunc) []string {
+func (q *Query) applyReduceFns(input []string, fns []QueryReduceFunc) []string {
 	matches := input
 	for _, fn := range fns {
 		matches = fn(matches)
@@ -53,9 +53,9 @@ func (f *Filter) applyReduceFns(input []string, fns []FilterReduceFunc) []string
 	return matches
 }
 
-func (f *Filter) storySources() (map[string]*Story, []string) {
+func (q *Query) storySources() (map[string]*Story, []string) {
 	allStorySources := make(map[string]*Story)
-	for k, v := range f.specification.StorySources {
+	for k, v := range q.specification.StorySources {
 		allStorySources[k] = v
 		allStorySources[v.Name] = v
 	}
@@ -68,14 +68,14 @@ func (f *Filter) storySources() (map[string]*Story, []string) {
 	return allStorySources, sources
 }
 
-func MapStories(filters ...FilterReduceFunc) FilterMapFunc {
-	return func(f *Filter) {
-		f.stories = []*Story{}
-		allStorySources, sources := f.storySources()
+func MapStories(filters ...QueryReduceFunc) QueryMapFunc {
+	return func(q *Query) {
+		q.stories = []*Story{}
+		allStorySources, sources := q.storySources()
 
 		lookup := make(map[string]string)
 		for _, source := range sources {
-			lookup[f.trimSource(source)] = source
+			lookup[q.trimSource(source)] = source
 		}
 
 		finalSources := []string{}
@@ -83,21 +83,21 @@ func MapStories(filters ...FilterReduceFunc) FilterMapFunc {
 			finalSources = append(finalSources, fs)
 		}
 
-		matches := f.applyReduceFns(finalSources, filters)
+		matches := q.applyReduceFns(finalSources, filters)
 		for _, match := range matches {
-			f.stories = append(f.stories, allStorySources[lookup[match]])
+			q.stories = append(q.stories, allStorySources[lookup[match]])
 		}
 	}
 }
 
-func MapUniqueStories() FilterMapFunc {
-	return func(f *Filter) {
-		if len(f.stories) <= 1 {
+func MapUniqueStories() QueryMapFunc {
+	return func(q *Query) {
+		if len(q.stories) <= 1 {
 			return
 		}
-		for i := 1; i < len(f.stories); i++ {
-			if f.stories[i-1] == f.stories[i] {
-				f.stories = append(f.stories[:i-1], f.stories[i])
+		for i := 1; i < len(q.stories); i++ {
+			if q.stories[i-1] == q.stories[i] {
+				q.stories = append(q.stories[:i-1], q.stories[i])
 			}
 		}
 	}
@@ -119,13 +119,13 @@ func (s scenarioIndexes) find(name string) *Scenario {
 	return nil
 }
 
-func MapScenarios(filters ...FilterReduceFunc) FilterMapFunc {
-	return func(f *Filter) {
-		f.scenarios = []*Scenario{}
+func MapScenarios(filters ...QueryReduceFunc) QueryMapFunc {
+	return func(q *Query) {
+		q.scenarios = []*Scenario{}
 		allScenarios := scenarioIndexes{}
 		uniqueNames := make(map[string]struct{})
 
-		for _, s := range f.specification.Scenarios(f.stories...) {
+		for _, s := range q.specification.Scenarios(q.stories...) {
 			allScenarios = append(allScenarios, scenarioIndex{s.Name, s})
 			uniqueNames[s.Name] = struct{}{}
 		}
@@ -135,30 +135,30 @@ func MapScenarios(filters ...FilterReduceFunc) FilterMapFunc {
 			pool = append(pool, k)
 		}
 
-		matches := f.applyReduceFns(pool, filters)
+		matches := q.applyReduceFns(pool, filters)
 		for _, match := range matches {
-			f.scenarios = append(f.scenarios, allScenarios.find(match))
+			q.scenarios = append(q.scenarios, allScenarios.find(match))
 		}
 	}
 }
 
-func MapScenarioIndex(index int) FilterMapFunc {
-	return func(f *Filter) {
-		f.scenarios = []*Scenario{}
-		if len(f.stories) != 1 {
+func MapScenarioIndex(index int) QueryMapFunc {
+	return func(q *Query) {
+		q.scenarios = []*Scenario{}
+		if len(q.stories) != 1 {
 			return
 		}
 
-		scenarios := f.specification.Scenarios(f.stories[0])
+		scenarios := q.specification.Scenarios(q.stories[0])
 		if index > len(scenarios) {
 			return
 		}
 
-		f.scenarios = []*Scenario{scenarios[index-1]}
+		q.scenarios = []*Scenario{scenarios[index-1]}
 	}
 }
 
-func ReduceClosestMatch(term string) FilterReduceFunc {
+func ReduceClosestMatch(term string) QueryReduceFunc {
 	return func(pool []string) []string {
 		ranked := fuzzy.Rank(term, pool)
 
@@ -177,5 +177,14 @@ func ReduceClosestMatch(term string) FilterReduceFunc {
 		}
 
 		return []string{ranked[0].Term}
+	}
+}
+
+func ReduceMax(num int) QueryReduceFunc {
+	return func(pool []string) []string {
+		if len(pool) > num {
+			pool = pool[:num]
+		}
+		return pool
 	}
 }
