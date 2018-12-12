@@ -31,7 +31,7 @@ func Test_AFilterCanAddressStories(t *testing.T) {
 	} {
 		t.Run(test.term, func(t *testing.T) {
 			filter := NewFilter(spec)
-			filter.Query(MapStories(ReduceClosestMatch(test.term)), DedupStories())
+			filter.MapReduce(MapStories(ReduceClosestMatch(test.term)), MapUniqueStories())
 			snaptest.Snapshot(t, filter.Stories())
 		})
 	}
@@ -59,7 +59,7 @@ func Test_AFilterCanAddressScenarios(t *testing.T) {
 	} {
 		t.Run(test.term, func(t *testing.T) {
 			filter := NewFilter(spec)
-			filter.Query(MapScenarios(ReduceClosestMatch(test.term)))
+			filter.MapReduce(MapScenarios(ReduceClosestMatch(test.term)))
 			snaptest.Snapshot(t, filter.Scenarios())
 		})
 	}
@@ -78,9 +78,9 @@ func Test_AFilterCanAddressAScenarioInAStory(t *testing.T) {
 		},
 	)
 
-	filter := NewFilter(spec).Query(
+	filter := NewFilter(spec).MapReduce(
 		MapStories(ReduceClosestMatch("similiar1")),
-		DedupStories(),
+		MapUniqueStories(),
 		MapScenarios(ReduceClosestMatch("similiar")),
 	)
 	snaptest.Snapshot(t, filter.Scenarios())
@@ -94,21 +94,21 @@ func Test_AFilterCanIndexAScenarioInAStory(t *testing.T) {
 	)
 
 	require.Equal(t, "Scenario A",
-		NewFilter(spec).Query(
+		NewFilter(spec).MapReduce(
 			MapStories(ReduceClosestMatch("two_scenarios")),
 			MapScenarioIndex(1),
 		).Scenarios()[0].Name,
 	)
 
 	require.Equal(t, "Scenario B",
-		NewFilter(spec).Query(
+		NewFilter(spec).MapReduce(
 			MapStories(ReduceClosestMatch("two_scenarios")),
 			MapScenarioIndex(2),
 		).Scenarios()[0].Name,
 	)
 
 	require.Empty(t,
-		NewFilter(spec).Query(
+		NewFilter(spec).MapReduce(
 			MapStories(ReduceClosestMatch("two_scenarios")),
 			MapScenarioIndex(3),
 		).Scenarios(),

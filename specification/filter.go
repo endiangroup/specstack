@@ -22,7 +22,7 @@ func NewFilter(specification *Specification) *Filter {
 	}
 }
 
-func (f *Filter) Query(fns ...FilterMapFunc) *Filter {
+func (f *Filter) MapReduce(fns ...FilterMapFunc) *Filter {
 	for _, fn := range fns {
 		fn(f)
 	}
@@ -71,7 +71,6 @@ func (f *Filter) storySources() (map[string]*Story, []string) {
 func MapStories(filters ...FilterReduceFunc) FilterMapFunc {
 	return func(f *Filter) {
 		f.stories = []*Story{}
-
 		allStorySources, sources := f.storySources()
 
 		lookup := make(map[string]string)
@@ -91,7 +90,7 @@ func MapStories(filters ...FilterReduceFunc) FilterMapFunc {
 	}
 }
 
-func DedupStories() FilterMapFunc {
+func MapUniqueStories() FilterMapFunc {
 	return func(f *Filter) {
 		if len(f.stories) <= 1 {
 			return
