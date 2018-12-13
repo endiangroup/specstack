@@ -106,7 +106,7 @@ func Test_AnInitialisedGitRepositoryCanHashObjects(t *testing.T) {
 		{"some other long string", "5370464603c6098cb422c98b0f3e9a0fdb9c83f8"},
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.input), func(t *testing.T) {
-			output, err := repo.objectID(bytes.NewBufferString(test.input))
+			output, err := repo.ObjectHash(bytes.NewBufferString(test.input))
 			require.Nil(t, err)
 			require.Equal(t, test.output, output)
 		})
