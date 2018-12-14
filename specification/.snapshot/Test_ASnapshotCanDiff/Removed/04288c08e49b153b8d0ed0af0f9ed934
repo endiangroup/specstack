@@ -1,0 +1,9 @@
+specification.Snapshot{
+  Scenarios: []specification.ScenarioSnapshot{
+    specification.ScenarioSnapshot{
+      StoryID: "features/a.feature",
+      LineNumber: 6,
+      ScenarioID: "should run a normal feature\na feature \"normal.feature\" file:\nI run feature suite\nthe suite should have passed\nthe following steps should be passed:",
+    },
+  },
+}
