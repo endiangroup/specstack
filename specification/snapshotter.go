@@ -5,27 +5,49 @@ type Snapshotter struct {
 	ObjectHasher ObjectHasher
 }
 
+func NewSnapshotter(readSourcer ReadSourcer, objectHasher ObjectHasher) *Snapshotter {
+	return &Snapshotter{
+		ReadSourcer:  readSourcer,
+		ObjectHasher: objectHasher,
+	}
+}
+
 func (s *Snapshotter) Snapshot(spec *Specification) (Snapshot, error) {
 	q := NewQuery(spec)
-	q.MapReduce(MapScenarios()) //TODO: order by DID?
+	q.MapReduce(
+		MapScenarios(),
+		MapScenarioFileOrder(),
+	)
 
 	snapshot := Snapshot{}
-	for _, scenario := range q.Scenarios() {
+
+	scenarios, err := s.snapshotScenarios(q.Scenarios())
+	if err != nil {
+		return snapshot, err
+	}
+	snapshot.Scenarios = scenarios
+
+	return snapshot, nil
+}
+
+func (s *Snapshotter) snapshotScenarios(scenarios []*Scenario) ([]ScenarioSnapshot, error) {
+	ss := make([]ScenarioSnapshot, len(scenarios))
+	for i, scenario := range scenarios {
 		storyID, err := s.DeterministicID(scenario.Story)
 		if err != nil {
-			return snapshot, err
+			return nil, err
 		}
-		scenarioID, err := s.DeterministicID(scenario.Story)
+		scenarioID, err := s.DeterministicID(scenario)
 		if err != nil {
-			return snapshot, err
+			return nil, err
 		}
-		snapshot.Scenarios = append(snapshot.Scenarios, ScenarioSnapshot{
+		ss[i] = ScenarioSnapshot{
 			StoryID:    storyID,
 			ScenarioID: scenarioID,
 			LineNumber: scenario.Location.Line,
-		})
+		}
 	}
-	return snapshot, nil
+	return ss, nil
 }
 
 func (s *Snapshotter) DeterministicID(object Sourcer) (string, error) {

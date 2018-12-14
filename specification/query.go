@@ -1,6 +1,7 @@
 package specification
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -155,6 +156,21 @@ func MapScenarioIndex(index int) QueryMapFunc {
 		}
 
 		q.scenarios = []*Scenario{scenarios[index-1]}
+	}
+}
+
+func MapScenarioFileOrder() QueryMapFunc {
+	fullPath := func(s *Scenario) string {
+		return fmt.Sprintf(
+			"%s:%d",
+			s.Story.SourceIdentifier,
+			s.Location.Line,
+		)
+	}
+	return func(q *Query) {
+		sort.Slice(q.scenarios, func(i, j int) bool {
+			return fullPath(q.scenarios[i]) < fullPath(q.scenarios[j])
+		})
 	}
 }
 

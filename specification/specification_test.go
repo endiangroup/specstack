@@ -78,6 +78,23 @@ const (
   Scenario: Scenario B
 	Then this will also work
 `
+	mockFeatureI = `Feature: Many scenarios
+
+  Scenario: Scenario A
+	Then this is step A
+
+  Scenario: Scenario B
+	Then this is step B
+
+  Scenario: Scenario C
+	Then this is step C
+
+  Scenario: Scenario D
+	Then this is step D
+
+  Scenario: Scenario E
+	Then this is step E
+`
 )
 
 func generateAndReadSpec(t *testing.T, files map[string]string) *Specification {
