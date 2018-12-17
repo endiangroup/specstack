@@ -13,12 +13,10 @@ func NewSnapshotter(readSourcer ReadSourcer, objectHasher ObjectHasher) *Snapsho
 }
 
 func (s *Snapshotter) Snapshot(spec *Specification) (Snapshot, error) {
-	q := NewQuery(spec)
-	q.MapReduce(
+	q := NewQuery(spec).MapReduce(
 		MapScenarios(),
 		MapScenarioFileOrder(),
 	)
-
 	snapshot := Snapshot{}
 
 	scenarios, err := s.snapshotScenarios(q.Scenarios())

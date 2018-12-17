@@ -602,6 +602,7 @@ Feature: %s
 }
 
 func (t *testHarness) iCommitAndPushMyChangesWithGit() error {
+	return godog.ErrPending
 	if err := t.iMakeACommit(); err != nil {
 		return err
 	}
@@ -651,9 +652,6 @@ func (t *testHarness) RunGitCommand(args ...string) error {
 			}
 		}
 	}
-
-	fmt.Println("stdout", t.stdout)
-	fmt.Println("stderr", t.stderr)
 
 	return err
 }
