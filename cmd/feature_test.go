@@ -419,24 +419,11 @@ func (t *testHarness) iRunAGitPush() error {
 }
 
 func (t *testHarness) iMakeACommit() error {
-	if err := afero.WriteFile(
-		t.fs,
-		"features/story1.feature",
-		[]byte(`Feature: Story1 (modified)`),
-		os.ModePerm,
-	); err != nil {
+	if err := t.RunGitCommand("add", "*"); err != nil {
 		return err
 	}
 
-	if err := t.RunGitCommand("add", "features/story1.feature"); err != nil {
-		return err
-	}
-
-	if err := t.RunGitCommand("commit", "-m", "iMakeACommit"); err != nil {
-		return err
-	}
-
-	return nil
+	return t.RunGitCommand("commit", "-m", "iMakeACommit")
 }
 
 func (t *testHarness) iHaveAProperlyConfiguredProjectDirectory() error {
@@ -567,16 +554,50 @@ Feature: %s
 	return t.myScenarioHasTheFollowingMetadata(scenario, table)
 }
 
-func (t *testHarness) myStoryHasAScenarioCalledWithSomeMetadata(arg1, arg2 string) error {
-	return godog.ErrPending
+func (t *testHarness) myStoryHasAScenarioCalledWithSomeMetadata(story, scenario string) error {
+	return t.myStoryHasAScenarioCalledWithTheFollowingMetadata(
+		story,
+		scenario,
+		&gherkin.DataTable{
+			Rows: []*gherkin.TableRow{
+				{
+					Cells: []*gherkin.TableCell{
+						{Value: "key"},
+						{Value: "value"},
+					},
+				},
+				{
+					Cells: []*gherkin.TableCell{
+						{Value: "metadata-key-1"},
+						{Value: "metadata-value-1"},
+					},
+				},
+			},
+		})
 }
 
-func (t *testHarness) iMakeMinorChangesToScenario(arg1 string) error {
-	return godog.ErrPending
+func (t *testHarness) iMakeMinorChangesToScenario(story, scenario string) error {
+	return t.iHaveAFileCalledWithTheFollowingContent(
+		fmt.Sprintf("features/%s.feature", story),
+		&gherkin.DocString{
+			Content: fmt.Sprintf(
+				`
+Feature: %s
+    Scenario: %s
+	    Then something else happens
+				`,
+				story,
+				scenario,
+			),
+		},
+	)
 }
 
 func (t *testHarness) iCommitAndPushMyChangesWithGit() error {
-	return godog.ErrPending
+	if err := t.iMakeACommit(); err != nil {
+		return err
+	}
+	return t.iRunAGitPush()
 }
 
 func (t *testHarness) theMetadataOnShouldStillExist(arg1 string) error {
@@ -622,6 +643,9 @@ func (t *testHarness) RunGitCommand(args ...string) error {
 			}
 		}
 	}
+
+	fmt.Println("stdout", t.stdout)
+	fmt.Println("stderr", t.stderr)
 
 	return err
 }
@@ -701,7 +725,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^there are new metadata on the remote git server$`, th.thereAreNewMetadataOnTheRemoteGitServer)
 	s.Step(`^my metadata should be fetched from the remote git server$`, th.myMetadataShouldBeFetchedFromTheRemoteGitServer)
 	s.Step(`^my metadata should be pushed to the remote git server$`, th.myMetadataShouldBePushedToTheRemoteGitServer)
-	s.Step(`^I make minor changes to scenario "([^"]*)"$`, th.iMakeMinorChangesToScenario)
+	s.Step(`^I make minor changes to scenario "([^"]*)" in "([^"]*)"$`, th.iMakeMinorChangesToScenario)
 	s.Step(`^I commit and push my changes with git$`, th.iCommitAndPushMyChangesWithGit)
 	s.Step(`^the metadata on "([^"]*)" should still exist$`, th.theMetadataOnShouldStillExist)
 	s.Step(`^I run any spec command$`, th.runAnySpecCommand)
