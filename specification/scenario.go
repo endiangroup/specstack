@@ -1,14 +1,11 @@
 package specification
 
 import (
-	"math"
 	"strings"
 
 	gherkin "github.com/DATA-DOG/godog/gherkin"
-	"github.com/antzucaro/matchr"
+	"github.com/endiangroup/specstack/fuzzy"
 )
-
-const distanceThreshold = 0.75
 
 type Scenario struct {
 	*gherkin.Scenario
@@ -22,7 +19,11 @@ func newScenarioFromGherkinScenario(scenario *gherkin.Scenario, story *Story) *S
 	}
 }
 
-func (s *Scenario) bareLines() []string {
+func (s *Scenario) Source() Source {
+	return Source{SourceTypeText, s.String()}
+}
+
+func (s *Scenario) NormalisedLines() []string {
 	output := []string{s.Name}
 	for _, step := range s.Steps {
 		output = append(output, step.Text)
@@ -30,29 +31,23 @@ func (s *Scenario) bareLines() []string {
 	return output
 }
 
-func (s *Scenario) bareString() string {
-	return strings.Join(s.bareLines(), "\n")
+func (s *Scenario) String() string {
+	return strings.Join(s.NormalisedLines(), "\n")
 }
 
-func (s *Scenario) bareStringStepsOnly() string {
-	return strings.Join(s.bareLines()[1:], "\n")
-}
-
-func levstrcmp(a, b string) float64 {
-	maxLen := math.Max(float64(len(a)), float64(len(b)))
-	levDist := matchr.DamerauLevenshtein(a, b)
-	return (1 - (float64(levDist) / maxLen))
+func (s *Scenario) NormalisedSteps() string {
+	return strings.Join(s.NormalisedLines()[1:], "\n")
 }
 
 func ScenarioDistance(a, b *Scenario) float64 {
 	if a.Name == "" || b.Name == "" {
-		return levstrcmp(a.bareStringStepsOnly(), b.bareStringStepsOnly())
+		return fuzzy.Strcmp(a.NormalisedSteps(), b.NormalisedSteps())
 	} else if len(a.Steps) == 0 || len(b.Steps) == 0 {
-		return levstrcmp(a.Name, b.Name)
+		return fuzzy.Strcmp(a.Name, b.Name)
 	}
-	return levstrcmp(a.bareString(), b.bareString())
+	return fuzzy.Strcmp(a.String(), b.String())
 }
 
 func ScenarioRelated(a, b *Scenario) bool {
-	return ScenarioDistance(a, b) >= distanceThreshold
+	return ScenarioDistance(a, b) >= fuzzy.DistanceThreshold
 }

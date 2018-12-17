@@ -33,7 +33,9 @@ type Controller interface {
 	GetConfiguration(string) (string, error)
 	SetConfiguration(string, string) error
 	AddMetadataToStory(storyName, key, value string) error
+	AddMetadataToScenario(scenarioName, storyName, key, value string) error
 	GetStoryMetadata(string) ([]*metadata.Entry, error)
+	GetScenarioMetadata(scenario string, story string) ([]*metadata.Entry, error)
 	RunRepoPrePushHook() error
 	RunRepoPostMergeHook() error
 	Push() error
@@ -162,7 +164,7 @@ func (a *appController) emitWarning(warning error) {
 	fmt.Fprintf(a.stderr, "WARNING: %s\n", warning.Error())
 }
 
-func (a *appController) findStoryObject(name string) (*specification.Story, io.Reader, error) {
+func (a *appController) specification() (*specification.Specification, specification.Reader, error) {
 	reader := a.specificationReader()
 
 	spec, warnings, err := reader.Read()
@@ -172,6 +174,14 @@ func (a *appController) findStoryObject(name string) (*specification.Story, io.R
 
 	for _, warning := range warnings {
 		a.emitWarning(warning)
+	}
+	return spec, reader, nil
+}
+
+func (a *appController) findStoryObject(name string) (*specification.Story, io.Reader, error) {
+	spec, reader, err := a.specification()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	story, err := spec.FindStory(name)
@@ -185,6 +195,25 @@ func (a *appController) findStoryObject(name string) (*specification.Story, io.R
 	}
 
 	return story, object, nil
+}
+
+func (a *appController) findScenarioObject(name, story string) (*specification.Scenario, io.Reader, error) {
+	spec, reader, err := a.specification()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	scenario, err := spec.FindScenario(name, story)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	object, err := reader.ReadSource(scenario)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return scenario, object, nil
 }
 
 func (a *appController) AddMetadataToStory(storyName, key, value string) error {
@@ -210,8 +239,40 @@ func (a *appController) AddMetadataToStory(storyName, key, value string) error {
 	return nil
 }
 
-func (a *appController) GetStoryMetadata(storyName string) ([]*metadata.Entry, error) {
-	_, object, err := a.findStoryObject(storyName)
+func (a *appController) AddMetadataToScenario(name, storyName, key, value string) error {
+	scenario, object, err := a.findScenarioObject(name, storyName)
+	if err != nil {
+		return err
+	}
+
+	if err := a.developer.AddMetadataToScenario(
+		a.newContextWithConfig(),
+		scenario,
+		object,
+		key,
+		value,
+	); err != nil {
+		return err
+	}
+
+	if a.config.Project.PushingMode == config.ModeAuto {
+		return errors.WarningOrNil(a.Push())
+	}
+
+	return nil
+}
+
+func (a *appController) GetStoryMetadata(name string) ([]*metadata.Entry, error) {
+	_, object, err := a.findStoryObject(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata.ReadAll(a.omniStore, object)
+}
+
+func (a *appController) GetScenarioMetadata(name, story string) ([]*metadata.Entry, error) {
+	_, object, err := a.findScenarioObject(name, story)
 	if err != nil {
 		return nil, err
 	}

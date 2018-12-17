@@ -3,21 +3,10 @@ package specification
 import (
 	"fmt"
 	"sort"
-	"strings"
+	"strconv"
 
 	gherkin "github.com/DATA-DOG/godog/gherkin"
-	"github.com/schollz/closestmatch"
 )
-
-/*
-Used for the closestmatch system, which uses bag-of-words approach for
-calculating string distance. Each integer represents a 'bag' of n-grams for the
-match (see https://en.wikipedia.org/wiki/Bag-of-words_model).
-
-Match accuracy can be improved by adding more bags of increasing size (for
-example, []int{2,3,4}) at the cost of speed.
-*/
-var stringMatchBags = []int{2, 3}
 
 type Specification struct {
 	Source          string
@@ -44,8 +33,8 @@ func newStoryFromGherkinFeature(feature *gherkin.Feature, source string) *Story 
 	}
 }
 
-func (s *Story) Source() string {
-	return s.SourceIdentifier
+func (s *Story) Source() Source {
+	return Source{SourceTypeFile, s.SourceIdentifier}
 }
 
 // Stories fetches a list of features derived from loaded feature files.
@@ -71,56 +60,103 @@ func (f *Specification) Stories() []*Story {
 // Scenarios fetches a complete list of scenarios from all loaded feature
 // files. Scenarios are returned in the order they appear in their feature
 // file, grouped by file name in alphabetical order.
-func (s *Specification) Scenarios() []*Scenario {
+func (s *Specification) Scenarios(stories ...*Story) []*Scenario {
 	scenarios := []*Scenario{}
-	for _, story := range s.Stories() {
+
+	if len(stories) == 0 {
+		stories = s.Stories()
+	}
+
+	for _, story := range stories {
 		scenarios = append(scenarios, s.ScenarioSources[story]...)
 	}
 	return scenarios
 }
 
 // FindStory performs a fuzzy match on the source (usually file name) and
-// name of all known stories, then returns the closest match. The base source
-// (usually directory path) and any file extensions are omitted from the
-// match. In the event of a tie (that is, two equal matches) the story is chosen
-// on its alphabetical primacy.
+// name of all known stories, then returns the closest match, if any. The base
+// source (usually directory path) and any file extensions are omitted from the
+// match. In the event of a tie (that is, two roughly equal matches) then an
+// error is returned.
 func (f *Specification) FindStory(input string) (*Story, error) {
-	allStorySources := make(map[string]*Story)
-	for k, v := range f.StorySources {
-		allStorySources[k] = v
-		allStorySources[v.Name] = v
-	}
+	matches := NewQuery(f).MapReduce(
+		MapStories(
+			ReduceClosestMatch(input),
+			ReduceMax(2),
+		),
+		MapUniqueStories(),
+	).Stories()
 
-	sources := []string{}
-	for file := range allStorySources {
-		sources = append(sources, file)
-	}
-
-	lookup := make(map[string]string)
-	for _, source := range sources {
-		lookup[f.trimSource(source)] = source
-	}
-
-	finalSources := []string{}
-	for fs := range lookup {
-		finalSources = append(finalSources, fs)
-	}
-
-	sort.Strings(finalSources)
-	cm := closestmatch.New(finalSources, stringMatchBags)
-	match := cm.Closest(input)
-
-	if match == "" {
+	switch {
+	case len(matches) == 0:
 		return nil, fmt.Errorf("no story matching %s", input)
+
+	case len(matches) > 1:
+		return nil, fmt.Errorf(
+			"story name is ambiguous. The most similar story names are '%s' and '%s'",
+			matches[0].Name,
+			matches[1].Name,
+		)
 	}
 
-	return allStorySources[lookup[match]], nil
+	return matches[0], nil
 }
 
-func (f *Specification) trimSource(input string) string {
-	specSource := f.Source + "/"
-	trimmed := strings.TrimPrefix(input, specSource)
-	trimmed = strings.TrimSuffix(trimmed, FileExtFeature)
-	trimmed = strings.TrimSuffix(trimmed, FileExtStory)
-	return trimmed
+// FindScenario performs a fuzzy match on the name of all scenarios
+// in scope. The scope is either all scenarios, or only scenarios in
+// the provided story name. In the event of a tie (that is, two roughly
+// equal matches) an error is returned
+func (s *Specification) FindScenario(query, storyName string) (*Scenario, error) {
+	q := s.findScenarioQuery(query, storyName)
+	matches := q.Scenarios()
+
+	switch {
+	case len(matches) == 0:
+		return nil, fmt.Errorf("no scenario matching %s", query)
+
+	case len(matches) > 1:
+		m0, m1 := matches[0], matches[1]
+		name0, name1 := m0.Name, m1.Name
+
+		if m0.Story != m1.Story {
+			name0 = fmt.Sprintf("%s/%s", m0.Story.Name, m0.Name)
+			name1 = fmt.Sprintf("%s/%s", m1.Story.Name, m1.Name)
+		}
+
+		return nil, fmt.Errorf(
+			"scenario query is ambiguous. The most similar scenario names are '%s' and '%s'",
+			name0,
+			name1,
+		)
+	}
+
+	return matches[0], nil
+}
+
+func (s *Specification) findScenarioQuery(term, storyName string) *Query {
+	q := NewQuery(s)
+
+	if storyName != "" {
+		q.MapReduce(
+			MapStories(
+				ReduceClosestMatch(storyName),
+				ReduceMax(1),
+			),
+		)
+	}
+
+	if val, err := strconv.Atoi(term); err == nil {
+		q.MapReduce(
+			MapScenarioIndex(val),
+		)
+	} else {
+		q.MapReduce(
+			MapScenarios(
+				ReduceClosestMatch(term),
+				ReduceMax(2),
+			),
+		)
+	}
+
+	return q
 }

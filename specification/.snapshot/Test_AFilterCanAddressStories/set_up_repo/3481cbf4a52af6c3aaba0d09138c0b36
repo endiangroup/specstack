@@ -1,4 +1,4 @@
-map[*specification.Story][]*specification.Scenario{
+[]*specification.Story{
   &specification.Story{
     Feature: &gherkin.Feature{
       Node: gherkin.Node{
@@ -16,7 +16,7 @@ map[*specification.Story][]*specification.Scenario{
       Description: "  In order to test application behavior\n  As a test suite\n  I need to be able to run features",
       Background: nil,
       ScenarioDefinitions: []interface {}{
-        &gherkin.Scenario{ // p1
+        &gherkin.Scenario{
           ScenarioDefinition: gherkin.ScenarioDefinition{
             Node: gherkin.Node{
               Location: &gherkin.Location{
@@ -95,32 +95,6 @@ map[*specification.Story][]*specification.Scenario{
       },
       Comments: p0,
     },
-    SourceIdentifier: "features/a.feature",
-  }: []*specification.Scenario{
-    &specification.Scenario{
-      Scenario: p1,
-      Story: &specification.Story{
-        Feature: &gherkin.Feature{
-          Node: gherkin.Node{
-            Location: &gherkin.Location{
-              Line: 1,
-              Column: 1,
-            },
-            Type: "Feature",
-          },
-          Tags: p0,
-          Language: "en",
-          Keyword: "Feature",
-          Name: "run features",
-          Description: "  In order to test application behavior\n  As a test suite\n  I need to be able to run features",
-          Background: nil,
-          ScenarioDefinitions: []interface {}{
-            p1,
-          },
-          Comments: p0,
-        },
-        SourceIdentifier: "features/a.feature",
-      },
-    },
+    SourceIdentifier: "features/set_up_repo.feature",
   },
 }

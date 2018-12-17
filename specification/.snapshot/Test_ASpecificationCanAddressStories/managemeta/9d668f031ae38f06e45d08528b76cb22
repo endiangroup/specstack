@@ -14,7 +14,37 @@
     Name: "manage metadata",
     Description: "  In order to test application behavior\n  As a test suite\n  I need to be able to run features",
     Background: nil,
-    ScenarioDefinitions: p0,
+    ScenarioDefinitions: []interface {}{
+      &gherkin.Scenario{
+        ScenarioDefinition: gherkin.ScenarioDefinition{
+          Node: gherkin.Node{
+            Location: &gherkin.Location{
+              Line: 6,
+              Column: 3,
+            },
+            Type: "Scenario",
+          },
+          Keyword: "Scenario",
+          Name: "Third",
+          Description: "",
+          Steps: []*gherkin.Step{
+            &gherkin.Step{
+              Node: gherkin.Node{
+                Location: &gherkin.Location{
+                  Line: 7,
+                  Column: 2,
+                },
+                Type: "Step",
+              },
+              Keyword: "Then ",
+              Text: "this will work",
+              Argument: nil,
+            },
+          },
+        },
+        Tags: p0,
+      },
+    },
     Comments: p0,
   },
   SourceIdentifier: "features/add_metadata.feature",

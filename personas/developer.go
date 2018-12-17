@@ -15,6 +15,7 @@ type Developer interface {
 	GetConfiguration(context.Context, string) (string, error)
 	SetConfiguration(context.Context, string, string) error
 	AddMetadataToStory(context.Context, *specification.Story, io.Reader, string, string) error
+	AddMetadataToScenario(context.Context, *specification.Scenario, io.Reader, string, string) error
 }
 
 func NewDeveloper(
@@ -52,6 +53,15 @@ func (d *developer) SetConfiguration(ctx context.Context, name, value string) er
 func (d *developer) AddMetadataToStory(
 	ctx context.Context,
 	story *specification.Story,
+	object io.Reader,
+	name, value string,
+) error {
+	return metadata.Add(d.store, object, metadata.NewKeyValue(name, value))
+}
+
+func (d *developer) AddMetadataToScenario(
+	ctx context.Context,
+	scenario *specification.Scenario,
 	object io.Reader,
 	name, value string,
 ) error {

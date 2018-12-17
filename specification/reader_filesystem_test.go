@@ -144,7 +144,7 @@ func Test_AFilesystemReaderCanReadASourcerFromDisk(t *testing.T) {
 	})
 	reader := NewFilesystemReader(fs, "features")
 	sourcer := &MockSourcer{}
-	sourcer.On("Source").Return("features/a.feature")
+	sourcer.On("Source").Return(Source{SourceTypeFile, "features/a.feature"})
 
 	sreader, err := reader.ReadSource(sourcer)
 	require.Nil(t, err)

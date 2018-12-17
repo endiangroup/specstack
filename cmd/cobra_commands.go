@@ -99,6 +99,7 @@ func commandMetadata(harness *CobraHarness) *cobra.Command {
 	)
 
 	root.PersistentFlags().String("story", "", "")
+	root.PersistentFlags().String("scenario", "", "")
 	add.RunE = harness.MetadataAdd
 	add.Args = harness.SetKeyValueArgs
 	list.RunE = harness.MetadataList

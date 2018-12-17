@@ -1,0 +1,103 @@
+[]*specification.Story{
+  &specification.Story{
+    Feature: &gherkin.Feature{
+      Node: gherkin.Node{
+        Location: &gherkin.Location{
+          Line: 1,
+          Column: 1,
+        },
+        Type: "Feature",
+      },
+      Tags: []*gherkin.Tag{} // p0
+,
+      Language: "en",
+      Keyword: "Feature",
+      Name: "Very similar1",
+      Description: "",
+      Background: nil,
+      ScenarioDefinitions: []interface {}{
+        &gherkin.Scenario{
+          ScenarioDefinition: gherkin.ScenarioDefinition{
+            Node: gherkin.Node{
+              Location: &gherkin.Location{
+                Line: 3,
+                Column: 3,
+              },
+              Type: "Scenario",
+            },
+            Keyword: "Scenario",
+            Name: "Very similar1",
+            Description: "",
+            Steps: []*gherkin.Step{
+              &gherkin.Step{
+                Node: gherkin.Node{
+                  Location: &gherkin.Location{
+                    Line: 4,
+                    Column: 2,
+                  },
+                  Type: "Step",
+                },
+                Keyword: "Then ",
+                Text: "this will work",
+                Argument: nil,
+              },
+            },
+          },
+          Tags: p0,
+        },
+      },
+      Comments: p0,
+    },
+    SourceIdentifier: "features/similar1.feature",
+  },
+  &specification.Story{
+    Feature: &gherkin.Feature{
+      Node: gherkin.Node{
+        Location: &gherkin.Location{
+          Line: 1,
+          Column: 1,
+        },
+        Type: "Feature",
+      },
+      Tags: p0,
+      Language: "en",
+      Keyword: "Feature",
+      Name: "Very similar2",
+      Description: "",
+      Background: nil,
+      ScenarioDefinitions: []interface {}{
+        &gherkin.Scenario{
+          ScenarioDefinition: gherkin.ScenarioDefinition{
+            Node: gherkin.Node{
+              Location: &gherkin.Location{
+                Line: 3,
+                Column: 3,
+              },
+              Type: "Scenario",
+            },
+            Keyword: "Scenario",
+            Name: "Very similar2",
+            Description: "",
+            Steps: []*gherkin.Step{
+              &gherkin.Step{
+                Node: gherkin.Node{
+                  Location: &gherkin.Location{
+                    Line: 4,
+                    Column: 2,
+                  },
+                  Type: "Step",
+                },
+                Keyword: "Then ",
+                Text: "this will work",
+                Argument: nil,
+              },
+            },
+          },
+          Tags: p0,
+        },
+      },
+      Comments: p0,
+    },
+    SourceIdentifier: "features/similar2.feature",
+  },
+}

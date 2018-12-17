@@ -10,14 +10,14 @@ type MockSourcer struct {
 }
 
 // Source provides a mock function with given fields:
-func (_m *MockSourcer) Source() string {
+func (_m *MockSourcer) Source() Source {
 	ret := _m.Called()
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
+	var r0 Source
+	if rf, ok := ret.Get(0).(func() Source); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Get(0).(Source)
 	}
 
 	return r0

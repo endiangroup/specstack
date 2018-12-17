@@ -108,7 +108,7 @@ func (t *testHarness) iHaveAProjectDirectory() error {
 	return afero.WriteFile(
 		t.fs,
 		"features/story1.feature",
-		[]byte(`Feature: Story1`),
+		[]byte(`Feature: story1`),
 		os.ModePerm,
 	)
 }
@@ -162,6 +162,14 @@ func (t *testHarness) iShouldSeeAWarningMessageInformingMe(msg string) error {
 	}
 
 	if !assert.Equal(t, 0, t.exitCode, "Non-zero exit coded returned") {
+		return t.AssertError()
+	}
+	return nil
+}
+
+func (t *testHarness) iShouldSeeAHelpfulSuggestionInformingMe(msg string) error {
+	if !assert.Contains(t, t.stderr.String(), msg) {
+		t.Errorf("%d, %s, %s", t.exitCode, t.stdout.String(), t.stderr.String())
 		return t.AssertError()
 	}
 	return nil
@@ -263,6 +271,22 @@ func (t *testHarness) iHaveAFileCalledWithTheFollowingContent(filename string, c
 	return afero.WriteFile(t.fs, filename, []byte(content.Content), os.ModePerm)
 }
 
+func (t *testHarness) iHaveAStoryCalled(name string) error {
+	return t.iHaveAFileCalledWithTheFollowingContent(
+		fmt.Sprintf("features/%s.feature", name),
+		&gherkin.DocString{
+			Content: fmt.Sprintf(`Feature: %s`, name),
+		},
+	)
+}
+
+func (t *testHarness) iHaveAStoryCalledInMySpecWithTheFollowingMetadata(name string, table *gherkin.DataTable) error {
+	if err := t.iHaveAStoryCalled(name); err != nil {
+		return err
+	}
+	return t.myStoryHasTheFollowingMetadata(name, table)
+}
+
 func (t *testHarness) iHaveAConfiguredProjectDirectory() error {
 	if err := t.iHaveAProjectDirectory(); err != nil {
 		return err
@@ -275,27 +299,21 @@ func (t *testHarness) theMetadataShouldBeAddedToStory(metadataKey, storyId, valu
 		return err
 	}
 
-	scanner := metadata.NewPlaintextPrintscanner()
-	entries, err := scanner.Scan(t.stdout)
-	if err != nil {
+	return t.AssertMetadataFromStdout(metadataKey, value)
+}
+
+func (t *testHarness) theMetadataShouldBeAddedToScenarioWithTheValue(key, scenarioQuery, value string) error {
+	if err := t.iRunTheCommand(fmt.Sprintf("metadata ls --scenario %s", scenarioQuery)); err != nil {
 		return err
 	}
 
-	for _, entry := range entries {
-		if entry.Name == metadataKey {
-			if entry.Value == value {
-				return nil
-			} else {
-				return fmt.Errorf("Got %s, expected %s", entry.Value, value)
-			}
-		}
-	}
-
-	return fmt.Errorf("metadata not found")
+	return t.AssertMetadataFromStdout(key, value)
 }
 
 func (t *testHarness) iShouldSeeNoErrors() error {
 	if !assert.True(t, t.exitCode == 0, "Non-zero exit coded returned, expected 0") {
+		fmt.Println("Stdout:", t.stdout)
+		fmt.Println("Stderr:", t.stderr)
 		return t.AssertError()
 	}
 
@@ -338,12 +356,34 @@ func (t *testHarness) overwriteHooks() error {
 	return nil
 }
 
-func (t *testHarness) hasTheFollowingMetadata(storyName string, table *gherkin.DataTable) error {
+func (t *testHarness) myStoryHasTheFollowingMetadata(storyName string, table *gherkin.DataTable) error {
+	if err := t.thePushingModeIsNotSetToAutomatic(); err != nil {
+		return err
+	}
 	for _, row := range table.Rows[1:] {
 		if err := t.iRunTheCommand(
 			fmt.Sprintf(
 				`metadata add --story "%s" "%s"="%s"`,
 				storyName,
+				row.Cells[0].Value, row.Cells[1].Value,
+			),
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (t *testHarness) myScenarioHasTheFollowingMetadata(name string, table *gherkin.DataTable) error {
+	if err := t.thePushingModeIsNotSetToAutomatic(); err != nil {
+		return err
+	}
+	for _, row := range table.Rows[1:] {
+		if err := t.iRunTheCommand(
+			fmt.Sprintf(
+				`metadata add --scenario "%s" "%s"="%s"`,
+				name,
 				row.Cells[0].Value, row.Cells[1].Value,
 			),
 		); err != nil {
@@ -514,6 +554,47 @@ func (t *testHarness) myMetadataShouldBePushedToTheRemoteGitServer() error {
 	return fmt.Errorf("Timed out")
 }
 
+func (t *testHarness) myStoryHasAScenarioCalledWithTheFollowingMetadata(story, scenario string, table *gherkin.DataTable) error {
+	if err := t.iHaveAFileCalledWithTheFollowingContent(
+		fmt.Sprintf("features/%s.feature", story),
+		&gherkin.DocString{
+			Content: fmt.Sprintf(
+				`
+Feature: %s
+    Scenario: %s
+	    Then something happens
+				`,
+				story,
+				scenario,
+			),
+		},
+	); err != nil {
+		return err
+	}
+
+	return t.myScenarioHasTheFollowingMetadata(scenario, table)
+}
+
+func (t *testHarness) myStoryHasAScenarioCalledWithSomeMetadata(arg1, arg2 string) error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iMakeMinorChangesToScenario(arg1 string) error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) iCommitAndPushMyChangesWithGit() error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) theMetadataOnShouldStillExist(arg1 string) error {
+	return godog.ErrPending
+}
+
+func (t *testHarness) runAnySpecCommand() error {
+	return godog.ErrPending
+}
+
 func (t *testHarness) Errorf(format string, args ...interface{}) {
 	t.assertError = fmt.Errorf(format, args...)
 }
@@ -560,6 +641,26 @@ func (t *testHarness) SetSyncMode(mode, value string) error {
 	return t.iRunTheCommand(fmt.Sprintf(`config set project.%smode=%s`, mode, value))
 }
 
+func (t *testHarness) AssertMetadataFromStdout(key, value string) error {
+	scanner := metadata.NewPlaintextPrintscanner()
+	entries, err := scanner.Scan(t.stdout)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.Name == key {
+			if entry.Value == value {
+				return nil
+			} else {
+				return fmt.Errorf("Got %s, expected %s", entry.Value, value)
+			}
+		}
+	}
+
+	return fmt.Errorf("metadata not found")
+}
+
 func FeatureContext(s *godog.Suite) {
 	th := newTestHarness()
 
@@ -568,6 +669,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I run "([^"]*)"$`, th.iRunTheCommand)
 	s.Step(`^I should see an error message informing me "([^"]*)"$`, th.iShouldSeeAnErrorMessageInformingMe)
 	s.Step(`^I should see a warning message informing me "([^"]*)"$`, th.iShouldSeeAWarningMessageInformingMe)
+	s.Step(`^I should see a helpful suggestion informing me "([^"]*)"$`, th.iShouldSeeAHelpfulSuggestionInformingMe)
 	s.Step(`^I have initialised git$`, th.iHaveInitialisedGit)
 	s.Step(`^I should see the following:$`, th.iShouldSeeTheFollowing)
 	s.Step(`^I should see some configuration keys and values$`, th.iShouldSeeSomeConfigurationKeysAndValues)
@@ -577,10 +679,16 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I have set the git user email to "([^"]*)"$`, th.iHaveSetTheGitUserEmailTo)
 	s.Step(`^I have set my user details$`, th.iHaveSetMyUserDetails)
 	s.Step(`^I have a file called "([^"]*)" with the following content:$`, th.iHaveAFileCalledWithTheFollowingContent)
+	s.Step(`^I have a story called "([^"]*)"$`, th.iHaveAStoryCalled)
+	s.Step(`^I have a story called "([^"]*)" in my spec with the following metadata:$`, th.iHaveAStoryCalledInMySpecWithTheFollowingMetadata)
+	s.Step(`^My story "([^"]*)" has a scenario called "([^"]*)" with the following metadata:$`, th.myStoryHasAScenarioCalledWithTheFollowingMetadata)
+	s.Step(`^My story "([^"]*)" has a scenario called "([^"]*)" with some metadata$`, th.myStoryHasAScenarioCalledWithSomeMetadata)
+	s.Step(`^My story "([^"]*)" has the following metadata:$`, th.myStoryHasTheFollowingMetadata)
 	s.Step(`^I have configured git$`, th.iHaveConfiguredGit)
 	s.Step(`^I have not initialised git$`, th.iHaveNotInitialisedGit)
 	s.Step(`^I have a configured project directory$`, th.iHaveAConfiguredProjectDirectory)
 	s.Step(`^The metadata "([^"]*)" should be added to story "([^"]*)" with the value "([^"]*)"$`, th.theMetadataShouldBeAddedToStory)
+	s.Step(`^The metadata "([^"]*)" should be added to scenario "([^"]*)" with the value "([^"]*)"$`, th.theMetadataShouldBeAddedToScenarioWithTheValue)
 	s.Step(`^I should see no errors$`, th.iShouldSeeNoErrors)
 	s.Step(`^I have a git-initialised project directory$`, th.iHaveAGitinitialisedProjectDirectory)
 	s.Step(`^I have not configured a project remote$`, th.iHaveNotConfiguredAProjectRemote)
@@ -602,7 +710,10 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^there are new metadata on the remote git server$`, th.thereAreNewMetadataOnTheRemoteGitServer)
 	s.Step(`^my metadata should be fetched from the remote git server$`, th.myMetadataShouldBeFetchedFromTheRemoteGitServer)
 	s.Step(`^my metadata should be pushed to the remote git server$`, th.myMetadataShouldBePushedToTheRemoteGitServer)
-	s.Step(`^My story "([^"]*)" has the following metadata:$`, th.hasTheFollowingMetadata)
+	s.Step(`^I make minor changes to scenario "([^"]*)"$`, th.iMakeMinorChangesToScenario)
+	s.Step(`^I commit and push my changes with git$`, th.iCommitAndPushMyChangesWithGit)
+	s.Step(`^the metadata on "([^"]*)" should still exist$`, th.theMetadataOnShouldStillExist)
+	s.Step(`^I run any spec command$`, th.runAnySpecCommand)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }

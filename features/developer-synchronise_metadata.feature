@@ -43,7 +43,7 @@ Feature: Synchronise metadata
     And I have set the pulling mode to automatic
     But I have not configured a project remote
     When I add some metadata
-    Then I should see a warning message informing me "configure a project remote first"
+    Then I should see an error message informing me "configure a project remote first"
 
   Scenario: Project remote not configured for manual pull
     Given I have a git-initialised project directory
@@ -62,7 +62,7 @@ Feature: Synchronise metadata
     And I have set the pushing mode to automatic
     But I have not set a git remote
     When I add some metadata
-    Then I should see a warning message informing me "set git remote 'origin' first"
+    Then I should see an error message informing me "set git remote 'origin' first"
 
   Scenario: Unexpected error for manual pull
     Given I have a properly configured project directory
@@ -82,7 +82,7 @@ Feature: Synchronise metadata
     And I have set the pushing mode to automatic
     But The remote git server isn't responding properly
     When I add some metadata
-    Then I should see an appropriate warning from git
+    Then I should see an appropriate error from git
 
   Scenario: Successful manual pull
     Given I have a properly configured project directory
