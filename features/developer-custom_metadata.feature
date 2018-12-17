@@ -22,7 +22,8 @@ Feature: Manage custom metadata
     And I have a story called "story2"
     And the pushing mode is not set to automatic
     When I run "metadata add --story story key=value"
-    Then I should see an error message informing me "story name is ambiguous. The most similar story names are 'story1' and 'story2'"
+    Then I should see an error message informing me "story name is ambiguous"
+    And I should see a helpful suggestion informing me "similar story names are 'story1' and 'story2'"
 
   Scenario: Successfully add metadata to extant story
     Given I have a configured project directory
@@ -67,7 +68,8 @@ Feature: Manage custom metadata
       			Then something else happens
       """
     When I run "metadata add --scenario scenario key=value"
-    Then I should see an error message informing me "scenario query is ambiguous. The most similar scenario names are 'Scenario1' and 'Scenario2'"
+    Then I should see an error message informing me "scenario query is ambiguous"
+    And I should see a helpful suggestion informing me "similar scenario names are 'Scenario1' and 'Scenario2'"
 
   Scenario: Try to identify ambiguous story in multiple stories
     Given I have a configured project directory
@@ -87,7 +89,8 @@ Feature: Manage custom metadata
       			Then something else happens
       """
     When I run "metadata add --scenario scenario key=value"
-    Then I should see an error message informing me "scenario query is ambiguous. The most similar scenario names are 'Story1/Scenario1' and 'Story2/Scenario2'"
+    Then I should see an error message informing me "scenario query is ambiguous"
+    And I should see a helpful suggestion informing me "similar scenario names are 'Story1/Scenario1' and 'Story2/Scenario2'"
 
   Scenario: Successfully add metadata to extant scenario by name
     Given I have a properly configured project directory

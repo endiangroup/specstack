@@ -167,6 +167,14 @@ func (t *testHarness) iShouldSeeAWarningMessageInformingMe(msg string) error {
 	return nil
 }
 
+func (t *testHarness) iShouldSeeAHelpfulSuggestionInformingMe(msg string) error {
+	if !assert.Contains(t, t.stderr.String(), msg) {
+		t.Errorf("%d, %s, %s", t.exitCode, t.stdout.String(), t.stderr.String())
+		return t.AssertError()
+	}
+	return nil
+}
+
 func (t *testHarness) iHaveInitialisedGit() error {
 	return t.repo.Init()
 }
@@ -685,6 +693,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I run "([^"]*)"$`, th.iRunTheCommand)
 	s.Step(`^I should see an error message informing me "([^"]*)"$`, th.iShouldSeeAnErrorMessageInformingMe)
 	s.Step(`^I should see a warning message informing me "([^"]*)"$`, th.iShouldSeeAWarningMessageInformingMe)
+	s.Step(`^I should see a helpful suggestion informing me "([^"]*)"$`, th.iShouldSeeAHelpfulSuggestionInformingMe)
 	s.Step(`^I have initialised git$`, th.iHaveInitialisedGit)
 	s.Step(`^I should see the following:$`, th.iShouldSeeTheFollowing)
 	s.Step(`^I should see some configuration keys and values$`, th.iShouldSeeSomeConfigurationKeysAndValues)

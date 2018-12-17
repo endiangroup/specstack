@@ -87,11 +87,11 @@ func (f *Specification) FindStory(input string) (*Story, error) {
 		MapUniqueStories(),
 	).Stories()
 
-	if len(matches) == 0 {
+	switch {
+	case len(matches) == 0:
 		return nil, fmt.Errorf("no story matching %s", input)
-	}
 
-	if len(matches) > 1 {
+	case len(matches) > 1:
 		return nil, fmt.Errorf(
 			"story name is ambiguous. The most similar story names are '%s' and '%s'",
 			matches[0].Name,
@@ -107,29 +107,14 @@ func (f *Specification) FindStory(input string) (*Story, error) {
 // the provided story name. In the event of a tie (that is, two roughly
 // equal matches) an error is returned
 func (s *Specification) FindScenario(query, storyName string) (*Scenario, error) {
-	filter := NewQuery(s)
-	if storyName != "" {
-		filter.MapReduce(
-			MapStories(
-				ReduceClosestMatch(storyName),
-				ReduceMax(1),
-			),
-		)
-	}
+	q := s.findScenarioQuery(query, storyName)
+	matches := q.Scenarios()
 
-	if val, err := strconv.Atoi(query); err == nil {
-		filter.MapReduce(MapScenarioIndex(val))
-	} else {
-		filter.MapReduce(MapScenarios(ReduceClosestMatch(query), ReduceMax(2)))
-	}
-
-	matches := filter.Scenarios()
-
-	if len(matches) == 0 {
+	switch {
+	case len(matches) == 0:
 		return nil, fmt.Errorf("no scenario matching %s", query)
-	}
 
-	if len(matches) > 1 {
+	case len(matches) > 1:
 		m0, m1 := matches[0], matches[1]
 		name0, name1 := m0.Name, m1.Name
 
@@ -146,4 +131,32 @@ func (s *Specification) FindScenario(query, storyName string) (*Scenario, error)
 	}
 
 	return matches[0], nil
+}
+
+func (s *Specification) findScenarioQuery(term, storyName string) *Query {
+	q := NewQuery(s)
+
+	if storyName != "" {
+		q.MapReduce(
+			MapStories(
+				ReduceClosestMatch(storyName),
+				ReduceMax(1),
+			),
+		)
+	}
+
+	if val, err := strconv.Atoi(term); err == nil {
+		q.MapReduce(
+			MapScenarioIndex(val),
+		)
+	} else {
+		q.MapReduce(
+			MapScenarios(
+				ReduceClosestMatch(term),
+				ReduceMax(2),
+			),
+		)
+	}
+
+	return q
 }
