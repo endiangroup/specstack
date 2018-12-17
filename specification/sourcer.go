@@ -4,7 +4,8 @@ package specification
 type SourceType int
 
 const (
-	SourceTypeFile SourceType = iota
+	SourceTypeUnknown SourceType = iota
+	SourceTypeFile
 	SourceTypeText
 )
 
