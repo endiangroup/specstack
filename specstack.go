@@ -21,6 +21,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+var MetdataSnapshotKey = bytes.NewBufferString("snapshots")
+
 type MissingRequiredConfigValueErr string
 
 func (err MissingRequiredConfigValueErr) Error() string {
@@ -296,9 +298,7 @@ func (a *appController) scenarioHasMetadata(scenario *specification.Scenario) bo
 }
 
 func (a *appController) previousSnapshot() (specification.Snapshot, error) {
-	// FIXME! const?
-	key := bytes.NewBufferString("snapshots")
-	entries, err := metadata.ReadAll(a.omniStore, key)
+	entries, err := metadata.ReadAll(a.omniStore, MetdataSnapshotKey)
 	if err != nil || len(entries) == 0 {
 		return specification.Snapshot{}, err
 	}
@@ -336,13 +336,11 @@ func (a *appController) snapshots() (current, previous specification.Snapshot, e
 }
 
 func (a *appController) storeSnapshot(s specification.Snapshot) error {
-	// FIXME! const?
-	key := bytes.NewBufferString("snapshots")
 	jsn, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
-	return metadata.Add(a.omniStore, key, metadata.NewKeyValue("snapshot", string(jsn)))
+	return metadata.Add(a.omniStore, MetdataSnapshotKey, metadata.NewKeyValue("snapshot", string(jsn)))
 }
 
 /*
@@ -458,7 +456,6 @@ func (a *appController) transferScenarioMetadata(
 			bestParent, scenario,
 			parentObject, object,
 		); err != nil {
-			fmt.Println(err)
 			return err
 		}
 	}
