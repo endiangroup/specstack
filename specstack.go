@@ -1,13 +1,18 @@
 package specstack
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/errors"
+	"github.com/endiangroup/specstack/fuzzy"
 	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
@@ -36,6 +41,7 @@ type Controller interface {
 	AddMetadataToScenario(scenarioName, storyName, key, value string) error
 	GetStoryMetadata(string) ([]*metadata.Entry, error)
 	GetScenarioMetadata(scenario string, story string) ([]*metadata.Entry, error)
+	SnapshotScenarioMetadata() error
 	RunRepoPrePushHook() error
 	RunRepoPostMergeHook() error
 	Push() error
@@ -202,7 +208,6 @@ func (a *appController) findScenarioObject(name, story string) (*specification.S
 	if err != nil {
 		return nil, nil, err
 	}
-
 	scenario, err := spec.FindScenario(name, story)
 	if err != nil {
 		return nil, nil, err
@@ -244,7 +249,6 @@ func (a *appController) AddMetadataToScenario(name, storyName, key, value string
 	if err != nil {
 		return err
 	}
-
 	if err := a.developer.AddMetadataToScenario(
 		a.newContextWithConfig(),
 		scenario,
@@ -278,6 +282,197 @@ func (a *appController) GetScenarioMetadata(name, story string) ([]*metadata.Ent
 	}
 
 	return metadata.ReadAll(a.omniStore, object)
+}
+
+// TODO! Move to developer
+func (a *appController) scenarioHasMetadata(scenario *specification.Scenario) bool {
+	reader := a.specificationReader()
+	key, err := reader.ReadSource(scenario)
+	if err != nil {
+		return false
+	}
+	e, err := metadata.ReadAll(a.omniStore, key)
+	return err == nil && len(e) > 0
+}
+
+func (a *appController) previousSnapshot() (specification.Snapshot, error) {
+	// FIXME! const?
+	key := bytes.NewBufferString("snapshots")
+	entries, err := metadata.ReadAll(a.omniStore, key)
+	if err != nil || len(entries) == 0 {
+		return specification.Snapshot{}, err
+	}
+
+	latest := entries[len(entries)-1]
+	snap := specification.Snapshot{}
+	if err := json.Unmarshal([]byte(latest.Value), &snap); err != nil {
+		return snap, err
+	}
+
+	return snap, nil
+}
+
+func (a *appController) currentSnapshot() (specification.Snapshot, error) {
+	spec, reader, err := a.specification()
+	if err != nil {
+		return specification.Snapshot{}, err
+	}
+
+	snapshotter := specification.NewSnapshotter(reader, a.repo)
+	current, err := snapshotter.Snapshot(spec)
+	if err != nil {
+		return specification.Snapshot{}, err
+	}
+	return current, nil
+}
+
+func (a *appController) storeSnapshot(s specification.Snapshot) error {
+	// FIXME! const?
+	key := bytes.NewBufferString("snapshots")
+	jsn, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+	return metadata.Add(a.omniStore, key, metadata.NewKeyValue("snapshot", string(jsn)))
+}
+
+/*
+Loads a scenario from a snapshot. The procedure is:
+
+1. Look in git object for story file
+2. If not there, look on disk
+3. If found, create new Scenario with only that one story file
+4. Query spec for scenario at line number
+5. Return if found
+*/
+func (a *appController) findScenarioFromSnapshot(snap specification.ScenarioSnapshot) (*specification.Scenario, error) {
+	fs, err := a.fileSystemFromScenarioSnapshot(snap)
+	if err != nil {
+		return nil, err
+	}
+
+	reader := specification.NewFilesystemReader(fs, a.config.Project.FeaturesDir)
+	spec, _, err := reader.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	scenarios := specification.NewQuery(spec).MapReduce(
+		specification.MapScenarios(),
+		specification.MapScenarioLineNumber(snap.LineNumber),
+	).Scenarios()
+
+	if l := len(scenarios); l != 1 {
+		return nil, fmt.Errorf("Expected 1 scenario from query, got %d", l)
+	}
+
+	return scenarios[0], nil
+}
+
+func (a *appController) fileSystemFromScenarioSnapshot(snap specification.ScenarioSnapshot) (afero.Fs, error) {
+	fs := afero.NewMemMapFs()
+	var (
+		err         error
+		fileContent string
+	)
+
+	fileContent, err = a.repo.ObjectString(snap.StoryID)
+
+	if err != nil && snap.StorySource.Type == specification.SourceTypeFile {
+		if fc, err := ioutil.ReadFile(snap.StorySource.Body); err == nil {
+			fileContent = string(fc)
+		}
+	}
+
+	if fileContent != "" {
+		err := afero.WriteFile(fs, snap.StorySource.Body, []byte(fileContent), os.ModePerm)
+		return fs, err
+	}
+
+	return nil, fmt.Errorf("spec not found")
+}
+
+// FIXME! Refactor
+func (a *appController) SnapshotScenarioMetadata() error {
+	current, err := a.currentSnapshot()
+	if err != nil {
+		return err
+	}
+
+	previous, err := a.previousSnapshot()
+	if err != nil {
+		return err
+	}
+
+	if previous.Equal(current) {
+		return nil
+	}
+
+	if err := a.storeSnapshot(current); err != nil {
+		return err
+	}
+
+	removed, added := previous.Diff(current)
+	if len(added.Scenarios) == 0 || len(removed.Scenarios) == 0 {
+		return nil
+	}
+
+	reader := a.specificationReader()
+
+	removeds := make(map[io.Reader]*specification.Scenario)
+	for _, r := range removed.Scenarios {
+		scen, err := a.findScenarioFromSnapshot(r)
+		if err != nil {
+			continue
+		}
+		if !a.scenarioHasMetadata(scen) {
+			continue
+		}
+		key, err := reader.ReadSource(scen)
+		if err != nil {
+			return err
+		}
+
+		removeds[key] = scen
+	}
+
+	for _, snapshot := range added.Scenarios {
+		scenario, err := a.findScenarioFromSnapshot(snapshot)
+		if err != nil {
+			return err
+		}
+
+		bestDistance := 0.0
+		var bestParent *specification.Scenario
+		var parentObject io.Reader
+
+		for k, v := range removeds {
+			if distance := specification.ScenarioDistance(scenario, v); distance >= fuzzy.DistanceThreshold &&
+				distance > bestDistance {
+				bestDistance = distance
+				bestParent = v
+				parentObject = k
+			}
+		}
+
+		if bestParent != nil {
+			object, err := reader.ReadSource(scenario)
+			if err != nil {
+				return err
+			}
+			entries, err := metadata.ReadAll(a.omniStore, parentObject)
+			if err != nil {
+				return err
+			}
+			if err := metadata.Add(a.omniStore, object, entries...); err != nil {
+				return err
+			}
+		}
+	}
+
+	// TODO: Move much of this to developer
+
+	return nil
 }
 
 func (a *appController) RunRepoPrePushHook() error {

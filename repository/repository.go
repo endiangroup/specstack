@@ -1,10 +1,13 @@
 package repository
 
+import "io"
+
 // Repository represents a version control repo
 type Repository interface {
 	Initialiser
 	Configurer
 	MetadataSyncer
+	ObjectHasher
 }
 
 // Initialiser initialises a repo
@@ -25,4 +28,9 @@ type MetadataSyncer interface {
 	PrepareMetadataSync() error
 	PullMetadata(from string) error
 	PushMetadata(to string) error
+}
+
+type ObjectHasher interface {
+	ObjectHash(io.Reader) (string, error)
+	ObjectString(hash string) (string, error)
 }

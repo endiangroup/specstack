@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
@@ -253,7 +254,7 @@ func Test_AnInitialisedGitRepoCanWriteItsHooksWhenAppropriate(t *testing.T) {
 		require.True(t, os.IsNotExist(err))
 	})
 
-	t.Run("Hooks shoulf exist afrer preparation", func(t *testing.T) {
+	t.Run("Hooks should exist after preparation", func(t *testing.T) {
 		require.Nil(t, repo.PrepareMetadataSync())
 
 		_, err := os.Stat(pc)
@@ -261,5 +262,51 @@ func Test_AnInitialisedGitRepoCanWriteItsHooksWhenAppropriate(t *testing.T) {
 
 		_, err = os.Stat(pu)
 		require.False(t, os.IsNotExist(err))
+	})
+}
+
+func Test_AnInitialisedGitRepoCanHashObjectsConsistently(t *testing.T) {
+
+	_, repo, shutdown := initialisedGitRepoDir(t)
+	defer shutdown()
+
+	require.Nil(t, ioutil.WriteFile("a.txt", []byte("1"), os.ModePerm))
+	hash := "56a6051ca2b02b04ef92d5150c9ef600403cb1de"
+
+	assertGitCmd(t, repo, hash, "hash-object", "a.txt")
+
+	fs := afero.NewOsFs()
+	file, err := fs.Open("a.txt")
+	require.Nil(t, err)
+
+	objectHash, err := repo.ObjectHash(file)
+	require.Nil(t, err)
+	require.Equal(t, hash, objectHash)
+}
+
+func Test_AnInitialisedGitRepoCanGetObjectContentByHash(t *testing.T) {
+
+	_, repo, shutdown := initialisedGitRepoDir(t)
+	defer shutdown()
+
+	require.Nil(t, ioutil.WriteFile("a.txt", []byte("1"), os.ModePerm))
+	assertGitCmd(t, repo, "", "add", "a.txt")
+	assertGitCmd(t, repo, "", "commit", "-m", "Commit A")
+
+	aHash, err := repo.ObjectHash(bytes.NewBufferString("1"))
+	require.Nil(t, err)
+
+	t.Run("Invalid hash", func(t *testing.T) {
+		_, err := repo.ObjectString("111")
+		require.NotNil(t, err)
+	})
+	t.Run("Valid hash, no object", func(t *testing.T) {
+		_, err := repo.ObjectString("a1ae7dc440fa004cb7379e33e3b15edd1625d50d")
+		require.NotNil(t, err)
+	})
+	t.Run("Valid hash", func(t *testing.T) {
+		content, err := repo.ObjectString(aHash)
+		require.Nil(t, err)
+		require.Equal(t, "1", content)
 	})
 }

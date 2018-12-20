@@ -174,6 +174,24 @@ func MapScenarioFileOrder() QueryMapFunc {
 	}
 }
 
+func MapScenarioMatchFunc(fn func(*Scenario) bool) QueryMapFunc {
+	return func(q *Query) {
+		newScenarios := []*Scenario{}
+		for _, s := range q.scenarios {
+			if fn(s) {
+				newScenarios = append(newScenarios, s)
+			}
+		}
+		q.scenarios = newScenarios
+	}
+}
+
+func MapScenarioLineNumber(line int) QueryMapFunc {
+	return MapScenarioMatchFunc(func(s *Scenario) bool {
+		return s.Node.Location.Line == line
+	})
+}
+
 func ReduceClosestMatch(term string) QueryReduceFunc {
 	return func(pool []string) []string {
 		ranked := fuzzy.Rank(term, pool)

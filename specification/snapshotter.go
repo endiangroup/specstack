@@ -1,14 +1,21 @@
 package specification
 
+type SnapshotterMatchFunc func(*Scenario) bool
+
 type Snapshotter struct {
 	ReadSourcer  ReadSourcer
 	ObjectHasher ObjectHasher
+	MatchFuncs   []SnapshotterMatchFunc
 }
 
-func NewSnapshotter(readSourcer ReadSourcer, objectHasher ObjectHasher) *Snapshotter {
+func NewSnapshotter(
+	readSourcer ReadSourcer,
+	objectHasher ObjectHasher,
+	matchFuncs ...SnapshotterMatchFunc) *Snapshotter {
 	return &Snapshotter{
 		ReadSourcer:  readSourcer,
 		ObjectHasher: objectHasher,
+		MatchFuncs:   matchFuncs,
 	}
 }
 
@@ -17,6 +24,10 @@ func (s *Snapshotter) Snapshot(spec *Specification) (Snapshot, error) {
 		MapScenarios(),
 		MapScenarioFileOrder(),
 	)
+	for _, fn := range s.MatchFuncs {
+		q.MapReduce(MapScenarioMatchFunc(fn))
+	}
+
 	snapshot := Snapshot{}
 
 	scenarios, err := s.snapshotScenarios(q.Scenarios())
@@ -40,9 +51,10 @@ func (s *Snapshotter) snapshotScenarios(scenarios []*Scenario) ([]ScenarioSnapsh
 			return nil, err
 		}
 		ss[i] = ScenarioSnapshot{
-			StoryID:    storyID,
-			ScenarioID: scenarioID,
-			LineNumber: scenario.Location.Line,
+			StorySource: scenario.Story.Source(),
+			StoryID:     storyID,
+			ScenarioID:  scenarioID,
+			LineNumber:  scenario.Location.Line,
 		}
 	}
 	return ss, nil

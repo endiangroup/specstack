@@ -1,6 +1,10 @@
 specification.Snapshot{
   Scenarios: []specification.ScenarioSnapshot{
     specification.ScenarioSnapshot{
+      StorySource: specification.Source{
+        Type: 1,
+        Body: "features/c.feature",
+      },
       StoryID: "features/c.feature",
       LineNumber: 6,
       ScenarioID: "Second\nthis will work",

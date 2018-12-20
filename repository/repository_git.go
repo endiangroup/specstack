@@ -472,3 +472,7 @@ func (repo *Git) configWriteScopeArg() string {
 func (repo *Git) ObjectHash(key io.Reader) (string, error) {
 	return repo.runGitCommandStdIn(key, "hash-object", "--stdin")
 }
+
+func (repo *Git) ObjectString(hash string) (string, error) {
+	return repo.runGitCommand("show", hash)
+}

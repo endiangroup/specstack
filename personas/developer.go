@@ -67,3 +67,5 @@ func (d *developer) AddMetadataToScenario(
 ) error {
 	return metadata.Add(d.store, object, metadata.NewKeyValue(name, value))
 }
+
+// TODO! Add snapshot logic

@@ -7,9 +7,14 @@ type Snapshot struct {
 }
 
 type ScenarioSnapshot struct {
-	StoryID    string
-	LineNumber int
-	ScenarioID string
+	StorySource Source
+	StoryID     string
+	LineNumber  int
+	ScenarioID  string
+}
+
+func (a Snapshot) Equal(b Snapshot) bool {
+	return reflect.DeepEqual(a, b)
 }
 
 /*

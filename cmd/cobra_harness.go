@@ -165,6 +165,10 @@ func (c *CobraHarness) parseStoryAndScenarioNames(storyName, scenarioName string
 	return storyName, scenarioName
 }
 
+func (c *CobraHarness) SnapshotScenarioMetadata(cmd *cobra.Command, args []string) error {
+	return c.app.SnapshotScenarioMetadata()
+}
+
 func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
 	storyName, scenarioName := c.parseStoryAndScenarioNames(
 		c.flagValueString(cmd, "story"),

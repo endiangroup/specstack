@@ -312,7 +312,6 @@ func (t *testHarness) theMetadataShouldBeAddedToScenarioWithTheValue(key, scenar
 
 func (t *testHarness) iShouldSeeNoErrors() error {
 	if !assert.True(t, t.exitCode == 0, "Non-zero exit coded returned, expected 0") {
-		fmt.Println("Stdout:", t.stdout)
 		fmt.Println("Stderr:", t.stderr)
 		return t.AssertError()
 	}
@@ -423,7 +422,8 @@ func (t *testHarness) iRunAGitPull() error {
 }
 
 func (t *testHarness) iRunAGitPush() error {
-	return t.RunGitCommand("push")
+	// Push to a temp branch in order to avoid non-bare repo errors
+	return t.RunGitCommand("push", "origin", "master:temp")
 }
 
 func (t *testHarness) iMakeACommit() error {
@@ -431,7 +431,11 @@ func (t *testHarness) iMakeACommit() error {
 		return err
 	}
 
-	return t.RunGitCommand("commit", "-m", "iMakeACommit")
+	err := t.RunGitCommand("commit", "-m", "iMakeACommit")
+
+	t.RunGitCommand("hash-object", "features/storyA.feature")
+
+	return err
 }
 
 func (t *testHarness) iHaveAProperlyConfiguredProjectDirectory() error {
@@ -546,8 +550,7 @@ func (t *testHarness) myStoryHasAScenarioCalledWithTheFollowingMetadata(story, s
 		fmt.Sprintf("features/%s.feature", story),
 		&gherkin.DocString{
 			Content: fmt.Sprintf(
-				`
-Feature: %s
+				`Feature: %s
     Scenario: %s
 	    Then something happens
 				`,
@@ -559,7 +562,11 @@ Feature: %s
 		return err
 	}
 
-	return t.myScenarioHasTheFollowingMetadata(scenario, table)
+	if err := t.myScenarioHasTheFollowingMetadata(scenario, table); err != nil {
+		return err
+	}
+
+	return t.iMakeACommit()
 }
 
 func (t *testHarness) myStoryHasAScenarioCalledWithSomeMetadata(story, scenario string) error {
@@ -584,13 +591,12 @@ func (t *testHarness) myStoryHasAScenarioCalledWithSomeMetadata(story, scenario 
 		})
 }
 
-func (t *testHarness) iMakeMinorChangesToScenario(story, scenario string) error {
+func (t *testHarness) iMakeMinorChangesToScenario(scenario, story string) error {
 	return t.iHaveAFileCalledWithTheFollowingContent(
 		fmt.Sprintf("features/%s.feature", story),
 		&gherkin.DocString{
 			Content: fmt.Sprintf(
-				`
-Feature: %s
+				`Feature: %s
     Scenario: %s
 	    Then something else happens
 				`,
@@ -602,19 +608,25 @@ Feature: %s
 }
 
 func (t *testHarness) iCommitAndPushMyChangesWithGit() error {
-	return godog.ErrPending
+	if err := t.RunGitCommand("pull"); err != nil {
+		return err
+	}
 	if err := t.iMakeACommit(); err != nil {
 		return err
 	}
 	return t.iRunAGitPush()
 }
 
-func (t *testHarness) theMetadataOnShouldStillExist(arg1 string) error {
-	return godog.ErrPending
+func (t *testHarness) theMetadataOnShouldStillExist(scenario string) error {
+	return t.theMetadataShouldBeAddedToScenarioWithTheValue(
+		"metadata-key-1",
+		"scenario1",
+		"metadata-value-1",
+	)
 }
 
-func (t *testHarness) runAnySpecCommand() error {
-	return godog.ErrPending
+func (t *testHarness) iRunAnySpecMetadataCommand() error {
+	return t.iRunTheCommand("metadata commit")
 }
 
 func (t *testHarness) Errorf(format string, args ...interface{}) {
@@ -735,7 +747,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I make minor changes to scenario "([^"]*)" in "([^"]*)"$`, th.iMakeMinorChangesToScenario)
 	s.Step(`^I commit and push my changes with git$`, th.iCommitAndPushMyChangesWithGit)
 	s.Step(`^the metadata on "([^"]*)" should still exist$`, th.theMetadataOnShouldStillExist)
-	s.Step(`^I run any spec command$`, th.runAnySpecCommand)
+	s.Step(`^I run any spec metadata command$`, th.iRunAnySpecMetadataCommand)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }

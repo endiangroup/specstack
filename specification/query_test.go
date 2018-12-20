@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_AFilterCanAddressStories(t *testing.T) {
+func Test_AQueryCanAddressStories(t *testing.T) {
 
 	spec := generateAndReadSpec(t,
 		map[string]string{
@@ -37,7 +37,7 @@ func Test_AFilterCanAddressStories(t *testing.T) {
 	}
 }
 
-func Test_AFilterCanAddressScenarios(t *testing.T) {
+func Test_AQueryCanAddressScenarios(t *testing.T) {
 
 	spec := generateAndReadSpec(t,
 		map[string]string{
@@ -65,7 +65,7 @@ func Test_AFilterCanAddressScenarios(t *testing.T) {
 	}
 }
 
-func Test_AFilterCanAddressAScenarioInAStory(t *testing.T) {
+func Test_AQueryCanAddressAScenarioInAStory(t *testing.T) {
 	spec := generateAndReadSpec(t,
 		map[string]string{
 			"features/set_up_repo.feature":   mockFeatureA,
@@ -86,7 +86,7 @@ func Test_AFilterCanAddressAScenarioInAStory(t *testing.T) {
 	snaptest.Snapshot(t, filter.Scenarios())
 }
 
-func Test_AFilterCanIndexAScenarioInAStory(t *testing.T) {
+func Test_AQueryCanIndexAScenarioInAStory(t *testing.T) {
 	spec := generateAndReadSpec(t,
 		map[string]string{
 			"features/two_scenarios.feature": mockFeatureH,
@@ -113,4 +113,26 @@ func Test_AFilterCanIndexAScenarioInAStory(t *testing.T) {
 			MapScenarioIndex(3),
 		).Scenarios(),
 	)
+}
+
+func Test_AQueryCanAddressAScenarioByFuncFilter(t *testing.T) {
+	spec := generateAndReadSpec(t,
+		map[string]string{
+			"features/set_up_repo.feature":   mockFeatureA,
+			"features/update_config.feature": mockFeatureB,
+			"features/create_config.feature": mockFeatureC,
+			"features/add_metadata.feature":  mockFeatureD,
+			"features/similar1.feature":      mockFeatureF,
+			"features/similar2.feature":      mockFeatureG,
+			"features/BBC.feature":           mockFeatureE,
+		},
+	)
+
+	filter := NewQuery(spec).MapReduce(
+		MapScenarios(),
+		MapScenarioMatchFunc(func(s *Scenario) bool {
+			return s.Name == "Second"
+		}),
+	)
+	snaptest.Snapshot(t, filter.Scenarios())
 }

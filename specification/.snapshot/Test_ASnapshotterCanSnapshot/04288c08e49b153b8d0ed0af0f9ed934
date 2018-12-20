@@ -1,36 +1,64 @@
 specification.Snapshot{
   Scenarios: []specification.ScenarioSnapshot{
     specification.ScenarioSnapshot{
+      StorySource: specification.Source{
+        Type: 1,
+        Body: "features/a.feature",
+      },
       StoryID: "1a793a7ce87266632309958a68e2bf09",
       LineNumber: 6,
       ScenarioID: "ba3c0c4bbd84de5e4b918399baa4a08d",
     },
     specification.ScenarioSnapshot{
+      StorySource: specification.Source{
+        Type: 1,
+        Body: "features/b.feature",
+      },
       StoryID: "7d49fb2ad0c81ea4125af6fcfbb91bef",
       LineNumber: 6,
       ScenarioID: "1d189e3ba8c3848bdd60260e5c9bc47a",
     },
     specification.ScenarioSnapshot{
+      StorySource: specification.Source{
+        Type: 1,
+        Body: "features/i.feature",
+      },
       StoryID: "1cac9a2d0786695ba10ca01d94e8bacd",
       LineNumber: 12,
       ScenarioID: "167930d262b640bbfb812803ac499cb3",
     },
     specification.ScenarioSnapshot{
+      StorySource: specification.Source{
+        Type: 1,
+        Body: "features/i.feature",
+      },
       StoryID: "1cac9a2d0786695ba10ca01d94e8bacd",
       LineNumber: 15,
       ScenarioID: "90594303b967eabe6a30947dbadf3c4e",
     },
     specification.ScenarioSnapshot{
+      StorySource: specification.Source{
+        Type: 1,
+        Body: "features/i.feature",
+      },
       StoryID: "1cac9a2d0786695ba10ca01d94e8bacd",
       LineNumber: 3,
       ScenarioID: "a40db916c5450e15fd7e9ecd9433925b",
     },
     specification.ScenarioSnapshot{
+      StorySource: specification.Source{
+        Type: 1,
+        Body: "features/i.feature",
+      },
       StoryID: "1cac9a2d0786695ba10ca01d94e8bacd",
       LineNumber: 6,
       ScenarioID: "35688091270e55339ec632e2ed4e8a83",
     },
     specification.ScenarioSnapshot{
+      StorySource: specification.Source{
+        Type: 1,
+        Body: "features/i.feature",
+      },
       StoryID: "1cac9a2d0786695ba10ca01d94e8bacd",
       LineNumber: 9,
       ScenarioID: "5a34394f59033bf857c46251849514b0",
