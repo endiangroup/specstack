@@ -517,6 +517,7 @@ func (t *testHarness) myMetadataShouldBeFetchedFromTheRemoteGitServer() error {
 
 	expectedEntries := []metadata.Entry{
 		{Name: "a", Value: "a"},
+		{Name: "snapshot", Value: `{"Scenarios":[]}`},
 	}
 
 	if !assert.Equal(t, expectedEntries, entries) {

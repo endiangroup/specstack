@@ -84,6 +84,7 @@ Feature: Synchronise metadata
     When I add some metadata
     Then I should see an appropriate error from git
 
+  @next
   Scenario: Successful manual pull
     Given I have a properly configured project directory
     And there are new metadata on the remote git server
@@ -99,6 +100,7 @@ Feature: Synchronise metadata
     Then my metadata should be pushed to the remote git server
     And I should see no errors
 
+  @next
   Scenario: Successful semi-automatic pull
     Given I have a properly configured project directory
     And I have set the pulling mode to semi-automatic
