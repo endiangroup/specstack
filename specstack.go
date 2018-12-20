@@ -286,7 +286,6 @@ func (a *appController) GetScenarioMetadata(name, story string) ([]*metadata.Ent
 	return metadata.ReadAll(a.omniStore, object)
 }
 
-// TODO! Move to developer
 func (a *appController) scenarioHasMetadata(scenario *specification.Scenario) bool {
 	reader := a.specificationReader()
 	key, err := reader.ReadSource(scenario)
