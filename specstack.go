@@ -326,6 +326,15 @@ func (a *appController) currentSnapshot() (specification.Snapshot, error) {
 	return current, nil
 }
 
+func (a *appController) snapshots() (current, previous specification.Snapshot, err error) {
+	current, err = a.currentSnapshot()
+	if err != nil {
+		return
+	}
+	previous, err = a.previousSnapshot()
+	return
+}
+
 func (a *appController) storeSnapshot(s specification.Snapshot) error {
 	// FIXME! const?
 	key := bytes.NewBufferString("snapshots")
@@ -345,7 +354,7 @@ Loads a scenario from a snapshot. The procedure is:
 4. Query spec for scenario at line number
 5. Return if found
 */
-func (a *appController) findScenarioFromSnapshot(snap specification.ScenarioSnapshot) (*specification.Scenario, error) {
+func (a *appController) scenarioFromSnapshot(snap specification.ScenarioSnapshot) (*specification.Scenario, error) {
 	fs, err := a.fileSystemFromScenarioSnapshot(snap)
 	if err != nil {
 		return nil, err
@@ -367,6 +376,29 @@ func (a *appController) findScenarioFromSnapshot(snap specification.ScenarioSnap
 	}
 
 	return scenarios[0], nil
+}
+
+func (a *appController) scenarioMapFromSnapshots(
+	reader specification.Reader,
+	snapshots []specification.ScenarioSnapshot,
+) (map[io.Reader]*specification.Scenario, error) {
+	output := make(map[io.Reader]*specification.Scenario)
+	for _, s := range snapshots {
+		scen, err := a.scenarioFromSnapshot(s)
+		if err != nil {
+			continue
+		}
+		if !a.scenarioHasMetadata(scen) {
+			continue
+		}
+		key, err := reader.ReadSource(scen)
+		if err != nil {
+			return nil, err
+		}
+
+		output[key] = scen
+	}
+	return output, nil
 }
 
 func (a *appController) fileSystemFromScenarioSnapshot(snap specification.ScenarioSnapshot) (afero.Fs, error) {
@@ -392,14 +424,49 @@ func (a *appController) fileSystemFromScenarioSnapshot(snap specification.Scenar
 	return nil, fmt.Errorf("spec not found")
 }
 
-// FIXME! Refactor
-func (a *appController) SnapshotScenarioMetadata() error {
-	current, err := a.currentSnapshot()
-	if err != nil {
-		return err
+func (a *appController) scenarioParent(
+	to *specification.Scenario,
+	from map[io.Reader]*specification.Scenario,
+) (*specification.Scenario, io.Reader) {
+	var (
+		bestDistance float64
+		bestParent   *specification.Scenario
+		parentObject io.Reader
+	)
+	for k, v := range from {
+		if distance := specification.ScenarioDistance(to, v); distance >= fuzzy.DistanceThreshold &&
+			distance > bestDistance {
+			bestDistance = distance
+			bestParent = v
+			parentObject = k
+		}
 	}
+	return bestParent, parentObject
+}
 
-	previous, err := a.previousSnapshot()
+func (a *appController) transferScenarioMetadata(
+	reader specification.Reader,
+	scenario *specification.Scenario,
+	potentialParents map[io.Reader]*specification.Scenario) error {
+	if bestParent, parentObject := a.scenarioParent(scenario, potentialParents); bestParent != nil {
+		object, err := reader.ReadSource(scenario)
+		if err != nil {
+			return err
+		}
+
+		if err := a.developer.TransferScenarioMetadata(
+			bestParent, scenario,
+			parentObject, object,
+		); err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *appController) SnapshotScenarioMetadata() error {
+	current, previous, err := a.snapshots()
 	if err != nil {
 		return err
 	}
@@ -418,60 +485,20 @@ func (a *appController) SnapshotScenarioMetadata() error {
 	}
 
 	reader := a.specificationReader()
-
-	removeds := make(map[io.Reader]*specification.Scenario)
-	for _, r := range removed.Scenarios {
-		scen, err := a.findScenarioFromSnapshot(r)
-		if err != nil {
-			continue
-		}
-		if !a.scenarioHasMetadata(scen) {
-			continue
-		}
-		key, err := reader.ReadSource(scen)
-		if err != nil {
-			return err
-		}
-
-		removeds[key] = scen
+	removedScenarios, err := a.scenarioMapFromSnapshots(reader, removed.Scenarios)
+	if err != nil {
+		return err
 	}
 
 	for _, snapshot := range added.Scenarios {
-		scenario, err := a.findScenarioFromSnapshot(snapshot)
+		scenario, err := a.scenarioFromSnapshot(snapshot)
 		if err != nil {
 			return err
 		}
-
-		bestDistance := 0.0
-		var bestParent *specification.Scenario
-		var parentObject io.Reader
-
-		for k, v := range removeds {
-			if distance := specification.ScenarioDistance(scenario, v); distance >= fuzzy.DistanceThreshold &&
-				distance > bestDistance {
-				bestDistance = distance
-				bestParent = v
-				parentObject = k
-			}
-		}
-
-		if bestParent != nil {
-			object, err := reader.ReadSource(scenario)
-			if err != nil {
-				return err
-			}
-			entries, err := metadata.ReadAll(a.omniStore, parentObject)
-			if err != nil {
-				return err
-			}
-			if err := metadata.Add(a.omniStore, object, entries...); err != nil {
-				return err
-			}
+		if err := a.transferScenarioMetadata(reader, scenario, removedScenarios); err != nil {
+			return err
 		}
 	}
-
-	// TODO: Move much of this to developer
-
 	return nil
 }
 

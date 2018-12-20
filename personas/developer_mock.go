@@ -97,3 +97,17 @@ func (_m *MockDeveloper) SetConfiguration(_a0 context.Context, _a1 string, _a2 s
 
 	return r0
 }
+
+// TransferScenarioMetadata provides a mock function with given fields: from, to, fromObject, toObject
+func (_m *MockDeveloper) TransferScenarioMetadata(from *specification.Scenario, to *specification.Scenario, fromObject io.Reader, toObject io.Reader) error {
+	ret := _m.Called(from, to, fromObject, toObject)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*specification.Scenario, *specification.Scenario, io.Reader, io.Reader) error); ok {
+		r0 = rf(from, to, fromObject, toObject)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

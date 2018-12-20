@@ -16,6 +16,7 @@ type Developer interface {
 	SetConfiguration(context.Context, string, string) error
 	AddMetadataToStory(context.Context, *specification.Story, io.Reader, string, string) error
 	AddMetadataToScenario(context.Context, *specification.Scenario, io.Reader, string, string) error
+	TransferScenarioMetadata(from, to *specification.Scenario, fromObject, toObject io.Reader) error
 }
 
 func NewDeveloper(
@@ -68,4 +69,13 @@ func (d *developer) AddMetadataToScenario(
 	return metadata.Add(d.store, object, metadata.NewKeyValue(name, value))
 }
 
-// TODO! Add snapshot logic
+func (d *developer) TransferScenarioMetadata(
+	from, to *specification.Scenario,
+	fromObject, toObject io.Reader,
+) error {
+	entries, err := metadata.ReadAll(d.store, fromObject)
+	if err != nil {
+		return err
+	}
+	return metadata.Add(d.store, toObject, entries...)
+}
