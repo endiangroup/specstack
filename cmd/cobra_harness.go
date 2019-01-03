@@ -220,9 +220,12 @@ func (c *CobraHarness) GitHookExec(cmd *cobra.Command, args []string) error {
 
 	case "post-merge":
 		return c.errorOrNil(cmd, 1, c.app.RunRepoPostMergeHook())
+
+	case "post-commit":
+		return c.errorOrNil(cmd, 1, c.app.RunRepoPostCommitHook())
 	}
 
-	return c.errorWithReturnCode(cmd, 1, fmt.Errorf("invalid hook name"))
+	return c.errorWithReturnCode(cmd, 1, fmt.Errorf("invalid hook name : %s", args[0]))
 }
 
 func (c *CobraHarness) Pull(cmd *cobra.Command, args []string) error {

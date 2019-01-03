@@ -14,12 +14,12 @@ Feature: Persist metadata
     Given I have a properly configured project directory
     And My story "story1" has a scenario called "scenario1" with some metadata
     And I make minor changes to scenario "scenario1" in "story1"
-    When I make a git commit
+    When I make a commit
     Then the metadata on "scenario1" should still exist
 
   Scenario: Pivot scenario metadata with remote git changes
     Given I have a properly configured project directory
     And My story "story1" has a scenario called "scenario1" with some metadata
-    And there are minor changes to scenario "scenario1" on the remote git server
-    When I pull from the remote git server
+    When there are minor changes to scenario "scenario1" on the remote git server
+    And I pull from the remote git server
     Then the metadata on "scenario1" should still exist

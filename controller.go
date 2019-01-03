@@ -21,7 +21,9 @@ import (
 	"github.com/spf13/afero"
 )
 
-var MetdataSnapshotKey = bytes.NewBufferString("snapshots")
+func MetdataSnapshotKey() io.Reader {
+	return bytes.NewBufferString("snapshots")
+}
 
 type MissingRequiredConfigValueErr string
 
@@ -46,6 +48,7 @@ type Controller interface {
 	SnapshotScenarioMetadata() error
 	RunRepoPrePushHook() error
 	RunRepoPostMergeHook() error
+	RunRepoPostCommitHook() error
 	Push() error
 	Pull() error
 }
@@ -297,7 +300,7 @@ func (a *appController) scenarioHasMetadata(scenario *specification.Scenario) bo
 }
 
 func (a *appController) previousSnapshot() (specification.Snapshot, error) {
-	entries, err := metadata.ReadAll(a.omniStore, MetdataSnapshotKey)
+	entries, err := metadata.ReadAll(a.omniStore, MetdataSnapshotKey())
 	if err != nil || len(entries) == 0 {
 		return specification.Snapshot{}, err
 	}
@@ -339,7 +342,7 @@ func (a *appController) storeSnapshot(s specification.Snapshot) error {
 	if err != nil {
 		return err
 	}
-	return metadata.Add(a.omniStore, MetdataSnapshotKey, metadata.NewKeyValue("snapshot", string(jsn)))
+	return metadata.Add(a.omniStore, MetdataSnapshotKey(), metadata.NewKeyValue("snapshot", string(jsn)))
 }
 
 /*
@@ -502,6 +505,9 @@ func (a *appController) RunRepoPrePushHook() error {
 	if a.config.Project.PushingMode != config.ModeSemiAuto {
 		return nil
 	}
+	if err := a.SnapshotScenarioMetadata(); err != nil {
+		return err
+	}
 	return a.Push()
 }
 
@@ -509,7 +515,14 @@ func (a *appController) RunRepoPostMergeHook() error {
 	if a.config.Project.PullingMode != config.ModeSemiAuto {
 		return nil
 	}
-	return a.Pull()
+	if err := a.Pull(); err != nil {
+		return err
+	}
+	return a.SnapshotScenarioMetadata()
+}
+
+func (a *appController) RunRepoPostCommitHook() error {
+	return a.SnapshotScenarioMetadata()
 }
 
 func (a *appController) Pull() error {

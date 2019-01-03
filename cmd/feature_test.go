@@ -352,6 +352,10 @@ func (t *testHarness) overwriteHooks() error {
 		return err
 	}
 
+	if err := t.repo.WriteHookFile("post-commit", cmd+" git-hook exec post-commit"); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -431,11 +435,7 @@ func (t *testHarness) iMakeACommit() error {
 		return err
 	}
 
-	err := t.RunGitCommand("commit", "-m", "iMakeACommit")
-
-	t.RunGitCommand("hash-object", "features/storyA.feature")
-
-	return err
+	return t.RunGitCommand("commit", "-m", "iMakeACommit")
 }
 
 func (t *testHarness) iHaveAProperlyConfiguredProjectDirectory() error {
@@ -593,7 +593,7 @@ func (t *testHarness) myStoryHasAScenarioCalledWithSomeMetadata(story, scenario 
 }
 
 func (t *testHarness) iMakeMinorChangesToScenario(scenario, story string) error {
-	return t.iHaveAFileCalledWithTheFollowingContent(
+	e := t.iHaveAFileCalledWithTheFollowingContent(
 		fmt.Sprintf("features/%s.feature", story),
 		&gherkin.DocString{
 			Content: fmt.Sprintf(
@@ -606,6 +606,7 @@ func (t *testHarness) iMakeMinorChangesToScenario(scenario, story string) error 
 			),
 		},
 	)
+	return e
 }
 
 func (t *testHarness) iCommitAndPushMyChangesWithGit() error {
@@ -628,6 +629,25 @@ func (t *testHarness) theMetadataOnShouldStillExist(scenario string) error {
 
 func (t *testHarness) iRunAnySpecMetadataCommand() error {
 	return t.iRunTheCommand("metadata commit")
+}
+
+func (t *testHarness) thereAreMinorChangesToScenarioOnTheRemoteGitServer(scenario string) error {
+	var err error
+	_, f, _, _ := runtime.Caller(1)
+	t.gitServer, err = gitest.NewServer(filepath.Join(path.Dir(f), "fixtures/git/minor-changes"))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *testHarness) iPullFromTheRemoteGitServer() error {
+	gitUrl := fmt.Sprintf("%s/%s.git", t.gitServer.URL, t.gitServer.ValidRepo)
+	return t.RunGitCommands(
+		[]string{"reset", "--hard", "origin/master"},
+		[]string{"remote", "set-url", "origin", gitUrl},
+		[]string{"pull"},
+	)
 }
 
 func (t *testHarness) Errorf(format string, args ...interface{}) {
@@ -667,6 +687,15 @@ func (t *testHarness) RunGitCommand(args ...string) error {
 	}
 
 	return err
+}
+
+func (t *testHarness) RunGitCommands(args ...[]string) error {
+	for _, arg := range args {
+		if err := t.RunGitCommand(arg...); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (t *testHarness) SetSyncMode(mode, value string) error {
@@ -745,6 +774,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^there are new metadata on the remote git server$`, th.thereAreNewMetadataOnTheRemoteGitServer)
 	s.Step(`^my metadata should be fetched from the remote git server$`, th.myMetadataShouldBeFetchedFromTheRemoteGitServer)
 	s.Step(`^my metadata should be pushed to the remote git server$`, th.myMetadataShouldBePushedToTheRemoteGitServer)
+	s.Step(`^there are minor changes to scenario "([^"]*)" on the remote git server$`, th.thereAreMinorChangesToScenarioOnTheRemoteGitServer)
+	s.Step(`^I pull from the remote git server$`, th.iPullFromTheRemoteGitServer)
 	s.Step(`^I make minor changes to scenario "([^"]*)" in "([^"]*)"$`, th.iMakeMinorChangesToScenario)
 	s.Step(`^I commit and push my changes with git$`, th.iCommitAndPushMyChangesWithGit)
 	s.Step(`^the metadata on "([^"]*)" should still exist$`, th.theMetadataOnShouldStillExist)

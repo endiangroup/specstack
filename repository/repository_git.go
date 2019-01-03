@@ -286,6 +286,10 @@ func (repo *Git) PrepareMetadataSync() error {
 		return err
 	}
 
+	if err := repo.WriteHookFile("post-commit", "spec git-hook exec post-commit"); err != nil {
+		return err
+	}
+
 	return nil
 }
 
