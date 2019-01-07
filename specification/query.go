@@ -1,6 +1,7 @@
 package specification
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -156,6 +157,39 @@ func MapScenarioIndex(index int) QueryMapFunc {
 
 		q.scenarios = []*Scenario{scenarios[index-1]}
 	}
+}
+
+func MapScenarioFileOrder() QueryMapFunc {
+	fullPath := func(s *Scenario) string {
+		return fmt.Sprintf(
+			"%s:%d",
+			s.Story.SourceIdentifier,
+			s.Location.Line,
+		)
+	}
+	return func(q *Query) {
+		sort.Slice(q.scenarios, func(i, j int) bool {
+			return fullPath(q.scenarios[i]) < fullPath(q.scenarios[j])
+		})
+	}
+}
+
+func MapScenarioMatchFunc(fn func(*Scenario) bool) QueryMapFunc {
+	return func(q *Query) {
+		newScenarios := []*Scenario{}
+		for _, s := range q.scenarios {
+			if fn(s) {
+				newScenarios = append(newScenarios, s)
+			}
+		}
+		q.scenarios = newScenarios
+	}
+}
+
+func MapScenarioLineNumber(line int) QueryMapFunc {
+	return MapScenarioMatchFunc(func(s *Scenario) bool {
+		return s.Node.Location.Line == line
+	})
 }
 
 func ReduceClosestMatch(term string) QueryReduceFunc {

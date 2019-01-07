@@ -2,6 +2,8 @@ package cmd
 
 import "github.com/spf13/cobra"
 
+func noop(*cobra.Command, []string) {}
+
 func WireUpCobraHarness(harness *CobraHarness) *cobra.Command {
 	root := &cobra.Command{
 		Use: "spec",
@@ -62,7 +64,7 @@ func commandGitHooks(harness *CobraHarness) *cobra.Command {
 		Short:   "Low-level git hook interactions",
 	}
 	exec := &cobra.Command{
-		Use:     "exec <pre-push|post-merge>",
+		Use:     "exec <pre-push|post-merge|post-commit>",
 		Args:    cobra.ExactArgs(1),
 		Example: "$ spec git-hook exec pre-push",
 	}
@@ -84,18 +86,28 @@ func commandMetadata(harness *CobraHarness) *cobra.Command {
 	}
 	add := &cobra.Command{
 		Use:     "add",
+		Short:   "Add metadata to a story or scenario",
 		Example: "$ spec metadata add --story my_story key=value",
+		PreRunE: harness.SnapshotScenarioMetadata,
 	}
 	list := &cobra.Command{
 		Use:     "list",
 		Args:    cobra.ExactArgs(0),
 		Aliases: []string{"ls"},
+		Short:   "Show metadata for a story or scenario",
 		Example: "$ spec metadata list --story my_story",
+		PreRunE: harness.SnapshotScenarioMetadata,
 	}
-
+	commit := &cobra.Command{
+		Use:     "commit",
+		Example: "$ spec metadata commit",
+		PreRunE: harness.SnapshotScenarioMetadata,
+		Run:     noop,
+	}
 	root.AddCommand(
 		add,
 		list,
+		commit,
 	)
 
 	root.PersistentFlags().String("story", "", "")

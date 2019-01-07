@@ -1,13 +1,18 @@
 package specstack
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/errors"
+	"github.com/endiangroup/specstack/fuzzy"
 	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/personas"
@@ -15,6 +20,10 @@ import (
 	"github.com/endiangroup/specstack/specification"
 	"github.com/spf13/afero"
 )
+
+func MetdataSnapshotKey() io.Reader {
+	return bytes.NewBufferString("snapshots")
+}
 
 type MissingRequiredConfigValueErr string
 
@@ -36,8 +45,10 @@ type Controller interface {
 	AddMetadataToScenario(scenarioName, storyName, key, value string) error
 	GetStoryMetadata(string) ([]*metadata.Entry, error)
 	GetScenarioMetadata(scenario string, story string) ([]*metadata.Entry, error)
+	SnapshotScenarioMetadata() error
 	RunRepoPrePushHook() error
 	RunRepoPostMergeHook() error
+	RunRepoPostCommitHook() error
 	Push() error
 	Pull() error
 }
@@ -202,7 +213,6 @@ func (a *appController) findScenarioObject(name, story string) (*specification.S
 	if err != nil {
 		return nil, nil, err
 	}
-
 	scenario, err := spec.FindScenario(name, story)
 	if err != nil {
 		return nil, nil, err
@@ -244,7 +254,6 @@ func (a *appController) AddMetadataToScenario(name, storyName, key, value string
 	if err != nil {
 		return err
 	}
-
 	if err := a.developer.AddMetadataToScenario(
 		a.newContextWithConfig(),
 		scenario,
@@ -280,9 +289,224 @@ func (a *appController) GetScenarioMetadata(name, story string) ([]*metadata.Ent
 	return metadata.ReadAll(a.omniStore, object)
 }
 
+func (a *appController) scenarioHasMetadata(scenario *specification.Scenario) bool {
+	reader := a.specificationReader()
+	key, err := reader.ReadSource(scenario)
+	if err != nil {
+		return false
+	}
+	e, err := metadata.ReadAll(a.omniStore, key)
+	return err == nil && len(e) > 0
+}
+
+func (a *appController) previousSnapshot() (specification.Snapshot, error) {
+	entries, err := metadata.ReadAll(a.omniStore, MetdataSnapshotKey())
+	if err != nil || len(entries) == 0 {
+		return specification.Snapshot{}, err
+	}
+
+	latest := entries[len(entries)-1]
+	snap := specification.Snapshot{}
+	if err := json.Unmarshal([]byte(latest.Value), &snap); err != nil {
+		return snap, err
+	}
+
+	return snap, nil
+}
+
+func (a *appController) currentSnapshot() (specification.Snapshot, error) {
+	spec, reader, err := a.specification()
+	if err != nil {
+		return specification.Snapshot{}, err
+	}
+
+	snapshotter := specification.NewSnapshotter(reader, a.repo)
+	current, err := snapshotter.Snapshot(spec)
+	if err != nil {
+		return specification.Snapshot{}, err
+	}
+	return current, nil
+}
+
+func (a *appController) snapshots() (current, previous specification.Snapshot, err error) {
+	current, err = a.currentSnapshot()
+	if err != nil {
+		return
+	}
+	previous, err = a.previousSnapshot()
+	return
+}
+
+func (a *appController) storeSnapshot(s specification.Snapshot) error {
+	jsn, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+	return metadata.Add(a.omniStore, MetdataSnapshotKey(), metadata.NewKeyValue("snapshot", string(jsn)))
+}
+
+/*
+Loads a scenario from a snapshot. The procedure is:
+
+1. Look in git object for story file
+2. If not there, look on disk
+3. If found, create new Scenario with only that one story file
+4. Query spec for scenario at line number
+5. Return if found
+*/
+func (a *appController) scenarioFromSnapshot(snap specification.ScenarioSnapshot) (*specification.Scenario, error) {
+	fs, err := a.fileSystemFromScenarioSnapshot(snap)
+	if err != nil {
+		return nil, err
+	}
+
+	reader := specification.NewFilesystemReader(fs, a.config.Project.FeaturesDir)
+	spec, _, err := reader.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	scenarios := specification.NewQuery(spec).MapReduce(
+		specification.MapScenarios(),
+		specification.MapScenarioLineNumber(snap.LineNumber),
+	).Scenarios()
+
+	if l := len(scenarios); l != 1 {
+		return nil, fmt.Errorf("Expected 1 scenario from query, got %d", l)
+	}
+
+	return scenarios[0], nil
+}
+
+func (a *appController) scenarioMapFromSnapshots(
+	reader specification.Reader,
+	snapshots []specification.ScenarioSnapshot,
+) (map[io.Reader]*specification.Scenario, error) {
+	output := make(map[io.Reader]*specification.Scenario)
+	for _, s := range snapshots {
+		scen, err := a.scenarioFromSnapshot(s)
+		if err != nil {
+			continue
+		}
+		if !a.scenarioHasMetadata(scen) {
+			continue
+		}
+		key, err := reader.ReadSource(scen)
+		if err != nil {
+			return nil, err
+		}
+
+		output[key] = scen
+	}
+	return output, nil
+}
+
+func (a *appController) fileSystemFromScenarioSnapshot(snap specification.ScenarioSnapshot) (afero.Fs, error) {
+	fs := afero.NewMemMapFs()
+	var (
+		err         error
+		fileContent string
+	)
+
+	fileContent, err = a.repo.ObjectString(snap.StoryID)
+
+	if err != nil && snap.StorySource.Type == specification.SourceTypeFile {
+		if fc, err := ioutil.ReadFile(snap.StorySource.Body); err == nil {
+			fileContent = string(fc)
+		}
+	}
+
+	if fileContent != "" {
+		err := afero.WriteFile(fs, snap.StorySource.Body, []byte(fileContent), os.ModePerm)
+		return fs, err
+	}
+
+	return nil, fmt.Errorf("spec not found")
+}
+
+func (a *appController) scenarioParent(
+	to *specification.Scenario,
+	from map[io.Reader]*specification.Scenario,
+) (*specification.Scenario, io.Reader) {
+	var (
+		bestDistance float64
+		bestParent   *specification.Scenario
+		parentObject io.Reader
+	)
+	for k, v := range from {
+		if distance := specification.ScenarioDistance(to, v); distance >= fuzzy.DistanceThreshold &&
+			distance > bestDistance {
+			bestDistance = distance
+			bestParent = v
+			parentObject = k
+		}
+	}
+	return bestParent, parentObject
+}
+
+func (a *appController) transferScenarioMetadata(
+	reader specification.Reader,
+	scenario *specification.Scenario,
+	potentialParents map[io.Reader]*specification.Scenario) error {
+	if bestParent, parentObject := a.scenarioParent(scenario, potentialParents); bestParent != nil {
+		object, err := reader.ReadSource(scenario)
+		if err != nil {
+			return err
+		}
+
+		if err := a.developer.TransferScenarioMetadata(
+			bestParent, scenario,
+			parentObject, object,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *appController) SnapshotScenarioMetadata() error {
+	current, previous, err := a.snapshots()
+	if err != nil {
+		return err
+	}
+
+	if previous.Equal(current) {
+		return nil
+	}
+
+	if err := a.storeSnapshot(current); err != nil {
+		return err
+	}
+
+	removed, added := previous.Diff(current)
+	if len(added.Scenarios) == 0 || len(removed.Scenarios) == 0 {
+		return nil
+	}
+
+	reader := a.specificationReader()
+	removedScenarios, err := a.scenarioMapFromSnapshots(reader, removed.Scenarios)
+	if err != nil {
+		return err
+	}
+
+	for _, snapshot := range added.Scenarios {
+		scenario, err := a.scenarioFromSnapshot(snapshot)
+		if err != nil {
+			return err
+		}
+		if err := a.transferScenarioMetadata(reader, scenario, removedScenarios); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (a *appController) RunRepoPrePushHook() error {
 	if a.config.Project.PushingMode != config.ModeSemiAuto {
 		return nil
+	}
+	if err := a.SnapshotScenarioMetadata(); err != nil {
+		return err
 	}
 	return a.Push()
 }
@@ -291,7 +515,14 @@ func (a *appController) RunRepoPostMergeHook() error {
 	if a.config.Project.PullingMode != config.ModeSemiAuto {
 		return nil
 	}
-	return a.Pull()
+	if err := a.Pull(); err != nil {
+		return err
+	}
+	return a.SnapshotScenarioMetadata()
+}
+
+func (a *appController) RunRepoPostCommitHook() error {
+	return a.SnapshotScenarioMetadata()
 }
 
 func (a *appController) Pull() error {

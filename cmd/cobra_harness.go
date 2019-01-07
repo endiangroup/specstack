@@ -165,6 +165,10 @@ func (c *CobraHarness) parseStoryAndScenarioNames(storyName, scenarioName string
 	return storyName, scenarioName
 }
 
+func (c *CobraHarness) SnapshotScenarioMetadata(cmd *cobra.Command, args []string) error {
+	return c.app.SnapshotScenarioMetadata()
+}
+
 func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
 	storyName, scenarioName := c.parseStoryAndScenarioNames(
 		c.flagValueString(cmd, "story"),
@@ -184,30 +188,25 @@ func (c *CobraHarness) MetadataAdd(cmd *cobra.Command, args []string) error {
 
 func (c *CobraHarness) MetadataList(cmd *cobra.Command, args []string) error {
 	var entries []*metadata.Entry
-	entityFound := false
 	storyName, scenarioName := c.parseStoryAndScenarioNames(
 		c.flagValueString(cmd, "story"),
 		c.flagValueString(cmd, "scenario"),
 	)
 
-	if scenarioName != "" {
-		var err error
+	var err error
+	switch {
+	case scenarioName != "":
 		entries, err = c.app.GetScenarioMetadata(scenarioName, storyName)
 		if err != nil {
 			return c.error(cmd, err)
 		}
-		entityFound = true
-	} else if storyName != "" {
-		var err error
+	case storyName != "":
 		entries, err = c.app.GetStoryMetadata(storyName)
 		if err != nil {
 			return c.error(cmd, err)
 		}
-		entityFound = true
-	}
-
-	if !entityFound {
-		return c.errorWithReturnCode(cmd, 1, fmt.Errorf("specify a story or scenario"))
+	default:
+		return c.error(cmd, fmt.Errorf("specify a story or scenario"))
 	}
 
 	printer := metadata.NewPlaintextPrintscanner()
@@ -221,9 +220,12 @@ func (c *CobraHarness) GitHookExec(cmd *cobra.Command, args []string) error {
 
 	case "post-merge":
 		return c.errorOrNil(cmd, 1, c.app.RunRepoPostMergeHook())
+
+	case "post-commit":
+		return c.errorOrNil(cmd, 1, c.app.RunRepoPostCommitHook())
 	}
 
-	return c.errorWithReturnCode(cmd, 1, fmt.Errorf("invalid hook name"))
+	return c.errorWithReturnCode(cmd, 1, fmt.Errorf("invalid hook name : %s", args[0]))
 }
 
 func (c *CobraHarness) Pull(cmd *cobra.Command, args []string) error {

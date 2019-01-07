@@ -174,7 +174,7 @@ func (repo *Git) UnsetConfig(key string) error {
 }
 
 func (repo *Git) GetMetadata(key io.Reader) ([][]byte, error) {
-	id, err := repo.objectID(key)
+	id, err := repo.ObjectHash(key)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (repo *Git) extractJsonMessagesFromRevisionList(revisions [][]string, raw *
 }
 
 func (repo *Git) SetMetadata(target io.Reader, value []byte) error {
-	id, err := repo.objectID(target)
+	id, err := repo.ObjectHash(target)
 	if err != nil {
 		return err
 	}
@@ -283,6 +283,10 @@ func (repo *Git) PrepareMetadataSync() error {
 	}
 
 	if err := repo.WriteHookFile("post-merge", "spec git-hook exec post-merge"); err != nil {
+		return err
+	}
+
+	if err := repo.WriteHookFile("post-commit", "spec git-hook exec post-commit"); err != nil {
 		return err
 	}
 
@@ -469,6 +473,10 @@ func (repo *Git) configWriteScopeArg() string {
 	return ""
 }
 
-func (repo *Git) objectID(key io.Reader) (string, error) {
+func (repo *Git) ObjectHash(key io.Reader) (string, error) {
 	return repo.runGitCommandStdIn(key, "hash-object", "--stdin")
+}
+
+func (repo *Git) ObjectString(hash string) (string, error) {
+	return repo.runGitCommand("show", hash)
 }

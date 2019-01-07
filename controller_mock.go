@@ -184,6 +184,20 @@ func (_m *MockController) RunRepoPostMergeHook() error {
 	return r0
 }
 
+// RunRepoPostCommitHook provides a mock function with given fields:
+func (_m *MockController) RunRepoPostCommitHook() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RunRepoPrePushHook provides a mock function with given fields:
 func (_m *MockController) RunRepoPrePushHook() error {
 	ret := _m.Called()
@@ -205,6 +219,20 @@ func (_m *MockController) SetConfiguration(_a0 string, _a1 string) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, string) error); ok {
 		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SnapshotScenarioMetadata provides a mock function with given fields:
+func (_m *MockController) SnapshotScenarioMetadata() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
 	}

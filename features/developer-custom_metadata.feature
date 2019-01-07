@@ -165,8 +165,8 @@ Feature: Manage custom metadata
 
   Scenario: Show metadata attached to a scenario
     Given I have a configured project directory
-    And I have a story called "story1"
-    And My story "story1" has a scenario called "scenario1" with the following metadata:
+    And I have a story called "storyA"
+    And My story "storyA" has a scenario called "scenario1" with the following metadata:
       | Name                 | Value                                                                                       |
       | Metadata one         | Value one                                                                                   |
       | Metadata two         | Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit |

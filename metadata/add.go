@@ -13,9 +13,14 @@ func assertHeaders(entry *Entry) error {
 	return nil
 }
 
-func Add(storer Storer, key io.Reader, entry *Entry) error {
-	if err := assertHeaders(entry); err != nil {
-		return err
+func Add(storer Storer, key io.Reader, entries ...*Entry) error {
+	for _, entry := range entries {
+		if err := assertHeaders(entry); err != nil {
+			return err
+		}
+		if err := storer.StoreMetadata(key, entry); err != nil {
+			return err
+		}
 	}
-	return storer.StoreMetadata(key, entry)
+	return nil
 }

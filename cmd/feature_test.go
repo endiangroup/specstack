@@ -312,7 +312,6 @@ func (t *testHarness) theMetadataShouldBeAddedToScenarioWithTheValue(key, scenar
 
 func (t *testHarness) iShouldSeeNoErrors() error {
 	if !assert.True(t, t.exitCode == 0, "Non-zero exit coded returned, expected 0") {
-		fmt.Println("Stdout:", t.stdout)
 		fmt.Println("Stderr:", t.stderr)
 		return t.AssertError()
 	}
@@ -350,6 +349,10 @@ func (t *testHarness) overwriteHooks() error {
 	}
 
 	if err := t.repo.WriteHookFile("post-merge", cmd+" git-hook exec post-merge"); err != nil {
+		return err
+	}
+
+	if err := t.repo.WriteHookFile("post-commit", cmd+" git-hook exec post-commit"); err != nil {
 		return err
 	}
 
@@ -423,28 +426,16 @@ func (t *testHarness) iRunAGitPull() error {
 }
 
 func (t *testHarness) iRunAGitPush() error {
-	return t.RunGitCommand("push")
+	// Push to a temp branch in order to avoid non-bare repo errors
+	return t.RunGitCommand("push", "origin", "master:temp")
 }
 
 func (t *testHarness) iMakeACommit() error {
-	if err := afero.WriteFile(
-		t.fs,
-		"features/story1.feature",
-		[]byte(`Feature: Story1 (modified)`),
-		os.ModePerm,
-	); err != nil {
+	if err := t.RunGitCommand("add", "*"); err != nil {
 		return err
 	}
 
-	if err := t.RunGitCommand("add", "features/story1.feature"); err != nil {
-		return err
-	}
-
-	if err := t.RunGitCommand("commit", "-m", "iMakeACommit"); err != nil {
-		return err
-	}
-
-	return nil
+	return t.RunGitCommand("commit", "-m", "iMakeACommit")
 }
 
 func (t *testHarness) iHaveAProperlyConfiguredProjectDirectory() error {
@@ -526,6 +517,7 @@ func (t *testHarness) myMetadataShouldBeFetchedFromTheRemoteGitServer() error {
 
 	expectedEntries := []metadata.Entry{
 		{Name: "a", Value: "a"},
+		{Name: "snapshot", Value: `{"Scenarios":[]}`},
 	}
 
 	if !assert.Equal(t, expectedEntries, entries) {
@@ -559,8 +551,7 @@ func (t *testHarness) myStoryHasAScenarioCalledWithTheFollowingMetadata(story, s
 		fmt.Sprintf("features/%s.feature", story),
 		&gherkin.DocString{
 			Content: fmt.Sprintf(
-				`
-Feature: %s
+				`Feature: %s
     Scenario: %s
 	    Then something happens
 				`,
@@ -572,27 +563,91 @@ Feature: %s
 		return err
 	}
 
-	return t.myScenarioHasTheFollowingMetadata(scenario, table)
+	if err := t.myScenarioHasTheFollowingMetadata(scenario, table); err != nil {
+		return err
+	}
+
+	return t.iMakeACommit()
 }
 
-func (t *testHarness) myStoryHasAScenarioCalledWithSomeMetadata(arg1, arg2 string) error {
-	return godog.ErrPending
+func (t *testHarness) myStoryHasAScenarioCalledWithSomeMetadata(story, scenario string) error {
+	return t.myStoryHasAScenarioCalledWithTheFollowingMetadata(
+		story,
+		scenario,
+		&gherkin.DataTable{
+			Rows: []*gherkin.TableRow{
+				{
+					Cells: []*gherkin.TableCell{
+						{Value: "key"},
+						{Value: "value"},
+					},
+				},
+				{
+					Cells: []*gherkin.TableCell{
+						{Value: "metadata-key-1"},
+						{Value: "metadata-value-1"},
+					},
+				},
+			},
+		})
 }
 
-func (t *testHarness) iMakeMinorChangesToScenario(arg1 string) error {
-	return godog.ErrPending
+func (t *testHarness) iMakeMinorChangesToScenario(scenario, story string) error {
+	e := t.iHaveAFileCalledWithTheFollowingContent(
+		fmt.Sprintf("features/%s.feature", story),
+		&gherkin.DocString{
+			Content: fmt.Sprintf(
+				`Feature: %s
+    Scenario: %s
+	    Then something else happens
+				`,
+				story,
+				scenario,
+			),
+		},
+	)
+	return e
 }
 
 func (t *testHarness) iCommitAndPushMyChangesWithGit() error {
-	return godog.ErrPending
+	if err := t.RunGitCommand("pull"); err != nil {
+		return err
+	}
+	if err := t.iMakeACommit(); err != nil {
+		return err
+	}
+	return t.iRunAGitPush()
 }
 
-func (t *testHarness) theMetadataOnShouldStillExist(arg1 string) error {
-	return godog.ErrPending
+func (t *testHarness) theMetadataOnShouldStillExist(scenario string) error {
+	return t.theMetadataShouldBeAddedToScenarioWithTheValue(
+		"metadata-key-1",
+		"scenario1",
+		"metadata-value-1",
+	)
 }
 
-func (t *testHarness) runAnySpecCommand() error {
-	return godog.ErrPending
+func (t *testHarness) iRunAnySpecMetadataCommand() error {
+	return t.iRunTheCommand("metadata commit")
+}
+
+func (t *testHarness) thereAreMinorChangesToScenarioOnTheRemoteGitServer(scenario string) error {
+	var err error
+	_, f, _, _ := runtime.Caller(1)
+	t.gitServer, err = gitest.NewServer(filepath.Join(path.Dir(f), "fixtures/git/minor-changes"))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *testHarness) iPullFromTheRemoteGitServer() error {
+	gitUrl := fmt.Sprintf("%s/%s.git", t.gitServer.URL, t.gitServer.ValidRepo)
+	return t.RunGitCommands(
+		[]string{"reset", "--hard", "origin/master"},
+		[]string{"remote", "set-url", "origin", gitUrl},
+		[]string{"pull"},
+	)
 }
 
 func (t *testHarness) Errorf(format string, args ...interface{}) {
@@ -632,6 +687,15 @@ func (t *testHarness) RunGitCommand(args ...string) error {
 	}
 
 	return err
+}
+
+func (t *testHarness) RunGitCommands(args ...[]string) error {
+	for _, arg := range args {
+		if err := t.RunGitCommand(arg...); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (t *testHarness) SetSyncMode(mode, value string) error {
@@ -710,10 +774,12 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^there are new metadata on the remote git server$`, th.thereAreNewMetadataOnTheRemoteGitServer)
 	s.Step(`^my metadata should be fetched from the remote git server$`, th.myMetadataShouldBeFetchedFromTheRemoteGitServer)
 	s.Step(`^my metadata should be pushed to the remote git server$`, th.myMetadataShouldBePushedToTheRemoteGitServer)
-	s.Step(`^I make minor changes to scenario "([^"]*)"$`, th.iMakeMinorChangesToScenario)
+	s.Step(`^there are minor changes to scenario "([^"]*)" on the remote git server$`, th.thereAreMinorChangesToScenarioOnTheRemoteGitServer)
+	s.Step(`^I pull from the remote git server$`, th.iPullFromTheRemoteGitServer)
+	s.Step(`^I make minor changes to scenario "([^"]*)" in "([^"]*)"$`, th.iMakeMinorChangesToScenario)
 	s.Step(`^I commit and push my changes with git$`, th.iCommitAndPushMyChangesWithGit)
 	s.Step(`^the metadata on "([^"]*)" should still exist$`, th.theMetadataOnShouldStillExist)
-	s.Step(`^I run any spec command$`, th.runAnySpecCommand)
+	s.Step(`^I run any spec metadata command$`, th.iRunAnySpecMetadataCommand)
 
 	s.AfterScenario(th.ScenarioCleanup)
 }
