@@ -21,15 +21,22 @@ func main() {
 		persistence.NewNamespacedKeyValueStorer(gitRepo, "specstack"),
 		gitRepo,
 	)
-	developer := personas.NewDeveloper(repoStore)
-	app := specstack.New(
+	developer := personas.NewDeveloper(
 		dir,
-		gitRepo,
-		developer,
 		repoStore,
+		gitRepo,
 		os.Stdout,
 		os.Stderr,
 	)
+	app := specstack.Application{
+		ConfigAsserter:      developer,
+		ConfigGetListSetter: developer,
+		MetadataGetAdder:    developer,
+		MetadataTransferer:  developer,
+		PushPuller:          developer,
+		RepoHooker:          developer,
+		Repository:          gitRepo,
+	}
 	cobra := cmd.WireUpCobraHarness(
 		cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr),
 	)
