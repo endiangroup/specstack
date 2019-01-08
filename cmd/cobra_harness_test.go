@@ -18,7 +18,7 @@ type stdInOutErr struct {
 func Test_PersistenPreRunE_ReturnsRepoError(t *testing.T) {
 	mockConfigAsserter := &specstack.MockConfigAsserter{}
 	mockRepo := &repository.MockRepository{}
-	app := specstack.Application{
+	app := &specstack.Application{
 		ConfigAsserter: mockConfigAsserter,
 		Repository:     mockRepo,
 	}
@@ -34,7 +34,7 @@ func Test_PersistenPreRunE_ReturnsRepoError(t *testing.T) {
 func Test_PersistenPreRunE_ReturnsConfigAssertionError(t *testing.T) {
 	mockConfigAsserter := &specstack.MockConfigAsserter{}
 	mockRepo := &repository.MockRepository{}
-	app := specstack.Application{
+	app := &specstack.Application{
 		ConfigAsserter: mockConfigAsserter,
 		Repository:     mockRepo,
 	}
@@ -48,7 +48,7 @@ func Test_PersistenPreRunE_ReturnsConfigAssertionError(t *testing.T) {
 	assert.Equal(t, err, NewCliErr(1, errors.New("!!!")))
 }
 
-func setupHarness(mockSs specstack.Application) (*CobraHarness, *stdInOutErr) {
+func setupHarness(mockSs *specstack.Application) (*CobraHarness, *stdInOutErr) {
 	io := stdInOutErr{}
 	return NewCobraHarness(mockSs, &io.stdin, &io.stdout, &io.stderr), &io
 }

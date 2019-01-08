@@ -54,7 +54,7 @@ type Application struct {
 	RepoHooker          RepoHooker
 }
 
-func (a Application) Initialise() error {
+func (a *Application) Initialise() error {
 	if !a.Repository.IsInitialised() {
 		return ErrUninitialisedRepo
 	}

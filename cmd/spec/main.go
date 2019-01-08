@@ -38,7 +38,7 @@ func main() {
 		Repository:          gitRepo,
 	}
 	cobra := cmd.WireUpCobraHarness(
-		cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr),
+		cmd.NewCobraHarness(&app, os.Stdin, os.Stdout, os.Stderr),
 	)
 
 	if err := cobra.Execute(); err != nil {

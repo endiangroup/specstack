@@ -25,7 +25,7 @@ func (err CliErr) Error() string {
 	return err.Err.Error()
 }
 
-func NewCobraHarness(app specstack.Application, stdin io.Reader, stdout, stderr io.Writer) *CobraHarness {
+func NewCobraHarness(app *specstack.Application, stdin io.Reader, stdout, stderr io.Writer) *CobraHarness {
 	return &CobraHarness{
 		app:    app,
 		stdin:  stdin,
@@ -35,7 +35,7 @@ func NewCobraHarness(app specstack.Application, stdin io.Reader, stdout, stderr 
 }
 
 type CobraHarness struct {
-	app    specstack.Application
+	app    *specstack.Application
 	stdin  io.Reader
 	stdout io.Writer
 	stderr io.Writer

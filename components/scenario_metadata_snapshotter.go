@@ -28,14 +28,14 @@ func NewScenarioMetadataSnapshotter(
 	factory *SpecificationFactory,
 	store *persistence.Store,
 	storageKey string,
-	repository repository.Repository,
+	repo repository.Repository,
 	featuresDir string,
 ) *ScenarioMetadataSnapshotter {
 	return &ScenarioMetadataSnapshotter{
 		Factory:     factory,
 		Store:       store,
 		StorageKey:  storageKey,
-		Repository:  repository,
+		Repository:  repo,
 		FeaturesDir: featuresDir,
 	}
 }
@@ -109,7 +109,9 @@ Loads a scenario from a snapshot. The procedure is:
 4. Query spec for scenario at line number
 5. Return if found
 */
-func (s *ScenarioMetadataSnapshotter) scenarioFromSnapshot(snap specification.ScenarioSnapshot) (*specification.Scenario, error) {
+func (s *ScenarioMetadataSnapshotter) scenarioFromSnapshot(
+	snap specification.ScenarioSnapshot,
+) (*specification.Scenario, error) {
 	fs, err := s.fileSystemFromScenarioSnapshot(snap)
 	if err != nil {
 		return nil, err
@@ -156,7 +158,9 @@ func (s *ScenarioMetadataSnapshotter) scenarioMapFromSnapshots(
 	return output, nil
 }
 
-func (s *ScenarioMetadataSnapshotter) fileSystemFromScenarioSnapshot(snap specification.ScenarioSnapshot) (afero.Fs, error) {
+func (s *ScenarioMetadataSnapshotter) fileSystemFromScenarioSnapshot(
+	snap specification.ScenarioSnapshot,
+) (afero.Fs, error) {
 	fs := afero.NewMemMapFs()
 	var (
 		err         error

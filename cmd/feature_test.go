@@ -69,7 +69,7 @@ func newTestHarness() *testHarness {
 		Repository:          git,
 	}
 
-	th.cobra = WireUpCobraHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
+	th.cobra = WireUpCobraHarness(NewCobraHarness(&app, th.stdin, th.stdout, th.stderr))
 
 	return th
 }

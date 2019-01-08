@@ -34,8 +34,7 @@ func NewDeveloper(
 	path string,
 	store *persistence.Store,
 	repo repository.Repository,
-	stdout io.Writer,
-	stderr io.Writer,
+	stdout, stderr io.Writer,
 ) *Developer {
 	return &Developer{
 		path:   path,

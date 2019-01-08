@@ -33,11 +33,11 @@ func Test_StoreConfig_ReturnsAnyConfigSetErrors(t *testing.T) {
 	mockConfigStorer := &MockConfigStorer{}
 	mockMetadataStorer := &MockMetadataStorer{}
 	repoStore := NewStore(mockConfigStorer, mockMetadataStorer)
-	config := config.NewWithDefaults()
+	cfg := config.NewWithDefaults()
 
 	mockConfigStorer.On("SetConfig", mock.Anything, mock.Anything).Return(errors.New("!!!"))
 
-	_, err := repoStore.StoreConfig(config)
+	_, err := repoStore.StoreConfig(cfg)
 
 	assert.True(t, len(err.(errors.Errors)) > 0)
 }
