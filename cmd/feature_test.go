@@ -52,10 +52,24 @@ func newTestHarness() *testHarness {
 		persistence.NewNamespacedKeyValueStorer(th.repo, "specstack"),
 		git,
 	)
-	developer := personas.NewDeveloper(repoStore)
-	app := specstack.New(testdirPath, th.repo, developer, repoStore, th.stdout, th.stderr)
+	developer := personas.NewDeveloper(
+		testdirPath,
+		repoStore,
+		git,
+		th.stdout,
+		th.stderr,
+	)
+	app := specstack.Application{
+		ConfigAsserter:      developer,
+		ConfigGetListSetter: developer,
+		MetadataGetAdder:    developer,
+		MetadataTransferer:  developer,
+		PushPuller:          developer,
+		RepoHooker:          developer,
+		Repository:          git,
+	}
 
-	th.cobra = WireUpCobraHarness(NewCobraHarness(app, th.stdin, th.stdout, th.stderr))
+	th.cobra = WireUpCobraHarness(NewCobraHarness(&app, th.stdin, th.stdout, th.stderr))
 
 	return th
 }

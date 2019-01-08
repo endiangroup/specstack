@@ -326,9 +326,9 @@ func Test_ScenarioRelated_ProgressiveTests(t *testing.T) {
 	} {
 		t.Run(fmt.Sprintf("input '%s'", test.description), func(t *testing.T) {
 			for i := 1; i < len(test.progression); i++ {
-				old := newMockScenario(t, test.progression[i-1])
-				new := newMockScenario(t, test.progression[i])
-				require.True(t, ScenarioRelated(old, new))
+				oldScenario := newMockScenario(t, test.progression[i-1])
+				newScenario := newMockScenario(t, test.progression[i])
+				require.True(t, ScenarioRelated(oldScenario, newScenario))
 			}
 		})
 	}
