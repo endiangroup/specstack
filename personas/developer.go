@@ -128,8 +128,8 @@ func (d *Developer) SetConfiguration(name, value string) error {
 	return err
 }
 
-func (d *Developer) specificationFactory() *components.SpecificationFactory {
-	return components.NewSpecificationFactory(
+func (d *Developer) specificationFactory() *specification.Factory {
+	return specification.NewFactory(
 		afero.NewOsFs(),
 		d.config.Project.FeaturesDir,
 		d.stderr,

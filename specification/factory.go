@@ -1,40 +1,39 @@
-package components
+package specification
 
 import (
 	"fmt"
 	"io"
 
-	"github.com/endiangroup/specstack/specification"
 	"github.com/spf13/afero"
 )
 
-type SpecificationFactory struct {
+type Factory struct {
 	FileSystem  afero.Fs
 	FeaturesDir string
 	WarningPipe io.Writer
 }
 
-func NewSpecificationFactory(
+func NewFactory(
 	fileSystem afero.Fs,
 	featuresDir string,
 	warningPipe io.Writer,
-) *SpecificationFactory {
-	return &SpecificationFactory{
+) *Factory {
+	return &Factory{
 		FileSystem:  fileSystem,
 		FeaturesDir: featuresDir,
 		WarningPipe: warningPipe,
 	}
 }
 
-func (s *SpecificationFactory) SpecificationReader() specification.Reader {
-	return specification.NewFilesystemReader(s.FileSystem, s.FeaturesDir)
+func (s *Factory) SpecificationReader() Reader {
+	return NewFilesystemReader(s.FileSystem, s.FeaturesDir)
 }
 
-func (s *SpecificationFactory) EmitWarning(warning error) {
+func (s *Factory) EmitWarning(warning error) {
 	fmt.Fprintf(s.WarningPipe, "WARNING: %s\n", warning.Error())
 }
 
-func (s *SpecificationFactory) Specification() (*specification.Specification, specification.Reader, error) {
+func (s *Factory) Specification() (*Specification, Reader, error) {
 	reader := s.SpecificationReader()
 
 	spec, warnings, err := reader.Read()

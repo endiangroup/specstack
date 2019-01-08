@@ -17,7 +17,7 @@ import (
 )
 
 type ScenarioMetadataSnapshotter struct {
-	Factory     *SpecificationFactory
+	Factory     *specification.Factory
 	Store       *persistence.Store
 	StorageKey  string
 	Repository  repository.Repository
@@ -25,7 +25,7 @@ type ScenarioMetadataSnapshotter struct {
 }
 
 func NewScenarioMetadataSnapshotter(
-	factory *SpecificationFactory,
+	factory *specification.Factory,
 	store *persistence.Store,
 	storageKey string,
 	repo repository.Repository,
