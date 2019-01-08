@@ -5,12 +5,12 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/endiangroup/specstack/components"
 	"github.com/endiangroup/specstack/config"
 	"github.com/endiangroup/specstack/errors"
 	"github.com/endiangroup/specstack/metadata"
 	"github.com/endiangroup/specstack/persistence"
 	"github.com/endiangroup/specstack/repository"
+	"github.com/endiangroup/specstack/snapshot"
 	"github.com/endiangroup/specstack/specification"
 	"github.com/spf13/afero"
 )
@@ -244,7 +244,7 @@ func (d *Developer) Push() error {
 }
 
 func (d *Developer) TransferScenarioMetadata() error {
-	ss := components.NewScenarioMetadataSnapshotter(
+	ss := snapshot.NewScenarioMetadataSnapshotter(
 		d.specificationFactory(),
 		d.store,
 		"snapshots",

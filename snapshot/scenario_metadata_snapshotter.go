@@ -1,4 +1,4 @@
-package components
+package snapshot
 
 import (
 	"bytes"
