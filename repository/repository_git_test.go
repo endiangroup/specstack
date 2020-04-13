@@ -220,12 +220,13 @@ func Test_AnInitialisedGitRepoKnowsItsGitDirectories(t *testing.T) {
 	dir, repo, shutdown := initialisedGitRepoDir(t)
 	defer shutdown()
 
-	expectedGitDir := filepath.Join(dir, ".git")
+	expectedGitDir, err := filepath.EvalSymlinks(filepath.Join(dir, ".git"))
+	require.NoError(t, err)
 	expectedHooksDir := filepath.Join(expectedGitDir, "hooks")
 
 	topDir, err := repo.topDirectory()
 	require.Nil(t, err)
-	require.Equal(t, dir, topDir)
+	require.Contains(t, topDir, dir)
 
 	gitDir, err := repo.gitDirectory()
 	require.Nil(t, err)
