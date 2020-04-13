@@ -353,7 +353,7 @@ func (t *testHarness) iHaveNotSetAGitRemote() error {
 
 func (t *testHarness) overwriteHooks() error {
 	goPath := os.Getenv("GOPATH")
-	cmd := "go run " + filepath.Join(
+	cmd := "GO111MODULE=off go run " + filepath.Join(
 		goPath,
 		"src/github.com/endiangroup/specstack/cmd/spec/*.go",
 	)
