@@ -277,3 +277,13 @@ func (d *Developer) RepoPostMergeHook() error {
 func (d *Developer) RepoPostCommitHook() error {
 	return d.TransferScenarioMetadata()
 }
+
+func (d *Developer) RepoRemovePrePushHook() error {
+	return d.repo.RemoveHook("pre-push")
+}
+func (d *Developer) RepoRemovePostMergeHook() error {
+	return d.repo.RemoveHook("post-merge")
+}
+func (d *Developer) RepoRemovePostCommitHook() error {
+	return d.repo.RemoveHook("post-commit")
+}

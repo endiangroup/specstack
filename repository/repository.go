@@ -8,6 +8,7 @@ type Repository interface {
 	Configurer
 	MetadataSyncer
 	ObjectHasher
+	HookRemover
 }
 
 // Initialiser initialises a repo
@@ -33,4 +34,8 @@ type MetadataSyncer interface {
 type ObjectHasher interface {
 	ObjectHash(io.Reader) (string, error)
 	ObjectString(hash string) (string, error)
+}
+
+type HookRemover interface {
+	RemoveHook(string) error
 }

@@ -353,7 +353,7 @@ func (t *testHarness) iHaveNotSetAGitRemote() error {
 
 func (t *testHarness) overwriteHooks() error {
 	goPath := os.Getenv("GOPATH")
-	cmd := "go run " + filepath.Join(
+	cmd := "GO111MODULE=off go run " + filepath.Join(
 		goPath,
 		"src/github.com/endiangroup/specstack/cmd/spec/*.go",
 	)
@@ -457,7 +457,7 @@ func (t *testHarness) iHaveAProperlyConfiguredProjectDirectory() error {
 		return err
 	}
 
-	_, f, _, _ := runtime.Caller(1)
+	_, f, _, _ := runtime.Caller(0)
 	var err error
 	t.gitServer, err = gitest.NewServer(filepath.Join(path.Dir(f), "fixtures/git/starting"))
 	if err != nil {
@@ -513,7 +513,7 @@ func (t *testHarness) iShouldSeeAnAppropriateWarningFromGit() error {
 }
 
 func (t *testHarness) thereAreNewMetadataOnTheRemoteGitServer() error {
-	_, f, _, _ := runtime.Caller(1)
+	_, f, _, _ := runtime.Caller(0)
 	p := filepath.Join(path.Dir(f), "fixtures/git/with-commits")
 	return t.gitServer.SetTemplate(p)
 }
@@ -647,7 +647,7 @@ func (t *testHarness) iRunAnySpecMetadataCommand() error {
 
 func (t *testHarness) thereAreMinorChangesToScenarioOnTheRemoteGitServer(scenario string) error {
 	var err error
-	_, f, _, _ := runtime.Caller(1)
+	_, f, _, _ := runtime.Caller(0)
 	t.gitServer, err = gitest.NewServer(filepath.Join(path.Dir(f), "fixtures/git/minor-changes"))
 	if err != nil {
 		return err

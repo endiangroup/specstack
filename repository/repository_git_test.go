@@ -220,12 +220,13 @@ func Test_AnInitialisedGitRepoKnowsItsGitDirectories(t *testing.T) {
 	dir, repo, shutdown := initialisedGitRepoDir(t)
 	defer shutdown()
 
-	expectedGitDir := filepath.Join(dir, ".git")
+	expectedGitDir, err := filepath.EvalSymlinks(filepath.Join(dir, ".git"))
+	require.NoError(t, err)
 	expectedHooksDir := filepath.Join(expectedGitDir, "hooks")
 
 	topDir, err := repo.topDirectory()
 	require.Nil(t, err)
-	require.Equal(t, dir, topDir)
+	require.Contains(t, topDir, dir)
 
 	gitDir, err := repo.gitDirectory()
 	require.Nil(t, err)
@@ -263,6 +264,24 @@ func Test_AnInitialisedGitRepoCanWriteItsHooksWhenAppropriate(t *testing.T) {
 		_, err = os.Stat(pu)
 		require.False(t, os.IsNotExist(err))
 	})
+}
+
+func Test_AnInitialisedGitRepoCanRemoveItsHooks(t *testing.T) {
+	_, repo, shutdown := initialisedGitRepoDir(t)
+	defer shutdown()
+
+	hooksDir, err := repo.gitHooksDirectory()
+	require.Nil(t, err)
+
+	pp := filepath.Join(hooksDir, "pre-push")
+
+	require.Nil(t, repo.PrepareMetadataSync())
+	require.Nil(t, repo.RemoveHook("pre-push"))
+
+	prePushBytes, err := ioutil.ReadFile(pp)
+	require.NoError(t, err)
+
+	require.False(t, findHookEntryRegex.Match(prePushBytes))
 }
 
 func Test_AnInitialisedGitRepoCanHashObjectsConsistently(t *testing.T) {
