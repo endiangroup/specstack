@@ -68,12 +68,20 @@ func commandGitHooks(harness *CobraHarness) *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		Example: "$ spec git-hook exec pre-push",
 	}
+	remove := &cobra.Command{
+		Use:     "remove <pre-push|post-merge|post-commit|all>",
+		Aliases: []string{"rm"},
+		Args:    cobra.ExactArgs(1),
+		Example: "$ spec git-hook remove all",
+	}
 
 	root.AddCommand(
 		exec,
+		remove,
 	)
 
 	exec.RunE = harness.GitHookExec
+	remove.RunE = harness.GitHookRemove
 
 	return root
 }

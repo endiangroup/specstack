@@ -42,6 +42,9 @@ type RepoHooker interface {
 	RepoPrePushHook() error
 	RepoPostMergeHook() error
 	RepoPostCommitHook() error
+	RepoRemovePrePushHook() error
+	RepoRemovePostMergeHook() error
+	RepoRemovePostCommitHook() error
 }
 
 type Application struct {

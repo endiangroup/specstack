@@ -228,6 +228,29 @@ func (c *CobraHarness) GitHookExec(cmd *cobra.Command, args []string) error {
 	return c.errorWithReturnCode(cmd, 1, fmt.Errorf("invalid hook name : %s", args[0]))
 }
 
+func (c *CobraHarness) GitHookRemove(cmd *cobra.Command, args []string) error {
+	switch args[0] {
+	case "pre-push":
+		return c.errorOrNil(cmd, 1, c.app.RepoHooker.RepoRemovePrePushHook())
+	case "post-merge":
+		return c.errorOrNil(cmd, 1, c.app.RepoHooker.RepoRemovePostMergeHook())
+	case "post-commit":
+		return c.errorOrNil(cmd, 1, c.app.RepoHooker.RepoRemovePostCommitHook())
+	case "all":
+		if err := c.errorOrNil(cmd, 1, c.app.RepoHooker.RepoRemovePrePushHook()); err != nil {
+			return err
+		}
+
+		if err := c.errorOrNil(cmd, 1, c.app.RepoHooker.RepoRemovePostMergeHook()); err != nil {
+			return err
+		}
+
+		return c.errorOrNil(cmd, 1, c.app.RepoHooker.RepoRemovePostCommitHook())
+	}
+
+	return c.errorWithReturnCode(cmd, 1, fmt.Errorf("invalid hook name : %s", args[0]))
+}
+
 func (c *CobraHarness) Pull(cmd *cobra.Command, args []string) error {
 	return c.errorOrNil(cmd, 1, c.app.PushPuller.Pull())
 }
