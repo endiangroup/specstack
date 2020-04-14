@@ -266,6 +266,24 @@ func Test_AnInitialisedGitRepoCanWriteItsHooksWhenAppropriate(t *testing.T) {
 	})
 }
 
+func Test_AnInitialisedGitRepoCanRemoveItsHooks(t *testing.T) {
+	_, repo, shutdown := initialisedGitRepoDir(t)
+	defer shutdown()
+
+	hooksDir, err := repo.gitHooksDirectory()
+	require.Nil(t, err)
+
+	pp := filepath.Join(hooksDir, "pre-push")
+
+	require.Nil(t, repo.PrepareMetadataSync())
+	require.Nil(t, repo.RemoveHook("pre-push"))
+
+	prePushBytes, err := ioutil.ReadFile(pp)
+	require.NoError(t, err)
+
+	require.False(t, findHookEntryRegex.Match(prePushBytes))
+}
+
 func Test_AnInitialisedGitRepoCanHashObjectsConsistently(t *testing.T) {
 
 	_, repo, shutdown := initialisedGitRepoDir(t)

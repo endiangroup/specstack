@@ -10,13 +10,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
 )
 
 const (
-	gitNotesRef = "refs/notes/specstack"
+	gitNotesRef       = "refs/notes/specstack"
+	gitHookOpeningTag = "### spec {"
+	gitHookClosingTag = "### }"
 
 	// Scopes for git config
 	GitConfigScopeLocal  = 1
@@ -24,7 +27,10 @@ const (
 	GitConfigScopeGlobal = 4
 )
 
-var ErrNoConfigFound = errors.New("no config found")
+var (
+	ErrNoConfigFound   = errors.New("no config found")
+	findHookEntryRegex = regexp.MustCompile("(?s)" + gitHookOpeningTag + ".+" + gitHookClosingTag)
+)
 
 // NewGitCmdConfigErr creates the appropriate typed error for a Git failure, if
 // possible.
@@ -306,11 +312,39 @@ func (repo *Git) WriteHookFile(name, command string) error {
 
 	content := fmt.Sprintf(
 		`#!/bin/sh
+
+%s
 # Added by spec command on %s
 %s
-`, time.Now().Format(time.RFC3339), command)
+%s
+`,
+		gitHookOpeningTag,
+		time.Now().Format(time.RFC3339),
+		command,
+		gitHookClosingTag,
+	)
 
 	return ioutil.WriteFile(path, []byte(content), 0774)
+}
+
+func (repo *Git) RemoveHook(name string) error {
+	hooksDir, err := repo.gitHooksDirectory()
+	if err != nil {
+		return err
+	}
+
+	path := filepath.Join(hooksDir, name)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+
+	hookBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	removeMsg := fmt.Sprintf("# Removed by spec command on %s", time.Now().Format(time.RFC3339))
+	return ioutil.WriteFile(path, findHookEntryRegex.ReplaceAll(hookBytes, []byte(removeMsg)), 0774)
 }
 
 func (repo *Git) PullMetadata(from string) error {
