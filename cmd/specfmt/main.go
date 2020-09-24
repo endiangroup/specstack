@@ -9,13 +9,13 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/cucumber/gherkin-go"
+	gherkin "github.com/cucumber/gherkin-go"
 	pretty "github.com/endiangroup/pretty-formatter-go"
 )
 
 var dialectFlag = flag.String("dialect", "en", "Gherkin Dialect")
 var writeFlag = flag.Bool("w", false, "write result to (source) file instead of stdout")
-var lintFlag = flag.Bool("l", false, "list files whoe formatting differes from specfmt's")
+var lintFlag = flag.Bool("l", false, "list files whose formatting differes from specfmt's")
 
 func main() {
 	flag.Parse()
