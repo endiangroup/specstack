@@ -1,5 +1,10 @@
 package config
 
+const (
+	ModeAuto     = "auto"
+	ModeSemiAuto = "semi-auto"
+)
+
 func newProject() *Project {
 	return &Project{}
 }
@@ -8,8 +13,8 @@ func newProjectWithDefaults() *Project {
 	return &Project{
 		Remote:      "origin",
 		FeaturesDir: "./features",
-		PushingMode: "auto",
-		PullingMode: "semi-auto",
+		PushingMode: ModeAuto,
+		PullingMode: ModeSemiAuto,
 	}
 }
 

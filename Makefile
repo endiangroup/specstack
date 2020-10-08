@@ -1,7 +1,29 @@
+.PHONY: install
+install: vendor $(GOPATH)/bin/spec $(GOPATH)/bin/specfmt
+
+$(GOPATH)/bin/spec:
+	@go install github.com/endiangroup/specstack/cmd/spec
+  
+$(GOPATH)/bin/specfmt:
+	@go install github.com/endiangroup/specstack/cmd/specfmt
+
+.PHONY: clean
+clean:
+	@rm -rf vendor $(GOPATH)/bin/spec $(GOPATH)/bin/specfmt
+
+.PHONY: vendor
+vendor: dep
+	@dep ensure --vendor-only
+
 .PHONY: test
 test: dep godog
 	go test ./...
 	(cd cmd/ && godog ../features)
+
+.PHONY: lint
+lint: golangci-lint $(GOPATH)/bin/specfmt
+	golangci-lint run ./...
+	specfmt -l features/*.feature
 
 .PHONY: mock
 dir ?= .
@@ -37,4 +59,13 @@ dep:
 ifndef DEP_BIN
 	@echo "Installing dep..."
 	@go get github.com/golang/dep/cmd/dep
+endif
+
+.PHONY: golangci-lint
+GOLANGCI_BIN := $(shell command -v golangci-lint 2> /dev/null)
+golangci-lint:
+ifndef GOLANGCI_BIN
+	-@go get -u github.com/golangci/golangci-lint
+	@cd $(GOPATH)/src/github.com/golangci/golangci-lint/cmd/golangci-lint
+	@go install -ldflags "-X 'main.version=$(git describe --tags)' -X 'main.commit=$(git rev-parse --short HEAD)' -X 'main.date=$(date)'"
 endif

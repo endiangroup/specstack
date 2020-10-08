@@ -18,13 +18,15 @@ func New() *Config {
 	}
 }
 
-func NewFromMap(configMap map[string]string) *Config {
+func NewFromMap(configMap map[string]string) (*Config, error) {
 	c := New()
 	for key, value := range configMap {
-		Set(c, key, value)
+		if err := Set(c, key, value); err != nil {
+			return nil, err
+		}
 	}
 
-	return c
+	return c, nil
 }
 
 type Config struct {

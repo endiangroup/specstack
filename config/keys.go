@@ -3,16 +3,16 @@ package config
 import "strings"
 
 const (
-	keyUser      prefix = "user"
-	keyUserName         = "name"
-	keyUserEmail        = "email"
+	KeyUser      prefix = "user"
+	KeyUserName         = "name"
+	KeyUserEmail        = "email"
 
-	keyProject            prefix = "project"
-	keyProjectRemote             = "remote"
-	keyProjectName               = "name"
-	keyProjectFeaturesDir        = "featuresdir"
-	keyProjectPushingMode        = "pushingmode"
-	keyProjectPullingMode        = "pullingmode"
+	KeyProject            prefix = "project"
+	KeyProjectRemote             = "remote"
+	KeyProjectName               = "name"
+	KeyProjectFeaturesDir        = "featuresdir"
+	KeyProjectPushingMode        = "pushingmode"
+	KeyProjectPullingMode        = "pullingmode"
 )
 
 func fetchPrefix(key string) prefix {

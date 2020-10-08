@@ -16,12 +16,30 @@ func main() {
 		panic(err)
 	}
 
-	gitRepo := repository.NewGit(dir, "specstack")
-	repoStore := persistence.NewRepositoryStore(gitRepo)
-	developer := personas.NewDeveloper(repoStore)
-	app := specstack.New(dir, gitRepo, developer, repoStore)
-
-	cobra := cmd.WireUpCobraHarness(cmd.NewCobraHarness(app, os.Stdin, os.Stdout, os.Stderr))
+	gitRepo := repository.NewGitRepository(dir)
+	repoStore := persistence.NewStore(
+		persistence.NewNamespacedKeyValueStorer(gitRepo, "specstack"),
+		gitRepo,
+	)
+	developer := personas.NewDeveloper(
+		dir,
+		repoStore,
+		gitRepo,
+		os.Stdout,
+		os.Stderr,
+	)
+	app := specstack.Application{
+		ConfigAsserter:      developer,
+		ConfigGetListSetter: developer,
+		MetadataGetAdder:    developer,
+		MetadataTransferer:  developer,
+		PushPuller:          developer,
+		RepoHooker:          developer,
+		Repository:          gitRepo,
+	}
+	cobra := cmd.WireUpCobraHarness(
+		cmd.NewCobraHarness(&app, os.Stdin, os.Stdout, os.Stderr),
+	)
 
 	if err := cobra.Execute(); err != nil {
 		if cliErr, ok := err.(cmd.CliErr); ok {
